@@ -1,0 +1,84 @@
+<script type="text/javascript">
+<!--
+function extractArray(a, idx, defval) { result = []; for (var i=0; i<a.length; i++) { b=a[i]; v=b[idx]; if (v==null) v=defval; result.push(v); } return result; }
+function getFirstNonNull(a) { result = null; for (var i=0; i<a.length; i++) { b=a[i]; if (b!=null) { result=b; break; } } return result; }
+function maxMin(a)
+{   var max=-9007199254740992;
+    var min=+9007199254740992;
+    for (var i=0; i<a.length; i++)
+    {   var v=a[i];
+        if (v!=null)
+        {   v=Number(v);
+            if (v>max) max=v;
+            if (v<min) min=v;
+        }
+    }
+    return { 'max': max, 'min': min };
+}
+
+var ids= %ID%;
+var gd= %D%;
+var len=gd.length;
+var w = 100, h = 36;
+var rmargin=20;
+var x = pv.Scale.linear(0, len).range(0, w);
+
+for (i=0; i<ids.length; i++)
+{
+	var id=ids[i];
+	var d=extractArray(gd,i+2, null);
+    //if (id=='urn:daylight:db')
+    //{   d=[true,true,false,true,false,false,false,true,false,true,true,true,false,true,false,false,false,true,false,true,false,true,false];
+    //}
+	var v=getFirstNonNull(d);
+    
+    var find = ':';
+    var re = new RegExp(find, 'g');
+    var selector="#s\\:"+id.replace(re,"\\:");
+    var canvas=$(selector).length;
+    if (canvas!=0)
+    {   
+        var vis = new pv.Panel()
+            .canvas("s:"+id)
+            .width(w)
+            .height(h)
+            .top(1).bottom(1)
+            //.fillStyle("#ffffff")
+            .right(rmargin);
+    
+        if ($.isNumeric(v))
+        {	
+            var mm=maxMin(d);
+            if (mm.max==mm.min) mm.max=mm.min+1;
+            var y = pv.Scale.linear(mm.min, mm.max).range(0, h);
+            
+            vis.add(pv.Line)
+                .data(d).interpolate("cardinal")
+                .bottom(function(d){ return y(d==null?mm.min:d); })
+                .left(function() {return x(this.index+0.5)})
+                .lineWidth(2)
+                .strokeStyle( "#2020C0" );
+            
+            vis.add(pv.Label).bottom(-2).right(-rmargin).textAlign('right').text(mm.min);   
+            vis.add(pv.Label).bottom(h-10).right(-rmargin).textAlign('right').text(mm.max);   
+            vis.root.render();
+        }
+        else if (typeof v === 'boolean')
+        {
+            var y = pv.Scale.linear(0,1).range(0, h);
+                            
+            vis.add(pv.Area)
+                .data(d)
+                .interpolate("step-before")
+                .bottom(function(d) { return y(d?0.25:0.475); } )
+                .height(function(d) { return y(d?0.5:0.05) } )
+                .left(function() { return x(this.index+0.5);} )
+                .fillStyle( "#2020C0" ); 
+                
+           vis.root.render();           
+        }
+    }
+}
+
+-->
+</script>

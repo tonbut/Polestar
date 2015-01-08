@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+	<endpoint>
+		<request>
+			<identifier>meta:polestar:statics</identifier>
+		</request>
+		<protected/>
+	</endpoint>
+    <endpoint> <!-- this is so template can resolve Configuration script -->
+        <request>
+            <identifier>meta:polestar:data:scriptExecute</identifier>
+        </request>
+        <protected/>
+    </endpoint>
+    <endpoint>
+        <request>
+            <identifier>meta:polestar:data:authenticationData</identifier>
+        </request>
+        <protected/>
+    </endpoint>
+	<endpoint>
+		<id>polestar:loginChallenge</id>
+		<grammar>res:/polestar/
+			<group name="action"><regex>login|logout</regex></group>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.login.LoginChallenge</argument>
+			<argument name="action">arg:action</argument>
+		</request>
+	</endpoint>
+    <endpoint>
+        <id>polestar:changePassword</id>
+        <grammar>res:/polestar/changePassword
+        </grammar>
+        <request>
+            <identifier>active:java</identifier>
+            <argument name="class">io.polestar.view.login.ChangePasswordAccessor</argument>
+        </request>
+    </endpoint>
+	<endpoint>
+		<id>polestar:pub</id>
+		<grammar>res:/polestar/pub/
+			<group name="file"><regex type="anything"/></group>
+		</grammar>
+		<request>
+			<identifier>res:/io/polestar/view/pub/[[arg:file]]</identifier>
+		</request>
+		<header name="HTTP_CACHE_EXPIRES_DELTA_SECONDS">604800</header>
+	</endpoint>
+	<endpoint>
+		<id>polestar:index</id>
+		<grammar>res:/polestar/
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.template.IndexPageAccessor</argument>
+		</request>
+	</endpoint>
+	<endpoint>
+		<id>polestar:help</id>
+		<grammar>res:/polestar/help
+		</grammar>
+		<request>
+			<identifier>res:/io/polestar/view/template/help.xml</identifier>
+		</request>
+		<header name="polestar_wrap">true</header>
+	</endpoint>
+	
+	<!-- scripts -->
+	<endpoint>
+		<id>polestar:execute</id>
+		<grammar>res:/polestar/scripts/execute/
+			<group name="id"><regex type="anything"/></group>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.scripts.ScriptAccessor</argument>
+			<argument name="action">execute</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+	<endpoint>
+		<id>polestar:scripts</id>
+		<grammar>res:/polestar/scripts
+			<optional>/<group name="action"><regex type="nmtoken"/></group>
+				<optional>/<group name="id"><regex type="anything"/></group></optional>
+			</optional>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.scripts.ScriptAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+	
+	<!-- sensors -->
+	<endpoint>
+		<id>polestar:sensors</id>
+		<grammar>res:/polestar/sensors
+			<optional>/<group name="action"><regex type="nmtoken"/></group>
+				<optional>/<group name="id"><regex type="anything"/></group></optional>
+			</optional>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.sensors.SensorViewAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+	
+	<!-- log -->
+	<endpoint>
+		<id>polestar:log</id>
+		<grammar>res:/polestar/log</grammar>
+		<request>
+			<identifier>active:xslt</identifier>
+			<argument name="operator">res:/io/polestar/view/log/styleLog.xsl</argument>
+			<argument name="operand">netkernel:/log/io.polestar/0/60</argument>
+		</request>
+		<header name="polestar_wrap"><literal type="boolean">true</literal></header>
+	</endpoint>	
+	
+</config>

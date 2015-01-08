@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+	<!-- scripts -->
+	<endpoint>
+		<request>
+			<identifier>meta:polestar:data:listScripts</identifier>
+		</request>
+	</endpoint>
+	<endpoint>
+		<id>polestar:data:reorderScripts</id>
+		<grammar>
+			<active>
+				<identifier>active:polestarReorderScripts</identifier>
+				<argument name="script"/>
+				<argument name="newPosition"/>
+			</active>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.data.scripts.ReorderScriptsAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+	<endpoint>
+		<id>polestar:data:queryScripts</id>
+		<grammar>
+			<active>
+				<identifier>active:polestarQueryScript</identifier>
+				<argument name="name"/>
+			</active>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.data.scripts.ScriptQueryAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+	<endpoint>
+		<id>polestar:data:queryCapture</id>
+		<grammar>
+			<active>
+				<identifier>active:polestarHistoricalQuery</identifier>
+				<argument name="operator"/>
+			</active>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.data.poll.CaptureQueryAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+		
+</config>

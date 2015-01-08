@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+		
+		<branch name="PassThrough" overlay="" targets="polestar:pub"/>
+
+		<branch name="Sessioned" overlay="Throttle"  />
+		<overlay name="Throttle" next="Session">
+			<prototype>layer1.Concurrency.Throttle</prototype>
+			<config>
+				<concurrency>2</concurrency>
+			</config>
+		</overlay>
+		<overlay name="Session" next="BM2">
+				<prototype>HTTPSession</prototype>
+				<config>
+						<maxSessions>16</maxSessions>
+						<minDuration>10000</minDuration> <!-- 30 seconds -->
+						<maxDuration>30000000</maxDuration> <!-- one day -->
+						<cookiePath>/polestar/</cookiePath>
+						<autoReconnect>true</autoReconnect>
+				</config>
+		</overlay>
+		
+		<overlay name="BM2" next="TemplateWrap">
+			<class>org.netkernel.module.standard.builtin.branchmerge.BranchMergeOverlay</class>
+			<config>
+				<branch name="Unsecure" overlay="" targets="polestar:execute"/>
+				<branch name="Secure" overlay="AuthenticationChallenge"/>
+	
+				<overlay name="AuthenticationChallenge" next="">
+					<class>io.polestar.view.login.CheckLogin</class>
+				</overlay>
+			</config>
+		</overlay>
+		<overlay name="TemplateWrap" next="">
+			<class>io.polestar.view.template.TemplateWrapper</class>
+		</overlay>		
+</config>

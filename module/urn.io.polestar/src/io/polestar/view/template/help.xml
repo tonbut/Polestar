@@ -1,0 +1,368 @@
+<div class='container'>
+	<h2>Introduction</h2>
+	<p>Polestar is a general purpose Internet of Things sensor monitor, data logger, controller and hub.
+	It is designed to be fully extensible on the fly with all configuration or scripting editable through the web interface
+	it provides. 
+	</p>
+	<p>Polestar implements the following main concepts:
+	<ul>
+		<li><b>Sensors</b> may be physical or logical. Their values are updated by customisable scripts. Their
+		values are stored in a database every 5 minutes.</li>
+		<li><b>Scripts</b> define everything from what sensors are in the system to how those sensors are updated and control
+		scripts acting on sensor values. Scripts can be automatically triggered based on state changes in the system or
+		exposed as "webhooks" so external events can call them.</li>
+		<li><b>Capture</b> all sensor values are captured every 5 minutes. Scripts can use this historical data
+		for analysis or visualisations.</li>
+		<li><b>Logging</b> scripts can log an important events.</li>
+	</ul></p>
+	<h2>Installation</h2>
+	<h3>Install NetKernel</h3>
+	<p>Download NetKernel from <a href="http://www.1060research.com/resources/">1060research.com</a>. Polestar supports
+	both NetKernel Standard Edition and Enterprise Edition. Follow the appropriate installation procedure.</p>
+	<p>Configure NetKernel to <a href="http://docs.netkernel.org/book/view/book:system:admin/doc:sysadmin:service">run as a service</a>.</p>
+	<p>Deploy the Polestar jar.</p>
+	<div class="alert alert-warning">More details soon.</div>
+	<h3>Install MongoDB</h3>
+	<p>Install using the instructions provided on the <a href="http://docs.mongodb.org/manual/installation">Mongo DB Site</a>.
+	MongoDB can be run as a service or on the commandline. For deployment of the system as a server it
+	is better to install as a service. Polestar expects to find MongoDB on it's default port 27017 on localhost.</p>
+	<h3>Change passwords</h3>
+	<p>Polestar should now be running. Connect to it on <kbd>http://[hostname]:8080/polestar/</kbd> where [hostname] is the
+	hostname of the server where you have installed it.</p>
+	<p>You should be prompted for a username and password. There are two usernames hardcoded.
+	One is "admin", the other is "guest". Both have the password "password". You should log into both of them and change them.
+	The guest account has readonly access. The admin account has full access.
+	</p>
+	<p>Change the password by appending altering the URL in your address bar, i.e.  <kbd>http://[hostname]:8080/polestar/changePassword</kbd>
+	You will be prompted to enter your new password twice. Don't forget it. If you do the only way to reset
+	it is to delete the database and start again. (Actually not quite true, you can just drop the collection named
+	"authentication".)
+	</p>
+	<h3>Configuration script</h3>
+	<p>Everything in Polestar is driven by scripts. The first script you need to know about is the
+	the configuration script.  Create it by click on Scripts in
+	the navigation bar and the clicking the <span class="label label-primary">+New</span> button. It must be named "Configuration".</p>
+	<pre><code>import org.netkernel.mod.hds.*;
+import org.netkernel.layer0.nkf.*;
+m=HDSFactory.newDocument()
+	.addNode("title","Tony's Deathstar")
+	.addNode("subtitle","deathstar automation!")
+	.addNode("icon","/polestar/pub/deathstar.png")
+	.pushNode("sensor-ticker")
+	.addNode("period",1000L*60*60*24*1)
+	.addNode("merge",6);
+context.createResponseFrom(m.toDocument(false));</code></pre>
+	<p>Title, subtitle and icon fields in the configuration are used to customise the navigation bar branding.
+	Sensor-ticker period and merge are used to customise the ticker shown in the sensor view.
+	</p>
+	<h3>Configuring sensors</h3>
+	<p>Sensors are defined by the sensor script. This is a script named "SensorList".
+	Here is a template with a single sensor:</p>
+	<pre><code>import org.netkernel.mod.hds.*;
+m=HDSFactory.newDocument()
+	.pushNode("sensors")
+	.pushNode("sensor")
+	.addNode("id","urn:random1")
+	.addNode("name","Random 1")
+	.addNode("units","")
+	.addNode("format","%.2f")
+	.addNode("icon","/polestar/pub/icon/sun.png")
+	.addNode("keywords","test")
+	.addNode("errorIfNoReadingsFor",800L);
+context.createResponseFrom(m.toDocument(false));</code></pre>
+	<p>There are seven fields that can be defined for each sensor, let us go through them:
+	<ul>
+		<li><b>id</b> <span class="label label-info">mandatory</span> Each sensor must have a unique URN (universal resource name)</li>
+		<li><b>name</b> <span class="label label-info">mandatory</span> This is the human readable display name of the sensor.</li>
+		<li><b>units</b> <span class="label label-info">optional</span> This specifies the display units of the sensors values.</li>
+		<li><b>format</b> <span class="label label-info">optional</span> Format is used to format the raw sensor values for display.
+		Boolean values can use "on" for on/off or "open" for open/close. Integer values can use "count", this effects how tickers are rendered.
+		Formats containing the percent character are formatted according to the specifications on this <a href="https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html">page</a>.</li>
+		<li><b>icon</b> <span class="label label-info">optional</span> Specifies a custom icon URL. There is a library of icons within
+		Polestar. (See below.)</li>
+		<li><b>keywords</b> <span class="label label-info">optional</span> Comma separated list of keywords that are display in sensor list and can be used to filter sensors.</li>
+		<li><b>errorIfNoReadingsFor</b> <span class="label label-info">optional</span> An integer number of seconds after which an error will be reported in a sensor if it's
+		value is not updated by a script.</li>
+	</ul>
+	</p>
+	<h3>Icons</h3>
+	<p>The following icons are built in. Use a URL of the form <code>/polestar/pub/icon/bell.png</code>. You can
+	also use external images or create a Netkernel module with some icons exposed. Ideally icons should be 48x48 pixels.</p>
+	<div>
+  		<div class="micon"><img src="/polestar/pub/icon/bell.png"/><div class="caption">bell.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/circle-dashed.png"/><div class="caption">circle-dashed.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/co2.png"/><div class="caption">co2.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/deathstar.png"/><div class="caption">deathstar.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/door.png"/><div class="caption">door.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/electricity.png"/><div class="caption">electricity.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/fan.png"/><div class="caption">fan.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/fire.png"/><div class="caption">fire.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/gate.png"/><div class="caption">gate.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/humidity.png"/><div class="caption">humidity.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/lightbulb.png"/><div class="caption">lightbulb.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/motion.png"/><div class="caption">motion.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/network.png"/><div class="caption">network.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/person.png"/><div class="caption">person.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/polestar.png"/><div class="caption">polestar.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/pressure.png"/><div class="caption">pressure.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/radiator.png"/><div class="caption">radiator.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/rain.png"/><div class="caption">rain.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/security.png"/><div class="caption">security.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/shower.png"/><div class="caption">shower.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/snowflake.png"/><div class="caption">slowflake.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/socket.png"/><div class="caption">socket.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/sun.png"/><div class="caption">sun.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/switch.png"/><div class="caption">switch.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/temperature.png"/><div class="caption">temperature.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/wind.png"/><div class="caption">wind.png</div></div>
+  	</div>
+	
+	
+	<h3>Working with scripts</h3>
+	<p>Polestar is completely configured and customised through the use of scripts. Scripts are
+	code snippets in the <a href="http://groovy.codehaus.org/">Groovy</a> programming language.
+	Scripts are used, as we have seen, to configure sensors, but also for updating the state of
+	those sensors, driving actions based on the sensor states, creating visualizations of the 
+	current and historical sensor state.</p>
+	<p>Each script has the following fields:</p>
+	<ul>
+		<li><b>Id</b> each script is assigned a unique id when it is created, you cannot change this.</li>
+		<li><b>Name</b> the display name of the script.</li>
+		<li><b>Triggers</b> the triggers field is a comma separated list of sensor ids. When any of the listed
+		sensors change the script will be executed automatically. In addition to sensor ids the following
+		values are supported:<ul>
+			<li><span class="label label-success">1s</span> execute script every second.</li>
+			<li><span class="label label-success">30s</span> execute script every thirty seconds.</li>
+			<li><span class="label label-success">5m</span> execute script every five minutes just before sensor state
+			is captured and stored in the historical database.</li>
+			<li><span class="label label-success">capture</span> execute immediately after sensor state has been
+			stored in the historical database. This trigger is useful for uploading sensor state to cloud storage.</li>
+			<li><span class="label label-success">error</span> execute script when a new error is reported by a sensor.</li>
+			<li><span class="label label-success">startup</span> execute script when Polestar is started.</li>
+			<li><span class="label label-success">shutdown</span> execute script before Polestar is stopped.</li>
+		</ul>
+		</li>
+		<li><b>Keywords</b> the keywords field is a comma separated list of keywords that are displayed in the script list and can be used to filter scripts.</li>
+		<li><b>Access</b> by default a script is private and can only be executed internally, either triggered or from another script, or manually by admin.
+		Change to guest to allow guest user to execute too. Change to public to make this script executable without authentication.
+		This is useful for providing "webhooks" for updating of sensors by external systems.</li>
+		<li><b>Code</b> the code field contains the source code for the script written in the Groovy programming language.</li>
+	</ul>
+	<h3>Script connectivity</h3>
+	<p>There are a number of services made available for the use of scripts. These will be documented
+	in the given examples. In addition you can issue web requests for data and create additional NetKernel modules with
+	services that connect to external hardware devices.</p>
+	<h4>Issuing a web request for data</h4>
+	<pre><code>import org.netkernel.mod.hds.*;
+url="http://api.wunderground.com/weatherstation/WXCurrentObXML.asp?ID=INORTHYA1";
+doc=context.source(url, IHDSDocument.class).getReader();
+outdoor=Float.parseFloat((String)doc.getFirstValue("/current_observation/temp_c"));</code></pre>
+	<h4>Adding hardware connectivity through NetKernel modules</h4>
+	<p>Polestar will import any spaces which make exports available with the type "Polestar" using the <a href="http://docs.netkernel.org/book/view/book:layer1:book/doc:layer1:accessors:sid">dynamic import hook</a>
+	mechanism. Once the spaces are imported you can issue requests to the services within from your scripts.
+	</p>
+	<h3>Sensor update script</h3>
+	<p>Sensors are typically updated on a periodic basis using a script with either a <span class="label label-success">1s</span>,
+	<span class="label label-success">30s</span> or <span class="label label-success">5m</span> trigger or by making a script public
+	and allowing an external system to execute the script passing in data. This is called a webhook. Let us have a look at examples of these two approaches.
+	Although these examples show only one sensor multiple sensors can be updated by adding more sensor updates into the
+	update document.
+	</p>
+	<p>First we need to create a sensor to work with so edit your "SensorList" script and add the following sensor definition:
+	<pre><code>m.pushNode("sensor").addNode("id","urn:exampleSensor").addNode("name","Example Sensor").popNode();</code></pre>
+	</p>
+	<h4>Polled sensor script</h4>
+	<p>Create a new script and enter a trigger of <span class="label label-success">30s</span>. Add the following code:
+	<pre><code>import org.netkernel.mod.hds.*;
+import org.netkernel.layer0.nkf.*;
+
+m=HDSFactory.newDocument()
+	.pushNode("sensors")
+	.pushNode("sensor")
+	.addNode("id","urn:exampleSensor")
+	.addNode("value", Math.random());
+
+req=context.createRequest("active:polestarSensorUpdate");
+req.addArgumentByValue("state",m.toDocument(false));
+context.issueRequest(req);</code></pre>
+	This script will run every 30 seconds and update this single sensor with a random number between 0 and 1.
+	</p>
+	<h4>Webhook sensor script</h4>
+	<p>Create a new script, leave the trigger field blank but check the "public" checkbox. Add the following code:
+	<pre><code>import org.netkernel.mod.hds.*;
+import org.netkernel.layer0.nkf.*;
+
+queryParam=context.source("httpRequest:/param/value",String.class);
+if (queryParam!=null)
+{	value=Double.parseDouble(queryParam);
+	context.sink("arg:state",queryParam);
+	context.createResponseFrom("sensor updated").setExpiry(INKFResponse.EXPIRY_ALWAYS);
+
+	m=HDSFactory.newDocument()
+		.pushNode("sensors")
+		.pushNode("sensor")
+		.addNode("id","urn:exampleSensor")
+		.addNode("value", value );
+	req=context.createRequest("active:polestarSensorUpdate");
+	req.addArgumentByValue("state",m.toDocument(false));
+	context.issueRequest(req);
+}</code></pre>
+	To update the value we now need to issue a web request to the script. So for example if our script has an id of
+	EAC75E961241D889 then we can issue the following request in our web browser addressbar
+	<kbd>http://localhost:8080/polestar/scripts/execute/EAC75E961241D889?value=1.0</kbd>.
+	</p>
+	<h4>Registering errors on sensors</h4>
+	<p>Sensors can report an error automatically if you specify an "errorIfNoReadingsFor" value in the sensor definition
+	however sometimes it is desirable to report a specific error directly if one is known. Here is an example based on the
+	polled random number example above which will report an error if the random number is above 0.95.</p>
+	<pre><code>import org.netkernel.mod.hds.*;
+import org.netkernel.layer0.nkf.*;
+value=Math.random();
+m=HDSFactory.newDocument()
+	.pushNode("sensors")
+	.pushNode("sensor")
+	.addNode("id","urn:exampleSensor")
+	.addNode("value",value);
+if (value>0.95)
+	m.addNode("error","Value is too large");	
+
+req=context.createRequest("active:polestarSensorUpdate");
+req.addArgumentByValue("state",m.toDocument(false));
+context.issueRequest(req);</code></pre>
+	<h3>Control scripts</h3>
+	<p>Control scripts are used to make decisions and take actions based upon the state of sensors.
+	For example turning on/off lights, sending messages or sounding alarms. Control scripts can
+	be triggered periodically or, for more immediate action, when sensors that effect it's outcome
+	change.</p>
+	<p>Control scripts usual want to read the current state of sensors, detect changes and them perform
+	actions or update further "logical" sensors.</p>
+	<p>Here is an example of reading sensor values:
+	<pre><code>import org.netkernel.mod.hds.*;
+import org.netkernel.layer0.nkf.*;
+
+//example of using the value and last modified time of a sensor
+sensors=context.source("active:polestarSensorState",IHDSDocument.class).getReader();
+atHome=sensors.getFirstValue("key('byId','urn:atHome')/value");
+lastAtHome=now-sensors.getFirstValue("key('byId','urn:atHome')/lastModified");
+now=System.currentTimeMillis();
+if (atHome &amp;&amp; now-lastAtHome&gt;24*60*60*1000)
+{	context.logRaw(INKFLocale.WARNING,"Did you know you really need to get out more?");
+}</code></pre></p>
+	<p>The problem with the above script is that after 24 hours of being at home you will be
+	warned everytime the script is run. Usually you determine a condition and then act when that
+	condition becomes true or stops being true. To do this we need to remember state to know
+	the state of the condition last time the script ran.
+	<pre><code>import org.netkernel.mod.hds.*;
+import org.netkernel.layer0.nkf.*;
+import io.polestar.ScriptUtils;
+
+//example of using the value and last modified time of a sensor
+sensors=context.source("active:polestarSensorState",IHDSDocument.class).getReader();
+atHome=sensors.getFirstValue("key('byId','urn:atHome')/value");
+lastAtHome=now-sensors.getFirstValue("key('byId','urn:atHome')/lastModified");
+now=System.currentTimeMillis();
+
+atHomeToLong=atHome &amp;&amp; now-lastAtHome&gt;24*60*60*1000;
+conditionChanged=ScriptUtils.booleanChangeDetect(
+	value:atHomeToLong,
+	context:context );
+if (changed &amp;&amp; atHomeToLong)
+{	context.logRaw(INKFLocale.LEVEL_INFO,"Did you know you really need to get out more?");
+}</code></pre></p>
+	<p>The booleanChangeDetect() method is contained within the MonitorUtils class. It
+	stores state between invocations of the script so as to detect when the condition changes.
+	It also supports the following optional arguments:<ul>
+		<li><b>trueHysteresis</b> <span class="label label-default">java.lang.Long</span> a period
+		in milliseconds after the condition has turned false before it can turn true again.</li>
+		<li><b>falseHysteresis</b> <span class="label label-default">java.lang.Long</span> a period
+		in milliseconds after the condition has turned true before it can turn false again.</li>
+		<li><b>sensorId</b> <span class="label label-default">java.lang.String</span> an optional
+		sensor id for a sensor to update with the value of the condition.</li>
+		<li><b>statePath</b> <span class="label label-default">java.lang.String</span> an optional
+		named path into the persistent state of a script to store the information needed for the
+		condition</li>
+	</ul></p>
+	<p>ScriptUtils also contain the analogue equivalent of booleanChangeDetect() called
+	analogueLevelChangeDetect(). It works in a similar way but looks for a numeric value
+	to be above a trigger level for the condition to become true.
+	<pre><code>import org.netkernel.mod.hds.*;
+import org.netkernel.layer0.nkf.*;
+
+sensors=context.source("active:polestarSensorState",IHDSDocument.class).getReader();
+light=(double)sensors.getFirstValue("key('byId','urn:daylight:db')/value");
+changed=io.polestar.ScriptUtils.analogueLevelChangeDetect(
+	value:light,
+	trueThreshold: -50.0D,
+	falseThreshold: -55.0D,
+	context:context );
+day=light>-50.0D;
+if (changed)
+{	if (day)
+	{	context.logRaw(INKFLocale.LEVEL_INFO,"Dawn");
+	}
+	else
+	{	context.logRaw(INKFLocale.LEVEL_INFO,"Dusk");
+	}
+}</code></pre></p>
+	<p>It also supports the following optional arguments:<ul>
+		<li><b>trueThreshold</b> <span class="label label-default">java.lang.Double</span> when
+		the value rises above this threshold the condition is true.</li>
+		<li><b>falseThreshold</b> <span class="label label-default">java.lang.Double</span> when
+		the value falls below this threshold the condition is false.</li>
+		<li><b>sensorId</b> <span class="label label-default">java.lang.String</span> an optional
+		sensor id for a sensor to update with the value of the condition.</li>
+		<li><b>statePath</b> <span class="label label-default">java.lang.String</span> an optional
+		named path into the persistent state of a script to store the information needed for the
+		condition</li>
+	</ul></p>
+	<h4>Script persistent state</h4>
+	<p>You can access the scripts persistent state directly:
+	<pre><code>import org.netkernel.layer0.nkf.*;
+import org.netkernel.mod.hds.*;
+
+state=context.source("arg:state",IHDSDocument.class).getMutableClone();
+count=state.getFirstValueOrNull("/state/count");
+if (count==null)
+	count=0;
+else
+	count++;
+state.createIfNotExists("state/count").setValue(count);
+context.sink("arg:state",state.toDocument(true));
+resp=context.createResponseFrom(state.toString());
+resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);</code></pre></p>
+	<h4>Calling other scripts</h4>
+	<p>One script can call another script. This is useful for generic services such as sending a message.
+	You can pass arbitrary arguments between scripts:
+	<pre><code>req=context.createRequest("active:polestarExecuteScript");
+req.addArgument("script","47CCD102175BC395");
+req.addArgumentByValue("argument1","abc");
+rep=context.issueRequest(req);
+	</code></pre>
+	The called script can access the argument:
+	<pre><code>argument1=context.source("arg:argument1");</code></pre> 
+	</p>
+	<h4>Logging</h4>
+	<p>Scripts can write to the log:
+	<pre><code>import org.netkernel.layer0.nkf.*;
+context.logRaw(INKFLocale.LEVEL_INFO,"Something happened");
+context.logRaw(INKFLocale.LEVEL_WARNING,"Something bad happened");</code></pre>
+	</p>
+	<h3>Visualization scripts</h3>
+	<p>You can define scripts which generate visualizations of historical data captured by Polestar.
+	</p>
+	<p>To make generated responses be wrapped by the Polestar HTML template add the <code>polestar_wrap</code> header:
+	<pre><code>response=context.createResponseFrom("&lt;div&gt;hello&lt;/div&gt;");
+response.addHeader("polestar_wrap",true);</code></pre>
+	</p>
+	<div class="alert alert-warning">More details soon</div>
+	<h3>Homepage script</h3>
+	<p>To customize the homepage create a script which returns XHTML with the name "Homepage". You can use this
+	page to put visualizations or status icons.</p>
+	<h3>Backup/Restore</h3>
+	<p>You can backup and restore all the scripts through the 
+	<button class="btn btn-default" title="backup"><span class="glyphicon glyphicon-cloud-download"></span></button>
+	and	<button class="btn btn-default" title="restore"><span class="glyphicon glyphicon-cloud-upload"></span></button>
+	buttons on the headerbar of the script list (only available on desktop not mobile.) 
+	</p>
+	
+</div>

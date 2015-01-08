@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+	<job>
+		<request>
+			<identifier>active:polestarQuickPoll</identifier>
+		</request>
+		<name>Polestar Quickpoll</name>
+		<desc>Quickpoll every 1 seconds</desc>
+		<simple>
+			<startTime></startTime>
+			<endTime></endTime>
+			<repeatCount></repeatCount>
+			<repeatInterval>1000</repeatInterval>
+		</simple>
+	</job>
+	
+	<job>
+		<request>
+			<identifier>active:polestarMediumPoll</identifier>
+		</request>
+		<name>Polestar Medium poll</name>
+		<desc>Runs every 30 seconds</desc>
+		<simple>
+			<startTime>15000</startTime>
+			<endTime></endTime>
+			<repeatCount></repeatCount>
+			<repeatInterval>30000</repeatInterval>
+		</simple>
+	</job>	
+
+    <job>
+        <request>
+            <identifier>active:polestarSlowPoll</identifier>
+        </request>
+        <name>Polestar Slowpoll</name>
+        <desc>Runs frequently to update DB</desc>
+        <simple>
+            <startTime>30000</startTime>
+            <endTime></endTime>
+            <repeatCount></repeatCount>
+            <repeatInterval>300000</repeatInterval>
+        </simple>
+    </job>  
+</jobs>

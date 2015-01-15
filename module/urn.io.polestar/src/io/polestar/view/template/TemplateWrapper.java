@@ -42,7 +42,7 @@ public class TemplateWrapper extends TransparentOverlayImpl
 			}
 			if (title==null) title="Polestar IoT Hub";
 			if (subtitle==null) subtitle="powered by NetKernel";
-			if (icon==null) icon="/polestar/pub/icon/Polestar6b-lowdetail48.png";
+			if (icon==null) icon="/polestar/pub/icon/polestar.png";
 			
 			req=aContext.createRequest("active:xrl2");
 			req.addArgumentFromResponse("content",respIn);

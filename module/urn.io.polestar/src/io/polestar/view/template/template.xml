@@ -28,7 +28,7 @@
 								<td><img xrl:eval="src" src="arg:icon"/></td>
 								<td>
 									<div class="title" xrl:eval="text">arg:title</div>
-									<div class="tag" style="padding-left: 0; margin-top: -0.1em" xrl:eval="text">arg:subtitle</div>
+									<div class="tag" xrl:eval="text">arg:subtitle</div>
 								</td>
 							</tr>
 						</table>

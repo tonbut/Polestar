@@ -7,16 +7,16 @@
 	<p>Polestar implements the following main concepts:
 	<ul>
 		<li><b>Sensors</b> may be physical or logical. Their values are updated by customisable scripts. Their
-		values are stored in a database every 5 minutes.</li>
+		values are stored in a database periodically.</li>
 		<li><b>Scripts</b> define everything from what sensors are in the system to how those sensors are updated and control
 		scripts acting on sensor values. Scripts can be automatically triggered based on state changes in the system or
 		exposed as "webhooks" so external events can call them.</li>
-		<li><b>Capture</b> all sensor values are captured every 5 minutes. Scripts can use this historical data
+		<li><b>Capture</b> all sensor values are captured every 5 minutes (soon to be configurable.) Scripts can use this historical data
 		for analysis or visualisations.</li>
-		<li><b>Logging</b> scripts can log an important events.</li>
+		<li><b>Logging</b> of important events from scripts.</li>
 	</ul></p>
 	<h2>Installation</h2>
-	<p>Prerequisites - NetKernel, MongoDB.</p>
+	<p>Prerequisites - <a href="http://www.1060research.com/products/">NetKernel</a> and <a href="http://www.mongodb.org">MongoDB</a>.</p>
 	<h3>Install NetKernel</h3>
 	<p>Download NetKernel from <a href="http://www.1060research.com/resources/">1060research.com</a>. Polestar supports
 	both NetKernel Standard Edition and Enterprise Edition. Follow the appropriate installation procedure.</p>
@@ -33,7 +33,7 @@
 	is better to install as a service. Polestar expects to find MongoDB on it's default port 27017 on localhost.</p>
 	<h3>Install Polestar</h3>
 	<p>Clone the git repository</p>
-	<p>Use gradle to build Polestar. (I hope to get pre-built builds up on github soon.)</p>
+	<p>Use <a href="https://www.gradle.org/">gradle</a> and the <a href="http://docs.netkernel.org/book/view/book:org:netkernel:gradle:plugin:book/">NetKernel Gradle Plugin</a> to build Polestar. (I hope to get pre-built builds up on github soon.)</p>
 	<p>Deploy the Polestar jar on NetKernel. Copy the jar to a suitable location then edit [netkernel]/etc/modules.xml. Add a reference to the Polestar jar.</p>
 	<h3>Change passwords</h3>
 	<p>Polestar should now be running. Connect to it on <kbd>http://[hostname]:8080/polestar/</kbd> where [hostname] is the
@@ -50,7 +50,7 @@
 	<h3>Configuration script</h3>
 	<div class="alert alert-info">
 		<p><b>Everything in Polestar is driven by scripts.</b></p>
-		<p>I hope to have a set of standard scripts either installed by default or available in the repo. At the
+		<p>We hope to have a set of standard scripts either installed by default or available in the repo. At the
 		moment you must manually create them to seed Polestar.</p>
 	</div>
 	
@@ -67,7 +67,7 @@ m=HDSFactory.newDocument()
 	.addNode("period",1000L*60*60*24*1)
 	.addNode("merge",6);
 context.createResponseFrom(m.toDocument(false));</code></pre>
-	<p>Title, subtitle and icon fields in the configuration are used to customise the navigation bar branding.
+	<p>Optional title, subtitle and icon fields in the configuration are used to customise the navigation bar branding.
 	Sensor-ticker period and merge are used to customise the ticker shown in the sensor view.
 	</p>
 	<h3>Configuring sensors</h3>

@@ -1,5 +1,6 @@
 package io.polestar.view.login;
 
+import io.polestar.data.util.MonitorUtils;
 import io.polestar.view.template.TemplateWrapper;
 
 import org.netkernel.layer0.nkf.INKFRequestContext;
@@ -12,6 +13,7 @@ import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 public class ChangePasswordAccessor extends StandardAccessorImpl
 {	public void onSource(INKFRequestContext aContext) throws Exception
 	{
+		MonitorUtils.assertAdmin(aContext);
 		IHDSNode params=aContext.source("httpRequest:/params",IHDSNode.class);
 		if (params.getChildren().length==0)
 		{
@@ -26,7 +28,9 @@ public class ChangePasswordAccessor extends StandardAccessorImpl
 			String password2=(String)params.getFirstValue("password2");
 			boolean equal=password1.equals(password2) && password1.length()>=8;
 			if (equal)
-			{	String username=aContext.source("session:/username",String.class);
+			{	
+				String username=(String)params.getFirstValue("username");
+				//String username=aContext.source("session:/username",String.class);
 				IHDSMutator m=HDSFactory.newDocument();
 				m.pushNode("changePassword").addNode("username", username).addNode("password", password1);
 				aContext.sink("res:/md/authentication", m.toDocument(false));

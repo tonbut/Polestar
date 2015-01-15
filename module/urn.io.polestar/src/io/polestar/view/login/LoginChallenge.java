@@ -95,7 +95,7 @@ public class LoginChallenge extends StandardAccessorImpl
 		{
 			String page=aContext.source("res:/io/polestar/view/login/loginPage.xml",String.class);
 			String url=(String)params.getFirstValue("url");
-			page=page.replace("%redirect%", url);
+			if (url!=null) page=page.replace("%redirect%", url);
 			page=page.replace("%message%", statusMessage);
 			INKFResponse resp=aContext.createResponseFrom(page);
 			resp.setHeader(TemplateWrapper.HEADER_WRAP, true);

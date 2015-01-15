@@ -81,12 +81,10 @@
 				<div class="form-group">
 					<label class="col-sm-1 control-label" for="name">Access</label>
 					<div class="col-sm-5">
-						<!--
-						<input name="public" type="checkbox" >
-							<xsl:if test="public='true'"><xsl:attribute name="checked"/></xsl:if>
-						</input>
-						-->
 						<select name="public" class="form-control">
+							<option>
+								<xsl:if test="public='secret'"><xsl:attribute name="selected"/></xsl:if>
+								secret</option>
 							<option>
 								<xsl:if test="public='private'"><xsl:attribute name="selected"/></xsl:if>
 								private</option>

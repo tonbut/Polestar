@@ -253,6 +253,14 @@ public class ScriptAccessor extends StandardAccessorImpl
 			}
 			return;
 		}
+		else
+		{
+			IHDSReader script=aContext.source("res:/md/script/"+aId,IHDSDocument.class).getReader();
+			String access=(String)script.getFirstValue("/script/public");
+			if (access.equals("secret"))
+			{	MonitorUtils.assertAdmin(aContext);
+			}
+		}
 		
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleEdit.xsl");

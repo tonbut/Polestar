@@ -16,22 +16,31 @@
 		<li><b>Logging</b> scripts can log an important events.</li>
 	</ul></p>
 	<h2>Installation</h2>
+	<p>Prerequisites - NetKernel, MongoDB.</p>
 	<h3>Install NetKernel</h3>
 	<p>Download NetKernel from <a href="http://www.1060research.com/resources/">1060research.com</a>. Polestar supports
 	both NetKernel Standard Edition and Enterprise Edition. Follow the appropriate installation procedure.</p>
-	<p>Configure NetKernel to <a href="http://docs.netkernel.org/book/view/book:system:admin/doc:sysadmin:service">run as a service</a>.</p>
-	<p>Deploy the Polestar jar.</p>
-	<div class="alert alert-warning">More details soon.</div>
+	<p>Go to the apposite tool on management console: <a href="http://localhost:1060/tools/apposite/">http://localhost:1060/tools/apposite/</a> and apply all available updates.</p>
+	<p>Also select and install the following packages:
+	<ul>
+		<li>hds-g2</li>
+		<li>email-core</li>
+	</ul></p>
+	<p><div class="label label-info">optional</div> Configure NetKernel to <a href="http://docs.netkernel.org/book/view/book:system:admin/doc:sysadmin:service">run as a service</a>.</p>
 	<h3>Install MongoDB</h3>
 	<p>Install using the instructions provided on the <a href="http://docs.mongodb.org/manual/installation">Mongo DB Site</a>.
 	MongoDB can be run as a service or on the commandline. For deployment of the system as a server it
 	is better to install as a service. Polestar expects to find MongoDB on it's default port 27017 on localhost.</p>
+	<h3>Install Polestar</h3>
+	<p>Clone the git repository</p>
+	<p>Use gradle to build Polestar. (I hope to get pre-built builds up on github soon.)</p>
+	<p>Deploy the Polestar jar on NetKernel. Copy the jar to a suitable location then edit [netkernel]/etc/modules.xml. Add a reference to the Polestar jar.</p>
 	<h3>Change passwords</h3>
 	<p>Polestar should now be running. Connect to it on <kbd>http://[hostname]:8080/polestar/</kbd> where [hostname] is the
 	hostname of the server where you have installed it.</p>
 	<p>You should be prompted for a username and password. There are two usernames hardcoded.
-	One is "admin", the other is "guest". Both have the password "password". You should log into both of them and change them.
-	The guest account has readonly access. The admin account has full access.
+	One is "admin", the other is "guest". Both have the password "password". You should log into admin and change them both.
+	The guest account has readonly access and can only execute scripts marked as public or guest. It can only view scripts not marked as secret. The admin account has full access.
 	</p>
 	<p>Change the password by appending altering the URL in your address bar, i.e.  <kbd>http://[hostname]:8080/polestar/changePassword</kbd>
 	You will be prompted to enter your new password twice. Don't forget it. If you do the only way to reset
@@ -39,7 +48,13 @@
 	"authentication".)
 	</p>
 	<h3>Configuration script</h3>
-	<p>Everything in Polestar is driven by scripts. The first script you need to know about is the
+	<div class="alert alert-info">
+		<p><b>Everything in Polestar is driven by scripts.</b></p>
+		<p>I hope to have a set of standard scripts either installed by default or available in the repo. At the
+		moment you must manually create them to seed Polestar.</p>
+	</div>
+	
+	<p>The first script you need to know about is the
 	the configuration script.  Create it by click on Scripts in
 	the navigation bar and the clicking the <span class="label label-primary">+New</span> button. It must be named "Configuration".</p>
 	<pre><code>import org.netkernel.mod.hds.*;
@@ -124,6 +139,7 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 	Scripts are used, as we have seen, to configure sensors, but also for updating the state of
 	those sensors, driving actions based on the sensor states, creating visualizations of the 
 	current and historical sensor state.</p>
+	
 	<p>Each script has the following fields:</p>
 	<ul>
 		<li><b>Id</b> each script is assigned a unique id when it is created, you cannot change this.</li>
@@ -145,7 +161,8 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 		<li><b>Keywords</b> the keywords field is a comma separated list of keywords that are displayed in the script list and can be used to filter scripts.</li>
 		<li><b>Access</b> by default a script is private and can only be executed internally, either triggered or from another script, or manually by admin.
 		Change to guest to allow guest user to execute too. Change to public to make this script executable without authentication.
-		This is useful for providing "webhooks" for updating of sensors by external systems.</li>
+		This is useful for providing "webhooks" for updating of sensors by external systems. If a script is marked as secret then the guest
+		user can neither execute or view the script.</li>
 		<li><b>Code</b> the code field contains the source code for the script written in the Groovy programming language.</li>
 	</ul>
 	<h3>Script connectivity</h3>

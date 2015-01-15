@@ -16,7 +16,7 @@
 		<literal uri="res:/etc/system/SimpleDynamicImportHook.xml" type="xml">
 			<connection>
 				<type>PolestarWeb</type>
-				<type>HTTPFulcrum2</type>
+				<type>HTTPFulcrum</type>
 			</connection>
 		</literal>
 		<branch-merge>

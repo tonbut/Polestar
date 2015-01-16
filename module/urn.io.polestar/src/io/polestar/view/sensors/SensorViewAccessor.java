@@ -7,12 +7,14 @@ import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFRequestReadOnly;
 import org.netkernel.layer0.nkf.INKFResponse;
 import org.netkernel.layer0.nkf.INKFResponseReadOnly;
+import org.netkernel.layer0.nkf.NKFException;
 import org.netkernel.layer0.util.Utils;
 import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
+
 import io.polestar.data.util.MonitorUtils;
 import io.polestar.view.template.TemplateWrapper;
 
@@ -219,10 +221,27 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	
 	public void onList(INKFRequestContext aContext) throws Exception	
 	{	
-		IHDSMutator list=getFilteredList("", aContext);
+		IHDSDocument sensorList;
+		try
+		{	IHDSMutator list=getFilteredList("", aContext);
+			sensorList=list.toDocument(false);
+		}
+		catch (NKFException e)
+		{	IHDSMutator list=HDSFactory.newDocument();
+			String error=e.getDeepestId();
+			String msg;
+			if (error.contains("Script not found"))
+			{	msg="No SensorList script has been configured yet.";
+			}
+			else
+			{	msg=e.getDeepestId()+" : "+e.getDeepestMessage();
+			}
+			list.addNode("error", msg);
+			sensorList=list.toDocument(false);
+		}
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensors.xsl");
-		req.addArgumentByValue("operand", list.toDocument(false));
+		req.addArgumentByValue("operand", sensorList);
 		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
 		INKFResponse resp=aContext.createResponseFrom(subresp);
 		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);

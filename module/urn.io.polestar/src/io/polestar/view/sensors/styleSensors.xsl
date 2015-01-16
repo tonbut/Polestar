@@ -9,12 +9,25 @@
     		<xsl:when test="$filtered='true'">
     			<xsl:call-template name="filtered"/>
     		</xsl:when>
+    		<xsl:when test="/error">
+    			<xsl:call-template name="error"/>    			
+    		</xsl:when>
     		<xsl:otherwise>
     			<xsl:call-template name="page"/>
     		</xsl:otherwise>
     	</xsl:choose>
     </xsl:template>
     
+    <xsl:template name="error">
+    	<div class="container top">
+    		<div class="alert alert-info">
+    			<p><xsl:value-of select="."/></p>
+    			<p>See <a href="/polestar/help">help page</a> for more information on configuring sensors.
+    			</p>
+    		</div>
+    	</div>
+    </xsl:template>
+
     <xsl:template name="filtered">
     	<ul class="list-group" id="sensor-list" >
 			<xsl:for-each select="/sensors/sensor">

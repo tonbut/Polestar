@@ -174,6 +174,20 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 url="http://api.wunderground.com/weatherstation/WXCurrentObXML.asp?ID=INORTHYA1";
 doc=context.source(url, IHDSDocument.class).getReader();
 outdoor=Float.parseFloat((String)doc.getFirstValue("/current_observation/temp_c"));</code></pre>
+
+	<div class="alert alert-info">
+		<p><b>Connecting to self signed HTTPS servers</b></p>
+		<p>Self signed servers are very useful because you can avoid the complexity of setting up real certificates for your servers
+		and yet still have an encryped connection. However by default Java doesn't allow you to connect to self signed servers.
+		Here is a simple solution, Polestar has an alternate connection manager to allow this:</p>
+		<code><pre>
+req=context.createRequest("active:httpGet");
+req.addArgument("url","https://selfsigned.io/polestar/scripts/execute/A476535511DE78B7");
+req.addArgument("connectionManager", "active:polestarSelfSignedConnectionManager");
+representation=context.issueRequest(req);	
+		</pre></code>
+	</div>
+
 	<h4>Adding hardware connectivity through NetKernel modules</h4>
 	<p>Polestar will import any spaces which make exports available with the type "Polestar" using the <a href="http://docs.netkernel.org/book/view/book:layer1:book/doc:layer1:accessors:sid">dynamic import hook</a>
 	mechanism. Once the spaces are imported you can issue requests to the services within from your scripts.

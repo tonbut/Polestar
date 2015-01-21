@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
 <!--
    Copyright 2015 1060 Research Ltd
 
@@ -13,7 +14,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<?xml version="1.0" encoding="UTF-8" ?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xrl="http://netkernel.org/xrl">
 
     <xsl:template match="/log">

@@ -14,5 +14,5 @@
    limitations under the License.
 -->
 <div class="container">
-<div class="alert alert-info">No Homepage script has been configured yet.</div>
+	<div class="alert alert-info">No Homepage script has been configured yet.</div>
 </div>

@@ -104,7 +104,9 @@ public class ScriptAccessor extends StandardAccessorImpl
 			String path=entry.getName();
 			if (path.startsWith("script/"))
 			{
-				String id=path.substring(7,path.length()-4);
+				String idname=path.substring(7,path.length()-4);
+				int i=idname.indexOf("+");
+				String id=idname.substring(i+1);
 				String dataIdentifier="res:/md/script/"+id;
 				boolean exists=aContext.exists(dataIdentifier);
 				if (!exists)
@@ -137,10 +139,12 @@ public class ScriptAccessor extends StandardAccessorImpl
 		for (IHDSReader script : scripts.getNodes("/scripts/script"))
 		{
 			String id=(String)script.getFirstValue("id");
+			String name=(String)script.getFirstValue("name");
+			name=safeName(name);
 			String dataIdentifier="res:/md/script/"+id;
 			IBinaryStreamRepresentation scriptData=aContext.source(dataIdentifier,IBinaryStreamRepresentation.class);
 			//System.out.println(scriptData);
-			zos.putNextEntry(new ZipEntry("script/"+id+".xml"));
+			zos.putNextEntry(new ZipEntry("script/"+name+"+"+id+".xml"));
 			scriptData.write(zos);
 			zos.closeEntry();
 		}
@@ -149,8 +153,16 @@ public class ScriptAccessor extends StandardAccessorImpl
 		INKFResponse response=aContext.createResponseFrom(rep);
 		response.setMimeType("application/zip");
 		response.setHeader("httpResponse:/header/Content-Disposition", "attachment; filename=polestar.zip");
-
-		
+	}
+	
+	private String safeName(String aName)
+	{	char[] ca=new char[aName.length()];
+		for (int i=0; i<ca.length; i++)
+		{	char c=aName.charAt(i);
+			if (!Character.isLetterOrDigit(c)) c='_';
+			ca[i]=c;
+		}
+		return new String(ca);
 	}
 	
 	public void onList(INKFRequestContext aContext) throws Exception

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><script xmlns:hds="http://netkernel.org/hds"><id>EAC75E961241D889</id><name>Demo Webhook</name><script>//execute this webhook with a parameter i.e.&#13;
+// http://localhost:8080/polestar/scripts/execute/EAC75E961241D889?value=2.0&#13;
+// it will update the urn:updated:by:webhook sensor with the value&#13;
+&#13;
+import org.netkernel.mod.hds.*;&#13;
+import org.netkernel.layer0.nkf.*;&#13;
+&#13;
+queryParam=context.source("httpRequest:/param/value",String.class);&#13;
+if (queryParam!=null)&#13;
+{&#13;
+	value=Double.parseDouble(queryParam.trim());&#13;
+	context.sink("arg:state",queryParam);&#13;
+	context.createResponseFrom("ok").setExpiry(INKFResponse.EXPIRY_ALWAYS);&#13;
+&#13;
+	m=HDSFactory.newDocument()&#13;
+		.pushNode("sensors")&#13;
+		.pushNode("sensor")&#13;
+		.addNode("id","urn:updated:by:webhook")&#13;
+		.addNode("value", value );&#13;
+	req=context.createRequest("active:polestarSensorUpdate");&#13;
+	req.addArgumentByValue("state",m.toDocument(false));&#13;
+	context.issueRequest(req);&#13;
+}&#13;
+else&#13;
+{&#13;
+	state=context.source("arg:state",String.class);&#13;
+	context.createResponseFrom(state).setExpiry(INKFResponse.EXPIRY_ALWAYS);&#13;
+}</script><state>51.119999</state><triggers hds:type="STRING"/><keywords hds:type="STRING"/><public>public</public></script>

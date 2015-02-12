@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><script xmlns:hds="http://netkernel.org/hds"><id>C7A8DD4BE836FAB9</id><name>onError</name><script>import org.netkernel.mod.hds.*;&#13;
+import org.netkernel.layer0.nkf.*;&#13;
+&#13;
+state=context.source("active:polestarSensorState",IHDSDocument.class).getReader();&#13;
+config=context.source("active:polestarSensorConfig",IHDSDocument.class).getReader();&#13;
+String msg="Errors on ";&#13;
+boolean first=true;&#13;
+for (IHDSReader sensor : state.getNodes("/sensors/sensor[error]"))&#13;
+{&#13;
+	id=sensor.getFirstValue("id");&#13;
+	sensorDef=config.getFirstNode(String.format("key('byId','%s')",id));&#13;
+	name=sensorDef.getFirstValue("name");&#13;
+	if (!first) msg=msg+", ";&#13;
+	first=false;&#13;
+	msg+=name;&#13;
+}&#13;
+&#13;
+if (!first)&#13;
+{	context.logRaw(INKFLocale.LEVEL_WARNING,"Errors on "+msg);&#13;
+}</script><state>&lt;state/&gt;</state><triggers>error</triggers><keywords hds:type="STRING"/><public>secret</public></script>

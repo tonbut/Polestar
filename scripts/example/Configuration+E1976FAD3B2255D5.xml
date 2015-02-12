@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?><script xmlns:hds="http://netkernel.org/hds"><id>E1976FAD3B2255D5</id><name>Configuration</name><script>import org.netkernel.mod.hds.*;&#13;
+import org.netkernel.layer0.nkf.*;&#13;
+&#13;
+m=HDSFactory.newDocument();&#13;
+m.addNode("title","Deathstar construction");&#13;
+m.addNode("subtitle","demonstration configuration");&#13;
+m.addNode("icon","/polestar/pub/icon/deathstar.png");&#13;
+m.pushNode("sensor-ticker");&#13;
+m.addNode("period",1000L*60*60*24);&#13;
+m.addNode("merge",2);&#13;
+m.popNode();&#13;
+context.createResponseFrom(m.toDocument(false));</script><state>&lt;state/&gt;</state><triggers hds:type="STRING"/><keywords hds:type="STRING"/><public>private</public></script>

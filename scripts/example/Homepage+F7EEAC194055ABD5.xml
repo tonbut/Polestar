@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?><script xmlns:hds="http://netkernel.org/hds"><id>F7EEAC194055ABD5</id><name>Homepage</name><script>import org.netkernel.mod.hds.*;&#13;
+import org.netkernel.layer0.nkf.*;&#13;
+&#13;
+resp=context.createResponseFrom("&lt;div class='container'&gt;homepage defined by script&lt;/div&gt;");&#13;
+resp.setHeader("polestar_wrap",true);</script><state>&lt;state/&gt;</state><triggers hds:type="STRING"/><keywords hds:type="STRING"/><public>private</public></script>

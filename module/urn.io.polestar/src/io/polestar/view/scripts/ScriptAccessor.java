@@ -282,8 +282,11 @@ public class ScriptAccessor extends StandardAccessorImpl
 		else
 		{
 			IHDSReader script=aContext.source("res:/md/script/"+aId,IHDSDocument.class).getReader();
-			String access=(String)script.getFirstValue("/script/public");
-			if (access.equals("secret"))
+			String access="";
+			try
+			{	access=(String)script.getFirstValue("/script/public");
+			} catch (Exception e) {}
+			if (access!=null && access.equals("secret"))
 			{	MonitorUtils.assertAdmin(aContext);
 			}
 		}

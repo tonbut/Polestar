@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?><script xmlns:hds="http://netkernel.org/hds"><id>03B5ACD13B0EDC84</id><name>Test Startup Hook</name><script>import org.netkernel.layer0.nkf.*;&#13;
+context.logRaw(INKFLocale.LEVEL_INFO,"Polestar started");</script><state>&lt;state/&gt;</state><triggers>startup</triggers><keywords hds:type="STRING"/><public>secret</public></script>

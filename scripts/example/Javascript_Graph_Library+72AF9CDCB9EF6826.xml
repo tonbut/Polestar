@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><script xmlns:hds="http://netkernel.org/hds"><id>72AF9CDCB9EF6826</id><name>Javacript Graph Library</name><script>import org.netkernel.layer0.nkf.*;&#13;
+<?xml version="1.0" encoding="UTF-8"?><script xmlns:hds="http://netkernel.org/hds"><id>72AF9CDCB9EF6826</id><name>Javascript Graph Library</name><script>import org.netkernel.layer0.nkf.*;&#13;
 lib="""&#13;
 function drawArea(idx, fillStyle, heightFunction, data, vis)&#13;
 {	var d = extractArray(data,idx,0);&#13;

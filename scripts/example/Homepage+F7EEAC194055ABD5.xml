@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?><script xmlns:hds="http://netkernel.org/hds"><id>F7EEAC194055ABD5</id><name>Homepage</name><script>import org.netkernel.mod.hds.*;&#13;
 import org.netkernel.layer0.nkf.*;&#13;
 &#13;
-resp=context.createResponseFrom("&lt;div class='container'&gt;homepage defined by script&lt;/div&gt;");&#13;
+s="""&#13;
+&lt;div class='container'&gt;"&#13;
+	&lt;iframe src="/polestar/scripts/execute/287CB3EAD99CA3A6" frameborder="0" width="280" height="160" scrolling="no"&gt;_&lt;/iframe&gt;&#13;
+&lt;/div&gt;&#13;
+""";&#13;
+&#13;
+resp=context.createResponseFrom(s);&#13;
 resp.setHeader("polestar_wrap",true);</script><state>&lt;state/&gt;</state><triggers hds:type="STRING"/><keywords hds:type="STRING"/><public>private</public></script>

@@ -65,8 +65,14 @@
 	<h3>Configuration script</h3>
 	<div class="alert alert-info">
 		<p><b>Everything in Polestar is driven by scripts.</b></p>
+		<p>We hope to have a set of standard scripts initialised when Polestar is installed. At the moment
+		you can manually create scripts from the information in this guide.</p>
+		<p>Alternatively there are set of
+		scripts to download and install from the <a href="https://github.com/tonbut/polestar/tree/master/scripts/example">
+		Github repository</a>.</p>
 		<p>We hope to have a set of standard scripts either installed by default or available in the repo. At the
 		moment you must manually create them to seed Polestar.</p>
+		<p>All the scripts are coded using the <a href="http://groovy.codehaus.org/">Groovy</a> programming language.</p>
 	</div>
 	
 	<p>The first script you need to know about is the
@@ -388,8 +394,12 @@ resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);</code></pre></p>
 	<pre><code>req=context.createRequest("active:polestarExecuteScript");
 req.addArgument("script","47CCD102175BC395");
 req.addArgumentByValue("argument1","abc");
-rep=context.issueRequest(req);
-	</code></pre>
+rep=context.issueRequest(req);</code></pre>
+	You can also reference scripts by their name as well as their id:
+	<pre><code>req=context.createRequest("active:polestarExecuteScript");
+req.addArgument("name","Send Message");
+req.addArgumentByValue("message","something happened");
+rep=context.issueRequest(req);</code></pre>
 	The called script can access the argument:
 	<pre><code>argument1=context.source("arg:argument1");</code></pre> 
 	</p>
@@ -402,14 +412,57 @@ context.logRaw(INKFLocale.LEVEL_WARNING,"Something bad happened");</code></pre>
 	<h3>Visualization scripts</h3>
 	<p>You can define scripts which generate visualizations of historical data captured by Polestar.
 	</p>
-	<p>To make generated responses be wrapped by the Polestar HTML template add the <code>polestar_wrap</code> header:
-	<pre><code>response=context.createResponseFrom("&lt;div&gt;hello&lt;/div&gt;");
-response.addHeader("polestar_wrap",true);</code></pre>
+	<p>You can read, aggregate and apply operations such as averaging on sensor values using the 
+	<code>active:polestarHistoricalQuery</code> data service:</p>
+	<pre><code>import org.netkernel.mod.hds.*;
+import org.netkernel.layer0.nkf.*;
+import java.text.*;
+
+m=HDSFactory.newDocument();
+m.pushNode("query");
+m.addNode("start",-1000L*60*60*24*4); // start 4 days ago
+//m.addNode("end",0); // end now
+m.addNode("merge",8); // merge 8 records into one
+m.addNode("json",true);
+m.pushNode("sensors"); //list of sensors that we want to get data for
+m.pushNode("sensor").addNode("id","urn:co2").addNode("mergeAction","average").popNode();
+m.pushNode("sensor").addNode("id","urn:home").addNode("mergeAction","sample").popNode();
+m.pushNode("sensor").addNode("id","urn:daylight:db").addNode("mergeAction","average").popNode();
+req=context.createRequest("active:polestarHistoricalQuery");
+req.addArgumentByValue("operator",m.toDocument(false));
+rep=context.issueRequest(req)</code></pre>
+	<p>The merge actions available are:
+	<ul>
+	<li>AVERAGE - average floating point sensor samples</li>
+	<li>MAX - take the maximum value from the sensor samples</li>
+	<li>MIN - take the minimum</li>
+	<li>DIFF - take the difference between the last and first sensor samples</li>
+	<li>SUM - sum all the samples</li>
+	<li>ROTATION_360_AVERAGE - average floating point samples assuming they are a rotational value between 0 and 360 degrees</li>
+	<li>SAMPLE - take first samples value</li>
+	<li>RUNNING_TOTAL - sum all the samples and add to sum of all previous values (integration)</li>
+	<li>BOOLEAN_CHANGE - return false if all samples are false, true if all are true. Otherwise if there is any change return the inverse of the last return value. This is useful for detecting momentary changes.</li>
+	</ul>
 	</p>
-	<div class="alert alert-warning">More details soon</div>
+	<p>Once you have the resultset in JSON format it is quite easy to generate charts and visualizations from it using 
+	protovis (built in) or any other clientside Javascript library. Because the code sample to do this can be quite large
+	take a look at the examples on <a href="https://github.com/tonbut/polestar/tree/master/scripts/example">GitHub</a>
+	or on the <a href="https://polestar.io/polestar/login?username=guest&amp;password=password&amp;url=/polestar/scripts">Live Demo</a>.
+	</p>
+	
 	<h3>Homepage script</h3>
 	<p>To customize the homepage create a script which returns XHTML with the name "Homepage". You can use this
 	page to put visualizations or status icons.</p>
+	<pre><code>import org.netkernel.layer0.nkf.*;
+s="""&lt;div class='container'&gt;
+&lt;iframe src="/polestar/scripts/execute/287CB3EAD99CA3A6" frameborder="0" width="280" height="160" scrolling="no"&gt;_&lt;/iframe&gt;
+&lt;/div&gt;""";
+
+resp=context.createResponseFrom(s.toString());
+resp.setHeader("polestar_wrap",true);
+	</code></pre>
+	
+	
 	<h3>Backup/Restore</h3>
 	<p>You can backup and restore all the scripts through the 
 	<button class="btn btn-default" title="backup"><span class="glyphicon glyphicon-cloud-download"></span></button>

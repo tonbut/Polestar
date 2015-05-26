@@ -102,7 +102,7 @@
 				<xsl:variable name="count" select="count(/scripts/script)"/>
 				<table style="width: 100%"><tr>
 					<td >
-						<a class="btn btn-primary" href="/polestar/scripts/new"><span class="glyphicon glyphicon-plus">New</span></a>
+						<a class="btn btn-primary btn-sm" href="/polestar/scripts/new"><span class="glyphicon glyphicon-plus"></span><span>New</span></a>
 						<span class="hidden-xs">
 							<xsl:text> </xsl:text>
 							<a class="btn btn-default" href="/polestar/scripts/backup" title="backup"><span class="glyphicon glyphicon-cloud-download"></span></a>

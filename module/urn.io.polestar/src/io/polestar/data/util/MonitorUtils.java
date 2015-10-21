@@ -226,6 +226,15 @@ public class MonitorUtils
 		}
 	}
 	
+	private static Boolean sInhibitPolling=null;
+	public static boolean inhibitPolling()
+	{	if (sInhibitPolling==null)
+		{	sInhibitPolling=Boolean.getBoolean("polestar.inhibitPolling");
+			System.out.println("polestar.inhibitPolling="+sInhibitPolling);
+		}
+		return sInhibitPolling;
+	}
+	
 
 	/**
 	 * @param args

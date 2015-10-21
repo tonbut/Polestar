@@ -54,8 +54,10 @@ public class SlowPollAccessor extends StandardAccessorImpl
 		//detect errors for unchanging sensors 
 		aContext.source("active:polestarSensorReadingCheck");
 	
-		//fire all slow poll scripts
-		MonitorUtils.executeTriggeredScripts(Collections.singleton("5m"), true, aContext);
+		if (!MonitorUtils.inhibitPolling())
+		{	//fire all slow poll scripts
+			MonitorUtils.executeTriggeredScripts(Collections.singleton("5m"), true, aContext);
+		}
 		
 		//store sensor state
 		IHDSReader sensors=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();

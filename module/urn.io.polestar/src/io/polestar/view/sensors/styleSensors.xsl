@@ -106,11 +106,13 @@
                     
                         //update HTML to include additional row
                         $(".list-group-item > .row ").each(function(i,el){
-                            var sensorId=$(el).parent().attr("sensorId");
-                            $(el).children("div:nth-child(1)").removeClass("col-xs-8").addClass("col-xs-6");
-                            $(el).children("div:nth-child(2)").removeClass("col-xs-4").addClass("col-xs-3");
-                            var d=$("&lt;div class='col-xs-3 ticker' id='s:"+sensorId+"'&gt;&lt;/div&gt;");
-                            d.insertAfter($(el).children("div:nth-child(1)"));
+                        	if ($(el).children().size()==2)
+                        	{	var sensorId=$(el).parent().attr("sensorId");
+	                            $(el).children("div:nth-child(1)").removeClass("col-xs-8").addClass("col-xs-6");
+	                            $(el).children("div:nth-child(2)").removeClass("col-xs-4").addClass("col-xs-3");
+	                            var d=$("&lt;div class='col-xs-3 ticker' id='s:"+sensorId+"'&gt;&lt;/div&gt;");
+	                            d.insertAfter($(el).children("div:nth-child(1)"));
+	                        }
                         });
                     
                         $("#scriptContainer").html($(d));

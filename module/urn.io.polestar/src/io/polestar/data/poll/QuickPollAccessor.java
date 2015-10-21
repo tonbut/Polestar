@@ -29,11 +29,12 @@ public class QuickPollAccessor extends StandardAccessorImpl
 	}
 	
 	public void onSource(INKFRequestContext aContext) throws Exception
-	{
-		IHDSReader changes=aContext.source("active:polestarSensorChanges",IHDSDocument.class).getReader();
-		List<String> changedSensors=new ArrayList(changes.getValues("/sensors/sensor"));
-		changedSensors.add("1s");
-		MonitorUtils.executeTriggeredScripts(changedSensors, false, aContext);
+	{	if (!MonitorUtils.inhibitPolling())
+		{	IHDSReader changes=aContext.source("active:polestarSensorChanges",IHDSDocument.class).getReader();
+			List<String> changedSensors=new ArrayList(changes.getValues("/sensors/sensor"));
+			changedSensors.add("1s");
+			MonitorUtils.executeTriggeredScripts(changedSensors, false, aContext);
+		}
 	}
 }
 

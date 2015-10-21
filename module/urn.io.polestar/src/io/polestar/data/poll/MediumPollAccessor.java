@@ -29,9 +29,10 @@ public class MediumPollAccessor extends StandardAccessorImpl
 	}
 	
 	public void onSource(INKFRequestContext aContext) throws Exception
-	{
-		//fire all medium poll scripts
-		MonitorUtils.executeTriggeredScripts(Collections.singleton("30s"), true, aContext);
+	{	if (!MonitorUtils.inhibitPolling())
+		{	//fire all medium poll scripts
+			MonitorUtils.executeTriggeredScripts(Collections.singleton("30s"), true, aContext);
+		}
 	}
 }
 

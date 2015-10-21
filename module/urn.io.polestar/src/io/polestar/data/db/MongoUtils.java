@@ -38,4 +38,5 @@ public class MongoUtils
 		DB db = sMongoClient.getDB( "homemonitor" );
 		return db.getCollection(aName);
 	}
+
 }

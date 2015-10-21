@@ -470,4 +470,11 @@ resp.setHeader("polestar_wrap",true);
 	buttons on the headerbar of the script list (only available on desktop not mobile.) 
 	</p>
 	
+	<h3>Inhibit Polling</h3>
+	<p>I've noticed that restarting polestar after significant hardware changes can lead to a lockup because the polling continues to happen
+	and with delays such as connecting to hardward or networking timouts the requests get backlogged to a degree that recovery and editing of
+	scripts is impossible. To workaround this there is a java system property that can be set at boot time which inhibits all polling scripts
+	from automatically executing. Add the following to [install]/bin/jvmsettings.cnf</p>
+	<code>-Dpolestar.inhibitPolling=true</code>
+	
 </div>

@@ -15,7 +15,19 @@
 -->
 <script type="text/javascript">
 <!--
-function extractArray(a, idx, defval) { result = []; for (var i=0; i<a.length; i++) { b=a[i]; v=b[idx]; if (v==null) v=defval; result.push(v); } return result; }
+function extractArray(a, idx, defval)
+{	var result = [];
+	for (var i=0; i<a.length; i++)
+	{	var b=a[i];
+		var v=defval;
+		if (b!=null)
+		{	v=b[idx];
+			if (v==null) v=defval;
+		}
+		result.push(v);
+	}
+	return result;
+}
 function getFirstNonNull(a) { result = null; for (var i=0; i<a.length; i++) { b=a[i]; if (b!=null) { result=b; break; } } return result; }
 function maxMin(a)
 {   var max=-9007199254740992;
@@ -30,6 +42,8 @@ function maxMin(a)
     }
     return { 'max': max, 'min': min };
 }
+
+var colours= [ "#C02020", "#20C020", "#2020C0", "#000000", "#606060" ];
 
 var ids= %ID%;
 var gd= %D%;
@@ -68,7 +82,7 @@ for (i=0; i<ids.length; i++)
             var y = pv.Scale.linear(mm.min, mm.max).range(0, h);
             
             vis.add(pv.Line)
-                .data(d).interpolate("cardinal")
+                .data(d).interpolate("basis")
                 .bottom(function(d){ return y(d==null?mm.min:d); })
                 .left(function() {return x(this.index+0.5)})
                 .lineWidth(2)
@@ -92,6 +106,68 @@ for (i=0; i<ids.length; i++)
                 
            vis.root.render();           
         }
+        else 
+        {	
+        	var numericMap=true;
+        	var size=0;
+        	for (var property in v)
+        	{	if (v.hasOwnProperty(property))
+        		{	size++;
+        			if (!$.isNumeric(v[property]))
+        			{	numericMap=false;
+        			}
+        		}
+        	}
+        	//console.log("id="+id+" "+(numericMap && size>0));
+        	if (numericMap && size>0)
+        	{	
+        	
+	        	var lines = [];
+	        	var mm=null;
+	       		for (var property in v)
+        		{	if (v.hasOwnProperty(property))
+        			{	//console.log(property);
+        				var d2=extractArray(d,property,null);
+        				//console.log(d2);
+						lines.push(d2);
+						var mm2=maxMin(d2);
+						if (mm==null)
+						{	mm=mm2;
+						}
+						else
+						{	if (mm2.max>mm.max) mm.max=mm2.max;
+							if (mm2.min>mm.min) mm.min=mm2.min;
+						}
+        			}
+        		}
+        		
+	            if (mm.max==mm.min) mm.max=mm.min+1;
+	            var y = pv.Scale.linear(mm.min, mm.max).range(0, h);
+        		vis.add(pv.Label).bottom(-2).right(-rmargin).textAlign('right').text(mm.min);   
+            	vis.add(pv.Label).bottom(h-10).right(-rmargin).textAlign('right').text(mm.max);
+            	
+            	var ci=0;
+            	for (var i2=0; i2<lines.length; i2++)
+            	{
+            		vis.add(pv.Line)
+		                .data(lines[i2]).interpolate("basis")
+		                .bottom(function(d){ return y(d==null?mm.min:d); })
+		                .left(function() {return x(this.index+0.5)})
+		                .lineWidth(1.5)
+		                .strokeStyle( colours[ci] );
+		            ci=(ci+1)%colours.length;
+            	}
+            	   
+            	vis.root.render();
+        		
+        		
+        	}
+        	
+        	
+        	
+        	
+    	}
+        
     }
 }
 

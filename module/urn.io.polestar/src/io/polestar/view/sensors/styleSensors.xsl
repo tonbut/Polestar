@@ -197,6 +197,9 @@
                     <div style="float: right;">
 	                    <div class="value">
 	                        <xsl:choose>
+	                            <xsl:when test="valueHTML">
+	                                <xsl:value-of select="valueHTML" disable-output-escaping="yes" />
+	                            </xsl:when>
 	                            <xsl:when test="valueHuman='NULL'">
 	                                Unknown
 	                            </xsl:when>

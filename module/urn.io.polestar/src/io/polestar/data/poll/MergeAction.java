@@ -14,6 +14,10 @@
 */
 package io.polestar.data.poll;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public abstract class MergeAction
 {
 	public enum Type
@@ -22,7 +26,9 @@ public abstract class MergeAction
 		/* numeric functions */
 		AVERAGE, MAX, MIN, DIFF, SUM, RUNNING_TOTAL, ROTATION_360_AVERAGE,
 		/* boolean functions */
-		BOOLEAN_CHANGE
+		BOOLEAN_CHANGE,
+		/* map functions */
+		AVERAGE_MAP
 	}
 	
 	private String mId;
@@ -59,6 +65,9 @@ public abstract class MergeAction
 			break;
 		case BOOLEAN_CHANGE:
 			result=new BooleanChangeAction();
+			break;
+		case AVERAGE_MAP:
+			result=new AverageMapAction();
 			break;
 		default:
 			throw new IllegalArgumentException(aType+" not implemented");
@@ -255,6 +264,41 @@ public abstract class MergeAction
 		{	return mValue;
 		}
 	}
+	
+	private static class AverageMapAction extends MergeAction
+	{	Map<String,Double> mValue=new LinkedHashMap();
+		Map<String,Integer> mCount=new HashMap();
+		public void update(Object aValue)
+		{	if (aValue!=null)
+			{	Map<String,Object> value=(Map)aValue;
+				for (Map.Entry<String,Object> entry : value.entrySet())
+				{	String key=entry.getKey();
+					double v2=Double.parseDouble(entry.getValue().toString());
+					Double existingValue=mValue.get(key);
+					if (existingValue==null)
+					{	mCount.put(key, Integer.valueOf(1));
+					}
+					else
+					{	mValue.put(key,v2+existingValue);
+						mCount.put(key, Integer.valueOf(1+mCount.get(key)));
+					}
+				}
+			}
+		}
+		public Object getValue()
+		{	for (Map.Entry<String,Double> entry : mValue.entrySet())
+			{	String key=entry.getKey();
+				Double existingValue=mValue.get(key);
+				Integer count=mCount.get(key);
+				mValue.put(key,existingValue/(double)count);
+			}
+			Object result=mValue;
+			mValue=new LinkedHashMap();
+			mCount.clear();
+			return result;
+		}
+	}
+	
 	
 	private static class BooleanChangeAction extends MergeAction
 	{	private boolean mHadFalse;

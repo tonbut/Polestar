@@ -247,7 +247,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			{	mChanges.put(aId,aId);
 			}
 			
-			if (existing.hasError())
+			if (existing!=null && existing.hasError())
 			{	//error is now cleared on sensor
 				mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 			}

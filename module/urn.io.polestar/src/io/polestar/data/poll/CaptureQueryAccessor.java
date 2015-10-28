@@ -101,7 +101,10 @@ public class CaptureQueryAccessor extends StandardAccessorImpl
 				{	name="sensor"+(c++);
 				}
 				String format=(String)config.getFirstValueOrNull("key('byId','"+id+"')/format");
-				if (format!=null && !format.contains("%"))
+				if (format.equals("rgb"))
+				{	format="%.3f";
+				}
+				else if (format!=null && !format.contains("%"))
 				{	format=null;
 				}
 				
@@ -191,25 +194,23 @@ public class CaptureQueryAccessor extends StandardAccessorImpl
 							if (v==null)
 							{	sb.append("null");
 							}
+							else if (v instanceof BasicDBObject)
+							{	String format=ma.getFormat();
+								BasicDBObject bdo=(BasicDBObject)v;
+								sb.append("{");
+								for (Map.Entry<String, Object> entry : bdo.entrySet())
+								{	sb.append("\"");
+									sb.append(entry.getKey());
+									sb.append("\": ");
+									outputValue(sb,entry.getValue(),format);
+									sb.append(", ");
+								}
+								sb.append("}");
+							}
 							else
-							{
-								boolean needsQuotes=(v instanceof String);
-								if (needsQuotes) sb.append("'");
-								String format=ma.getFormat();
-								if (format==null)
-								{	sb.append(v);
-								}
-								else
-								{	String sf;
-									try
-									{	sf=String.format(format, v);
-									} catch (Exception e)
-									{	sf=v.toString();
-									}
-									sb.append(sf);
-								}
+							{	String format=ma.getFormat();
+								outputValue(sb,v,format);
 								
-								if (needsQuotes) sb.append("'");
 							}
 						}
 						
@@ -222,7 +223,17 @@ public class CaptureQueryAccessor extends StandardAccessorImpl
 						m.addNode("timeString",df.format(new Date(time)));
 						for (MergeAction ma : actionList)
 						{	Object v=ma.getValue();
-							m.addNode(ma.getName(), v);
+							if (v instanceof BasicDBObject)
+							{	BasicDBObject bdo=(BasicDBObject)v;
+								m.pushNode(ma.getName());
+								for (Map.Entry<String, Object> entry : bdo.entrySet())
+								{	m.addNode(entry.getKey(), entry.getValue());
+								}
+								m.popNode();
+							}
+							else
+							{	m.addNode(ma.getName(), v);
+							}
 						}
 						m.popNode();
 					}
@@ -242,6 +253,26 @@ public class CaptureQueryAccessor extends StandardAccessorImpl
 			resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 		}
 		
+	}
+	
+	private void outputValue(StringBuilder sb, Object v, String format)
+	{
+		boolean needsQuotes=(v instanceof String);
+		if (needsQuotes) sb.append("'");
+		if (format==null)
+		{	sb.append(v);
+		}
+		else
+		{	String sf;
+			try
+			{	sf=String.format(format, v);
+			} catch (Exception e)
+			{	sf=v.toString();
+			}
+			sb.append(sf);
+		}
+		
+		if (needsQuotes) sb.append("'");
 	}
 }
 

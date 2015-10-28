@@ -18,6 +18,7 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 #log td { padding: 0 4px; vertical-align: top; }
 .handle {  }
 .list-group-item svg { margin: 4px 0; }
+.rgb { border: solid 1px #ddd; margin: 4px 0; width: 36px; height: 36px; }
 .ticker { text-align: right; }
 .micon { display: inline-block; width: 128px; border: solid 2px #EEE; margin: 2px; text-align: center;}
 .micon .caption {  }

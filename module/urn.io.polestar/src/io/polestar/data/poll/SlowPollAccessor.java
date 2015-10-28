@@ -72,7 +72,7 @@ public class SlowPollAccessor extends StandardAccessorImpl
 			Object value=sensorNode.getFirstValue("value");
 			if (value!=null)
 			{	Class c=value.getClass();
-				if (c==String.class||c==Boolean.class||c==Integer.class||c==Long.class||c==Float.class||c==Double.class)
+				if (c==String.class||c==Boolean.class||c==Integer.class||c==Long.class||c==Float.class||c==Double.class||Map.class.isAssignableFrom(c))
 				{	
 					if (c==Boolean.class)
 					{	long lastModified=(Long)sensorNode.getFirstValue("lastModified");

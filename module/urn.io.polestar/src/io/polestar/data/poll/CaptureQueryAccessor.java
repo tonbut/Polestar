@@ -101,7 +101,7 @@ public class CaptureQueryAccessor extends StandardAccessorImpl
 				{	name="sensor"+(c++);
 				}
 				String format=(String)config.getFirstValueOrNull("key('byId','"+id+"')/format");
-				if (format.equals("rgb"))
+				if (format!=null && format.equals("rgb"))
 				{	format="%.3f";
 				}
 				else if (format!=null && !format.contains("%"))
@@ -194,9 +194,9 @@ public class CaptureQueryAccessor extends StandardAccessorImpl
 							if (v==null)
 							{	sb.append("null");
 							}
-							else if (v instanceof BasicDBObject)
+							else if (v instanceof Map)
 							{	String format=ma.getFormat();
-								BasicDBObject bdo=(BasicDBObject)v;
+								Map<String,Object> bdo=(Map)v;
 								sb.append("{");
 								for (Map.Entry<String, Object> entry : bdo.entrySet())
 								{	sb.append("\"");
@@ -225,6 +225,14 @@ public class CaptureQueryAccessor extends StandardAccessorImpl
 						{	Object v=ma.getValue();
 							if (v instanceof BasicDBObject)
 							{	BasicDBObject bdo=(BasicDBObject)v;
+								m.pushNode(ma.getName());
+								for (Map.Entry<String, Object> entry : bdo.entrySet())
+								{	m.addNode(entry.getKey(), entry.getValue());
+								}
+								m.popNode();
+							}
+							else if (v instanceof Map)
+							{	Map<String,Object> bdo=(Map)v;
 								m.pushNode(ma.getName());
 								for (Map.Entry<String, Object> entry : bdo.entrySet())
 								{	m.addNode(entry.getKey(), entry.getValue());

@@ -100,7 +100,10 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		{	Object id=sensor.getFirstValue("id");
 			Object value=state.getFirstValue("key('byId','"+id+"')/value");
 			String mergeAction="sample";
-			if (value!=null && value instanceof Float)
+			if (value!=null && (value instanceof Float || value instanceof Double))
+			{	mergeAction="average";
+			}
+			if (value!=null && (value instanceof Map))
 			{	mergeAction="average_map";
 			}
 			
@@ -113,10 +116,11 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			}
 			sb.append(" '").append(id).append("',");
 			//System.out.println(id+" "+value);
-			m.pushNode("sensor").addNode("id",id).addNode("mergeAction",mergeAction).popNode();			
+			m.pushNode("sensor").addNode("id",id).addNode("mergeAction",mergeAction).popNode();
 		}
 		sb.append(" ]");
 		m.popNode();
+		
 		
 		INKFRequest req=aContext.createRequest("active:polestarHistoricalQuery");
 		req.addArgumentByValue("operator",m.toDocument(false));

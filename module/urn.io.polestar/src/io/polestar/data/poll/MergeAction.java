@@ -269,14 +269,17 @@ public abstract class MergeAction
 	{	Map<String,Double> mValue=new LinkedHashMap();
 		Map<String,Integer> mCount=new HashMap();
 		public void update(Object aValue)
-		{	if (aValue!=null)
+		{	
+			if (aValue!=null)
 			{	Map<String,Object> value=(Map)aValue;
 				for (Map.Entry<String,Object> entry : value.entrySet())
 				{	String key=entry.getKey();
+					
 					double v2=Double.parseDouble(entry.getValue().toString());
 					Double existingValue=mValue.get(key);
 					if (existingValue==null)
 					{	mCount.put(key, Integer.valueOf(1));
+						mValue.put(key,v2);
 					}
 					else
 					{	mValue.put(key,v2+existingValue);
@@ -286,13 +289,15 @@ public abstract class MergeAction
 			}
 		}
 		public Object getValue()
-		{	for (Map.Entry<String,Double> entry : mValue.entrySet())
+		{	
+			for (Map.Entry<String,Double> entry : mValue.entrySet())
 			{	String key=entry.getKey();
 				Double existingValue=mValue.get(key);
 				Integer count=mCount.get(key);
 				mValue.put(key,existingValue/(double)count);
 			}
 			Object result=mValue;
+
 			mValue=new LinkedHashMap();
 			mCount.clear();
 			return result;

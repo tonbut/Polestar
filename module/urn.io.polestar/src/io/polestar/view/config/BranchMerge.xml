@@ -17,7 +17,7 @@
 <config>
 		
 		<branch name="PassThrough" overlay="" targets="polestar:pub"/>
-		<branch name="UnsecurePages" overlay="TemplateWrap" targets="polestar:help"/>
+		<branch name="UnsecurePages" overlay="TemplateWrap" targets="polestar:help,polestar:webhook"/>
 
 		<branch name="Sessioned" overlay="Throttle"  />
 		<overlay name="Throttle" next="Session">

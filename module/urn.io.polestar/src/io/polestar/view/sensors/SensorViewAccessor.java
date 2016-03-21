@@ -143,6 +143,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	{	long now=System.currentTimeMillis();
 		IHDSMutator state=aContext.source("active:polestarSensorState",IHDSDocument.class).getMutableClone();
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		boolean isError=aFilter.indexOf("error")>=0;
 		for (IHDSMutator sensorNode : state.getNodes("/sensors/sensor"))
 		{	
 			String id=(String)sensorNode.getFirstValue("id");
@@ -157,6 +158,9 @@ public class SensorViewAccessor extends StandardAccessorImpl
 				}
 				String keywords=(String)sensorDef.getFirstValueOrNull("keywords");
 				if (keywords!=null && keywords.toLowerCase().contains(aFilter))
+				{	include=true;
+				}
+				if (isError && sensorNode.getFirstNodeOrNull("error")!=null)
 				{	include=true;
 				}
 			}
@@ -295,6 +299,10 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensors.xsl");
 		req.addArgumentByValue("operand", sensorList);
+		String filter=aContext.source("httpRequest:/param/filter",String.class);
+		if (filter!=null)
+		{	req.addArgumentByValue("filter", filter);
+		}
 		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
 		INKFResponse resp=aContext.createResponseFrom(subresp);
 		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);

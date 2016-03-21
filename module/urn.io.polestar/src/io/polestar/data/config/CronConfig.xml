@@ -16,6 +16,19 @@
 	
 	<job>
 		<request>
+			<identifier>active:polestar5sPoll</identifier>
+		</request>
+		<name>Polestar 5second poll</name>
+		<desc>Poll every 5 seconds</desc>
+		<simple>
+			<startTime></startTime>
+			<endTime></endTime>
+			<repeatCount></repeatCount>
+			<repeatInterval>5000</repeatInterval>
+		</simple>
+	</job>
+	<job>
+		<request>
 			<identifier>active:polestarMediumPoll</identifier>
 		</request>
 		<name>Polestar Medium poll</name>

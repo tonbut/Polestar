@@ -17,7 +17,7 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:nk="http://1060.org">
     <xsl:output method="xml"/>
     <xsl:param name="filtered" nk:class="java.lang.String"/>
-
+	<xsl:param name="filter" nk:class="java.lang.String"></xsl:param>
     <xsl:template match="/">
     	<xsl:choose>
     		<xsl:when test="$filtered='true'">
@@ -74,9 +74,13 @@
                     
                     showTickerFlag=window.innerWidth&gt;768;
                     $("#toggle-stats").click( toggleTicker );
-                    
-                    showTicker();
-                    
+
+                    if ($("#filter").val()!="")
+                    {	doFilterUpdate();
+                    }
+                    else
+                    {	showTicker();
+                    }
 				});	
                 
                 function toggleTicker()
@@ -139,7 +143,9 @@
                     <td width="99%">
                     <div class="input-group">
                     	<xsl:variable name="count" select="count(/sensors/sensor)"/>
-    				    <input id="filter" type="text" placeholder="Filter list of {$count} sensors" class="form-control" value=""/>
+    				    <input id="filter" type="text" placeholder="Filter list of {$count} sensors" class="form-control" value="">
+    				    	<xsl:attribute name="value"><xsl:value-of select="$filter"/></xsl:attribute>
+    				    </input>
                         <span class="input-group-btn">
                             <button id="refresh" class="btn btn-default"><span class="glyphicon glyphicon-refresh"></span>&#160;</button>
                         </span>

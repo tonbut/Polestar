@@ -128,9 +128,12 @@ public class SensorListAccessor extends StandardAccessorImpl
 				long lastUpdated=ss.getLastUpdated();
 				if (now-lastUpdated>=errorIfNoReadingsFor*1000L && ss.getError()==null)
 				{	String error="No fresh readings";
-					updateSensorState(id, ss.getValue(), error);
+					updateSensorState(id, sensorDef, ss.getValue(), error);
 				}
 			}
+			
+			
+			
 		}				
 	}
 
@@ -223,11 +226,57 @@ public class SensorListAccessor extends StandardAccessorImpl
 			{	throw new NKFException("Sensor not found",sensorId);
 			}
 			
-			updateSensorState(sensorId,newValue,exception);
+			if (exception==null && newValue!=null)
+			{	//now test value if necessary
+				Number errorIfGreaterThan=(Number)sensorDef.getFirstValueOrNull("errorIfGreaterThan");
+				if (errorIfGreaterThan!=null && newValue instanceof Number)
+				{	Number nn=(Number)newValue;
+					if (nn.doubleValue()>errorIfGreaterThan.doubleValue())
+					{	exception="Value exceeds "+errorIfGreaterThan;
+					}
+				}
+				Number errorIfLessThan=(Number)sensorDef.getFirstValueOrNull("errorIfLessThan");
+				if (errorIfLessThan!=null && newValue instanceof Number)
+				{	Number nn=(Number)newValue;
+					if (nn.doubleValue()<errorIfLessThan.doubleValue())
+					{	exception="Value below "+errorIfLessThan;
+					}
+				}
+				
+				Object errorIfEquals=sensorDef.getFirstValueOrNull("errorIfEquals");
+				if (errorIfEquals!=null && errorIfEquals instanceof Number && newValue instanceof Number)
+				{	Number nn=(Number)newValue;
+					if (nn.doubleValue()==((Number)errorIfEquals).doubleValue())
+					{	exception="Value equals "+errorIfEquals;
+					}
+				}
+				if (errorIfEquals!=null && errorIfEquals instanceof Boolean && newValue instanceof Boolean)
+				{	Boolean nn=(Boolean)newValue;
+					if (nn.equals(errorIfEquals))
+					{	exception="Value equals "+errorIfEquals;
+					}
+				}
+				
+				Object errorIfNotEquals=sensorDef.getFirstValueOrNull("errorIfNotEquals");
+				if (errorIfNotEquals!=null && errorIfNotEquals instanceof Number && newValue instanceof Number)
+				{	Number nn=(Number)newValue;
+					if (nn.doubleValue()!=((Number)errorIfNotEquals).doubleValue())
+					{	exception="Value doesn't equal "+errorIfNotEquals;
+					}
+				}
+				if (errorIfNotEquals!=null && errorIfNotEquals instanceof Boolean && newValue instanceof Boolean)
+				{	Boolean nn=(Boolean)newValue;
+					if (nn.equals(errorIfNotEquals))
+					{	exception="Value doesn't equal "+errorIfNotEquals;
+					}
+				}
+			}
+			
+			updateSensorState(sensorId,sensorDef,newValue,exception);
 		}
 	}
 	
-	private void updateSensorState(String aId, Object aValue, String aException)
+	private void updateSensorState(String aId, IHDSReader aSensorDef, Object aValue, String aException)
 	{	SensorState existing=mSensorStates.get(aId);
 		long now=System.currentTimeMillis();
 		if (aException==null)

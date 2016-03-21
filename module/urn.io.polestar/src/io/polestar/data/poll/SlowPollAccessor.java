@@ -15,6 +15,7 @@
 package io.polestar.data.poll;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.netkernel.layer0.nkf.*;
 import org.netkernel.mod.hds.IHDSDocument;
@@ -26,12 +27,13 @@ import io.polestar.data.util.MonitorUtils;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 import com.mongodb.WriteResult;
 
 public class SlowPollAccessor extends StandardAccessorImpl
 {
 	private Map<String,Object> mLastStored=Collections.EMPTY_MAP;
+	private AtomicBoolean mBusy=new AtomicBoolean(false);
+	
 	public SlowPollAccessor()
 	{	declareThreadSafe();
 	}
@@ -48,15 +50,22 @@ public class SlowPollAccessor extends StandardAccessorImpl
 		//System.out.println(indices);
 	}
 	
+	
 	public void onSource(INKFRequestContext aContext) throws Exception
-	{	//System.out.println("SlowPollAccessor");
-		
+	{			
 		//detect errors for unchanging sensors 
 		aContext.source("active:polestarSensorReadingCheck");
 	
 		if (!MonitorUtils.inhibitPolling())
 		{	//fire all slow poll scripts
-			MonitorUtils.executeTriggeredScripts(Collections.singleton("5m"), true, aContext);
+			if (mBusy.compareAndSet(false, true))
+			{	try
+				{	MonitorUtils.executeTriggeredScripts(Collections.singleton("5m"), true, aContext);
+				}
+				finally
+				{	mBusy.set(false);
+				}
+			}
 		}
 		
 		//store sensor state

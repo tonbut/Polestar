@@ -44,6 +44,16 @@
 			<argument name="action">arg:action</argument>
 		</request>
 	</endpoint>
+	<endpoint>
+		<id>polestar:template</id>
+		<protected/>
+		<grammar>active:polestarTemplate
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.template.TemplateAccessor</argument>
+		</request>
+	</endpoint>
     <endpoint>
         <id>polestar:changePassword</id>
         <grammar>res:/polestar/changePassword
@@ -83,6 +93,19 @@
 	</endpoint>
 	
 	<!-- scripts -->
+	<endpoint>
+		<!-- allow direct execution without session for public scripts -->
+		<id>polestar:webhook</id>
+		<grammar>res:/polestar/scripts/webhook/
+			<group name="id"><regex type="anything"/></group>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.scripts.ScriptAccessor</argument>
+			<argument name="action">execute</argument>
+			<varargs/>
+		</request>
+	</endpoint>
 	<endpoint>
 		<id>polestar:execute</id>
 		<grammar>res:/polestar/scripts/execute/

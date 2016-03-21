@@ -13,8 +13,8 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .list-group-item .changed { font-style: italic; font-size: 12px; }
 .list-group-item .value { font-weight: bold; font-size: 16px; color: #2020C0; }
 .list-group-item .icon { margin-right: 4px; }
-.list-group-item-danger { background: #FFE8E5;  }
-.list-group-item-danger .title, .list-group-item-danger .changed, .list-group-item-danger .value { color: #a94442; }
+.list-group-item-danger { background: #d9534f; color: #333; }
+.list-group-item-danger .title, .list-group-item-danger .changed, .list-group-item-danger .value { color: #333 }
 #log td { padding: 0 4px; vertical-align: top; }
 .handle {  }
 .list-group-item svg { margin: 4px 0; }

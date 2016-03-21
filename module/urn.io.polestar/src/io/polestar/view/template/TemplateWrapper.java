@@ -63,7 +63,7 @@ public class TemplateWrapper extends TransparentOverlayImpl
 			req.addArgumentByValue("title", title);
 			req.addArgumentByValue("subtitle", subtitle);
 			req.addArgumentByValue("icon", icon);
-			req.addArgument("template", "res:/io/polestar/view/template/template.xml");
+			req.addArgument("template", "active:polestarTemplate");
 			respIn=aContext.issueRequestForResponse(req);
 			INKFResponse respOut=aContext.createResponseFrom(respIn);
 			respOut.setMimeType("text/html");

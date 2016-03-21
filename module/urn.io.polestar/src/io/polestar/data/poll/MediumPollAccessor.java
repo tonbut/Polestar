@@ -15,15 +15,16 @@
 package io.polestar.data.poll;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.netkernel.layer0.nkf.*;
-import org.netkernel.mod.hds.IHDSDocument;
-import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 import io.polestar.data.util.MonitorUtils;
 
 public class MediumPollAccessor extends StandardAccessorImpl
 {
+	private AtomicBoolean mBusy=new AtomicBoolean(false);
+	
 	public MediumPollAccessor()
 	{	declareThreadSafe();
 	}
@@ -31,7 +32,14 @@ public class MediumPollAccessor extends StandardAccessorImpl
 	public void onSource(INKFRequestContext aContext) throws Exception
 	{	if (!MonitorUtils.inhibitPolling())
 		{	//fire all medium poll scripts
-			MonitorUtils.executeTriggeredScripts(Collections.singleton("30s"), true, aContext);
+			if (mBusy.compareAndSet(false, true))
+			{	try
+				{	MonitorUtils.executeTriggeredScripts(Collections.singleton("30s"), true, aContext);
+				}
+				finally
+				{	mBusy.set(false);
+				}
+			}
 		}
 	}
 }

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+   Copyright 2015 1060 Research Ltd
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<html xmlns:xrl="http://netkernel.org/xrl" style="background: none;">
+	<head>
+		<title xrl:eval="text">arg:title</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<link href="/polestar/pub/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+		<link href="/polestar/pub/polestar.css" rel="stylesheet" type="text/css"/>		
+
+		<link rel="apple-touch-icon" sizes="57x57" href="/polestar/pub/favicon/apple-touch-icon-57x57.png"/>
+		<link rel="apple-touch-icon" sizes="114x114" href="/polestar/pub/favicon/apple-touch-icon-114x114.png"/>
+		<link rel="apple-touch-icon" sizes="72x72" href="/polestar/pub/favicon/apple-touch-icon-72x72.png"/>
+		<link rel="apple-touch-icon" sizes="144x144" href="/polestar/pub/favicon/apple-touch-icon-144x144.png"/>
+		<link rel="apple-touch-icon" sizes="60x60" href="/polestar/pub/favicon/apple-touch-icon-60x60.png"/>
+		<link rel="apple-touch-icon" sizes="120x120" href="/polestar/pub/favicon/apple-touch-icon-120x120.png"/>
+		<link rel="apple-touch-icon" sizes="76x76" href="/polestar/pub/favicon/apple-touch-icon-76x76.png"/>
+		<link rel="apple-touch-icon" sizes="152x152" href="/polestar/pub/favicon/apple-touch-icon-152x152.png"/>
+		<link rel="apple-touch-icon" sizes="180x180" href="/polestar/pub/favicon/apple-touch-icon-180x180.png"/>
+		<link rel="shortcut icon" href="/polestar/pub/favicon/favicon.ico"/>
+		<link rel="icon" type="image/png" href="/polestar/pub/favicon/favicon-192x192.png" sizes="192x192"/>
+		<link rel="icon" type="image/png" href="/polestar/pub/favicon/favicon-160x160.png" sizes="160x160"/>
+		<link rel="icon" type="image/png" href="/polestar/pub/favicon/favicon-96x96.png" sizes="96x96"/>
+		<link rel="icon" type="image/png" href="/polestar/pub/favicon/favicon-16x16.png" sizes="16x16"/>
+		<link rel="icon" type="image/png" href="/polestar/pub/favicon/favicon-32x32.png" sizes="32x32"/>
+		<meta name="msapplication-TileColor" content="#ffc40d"/>
+		<meta name="msapplication-TileImage" content="/polestar/pub/favicon/mstile-144x144.png"/>
+		<meta name="msapplication-config" content="/polestar/pub/favicon/browserconfig.xml"/>
+
+	</head>
+	<body>
+		<script src="/polestar/pub/jquery-2.0.3.min.js">_</script>
+		<script src="/polestar/pub/bootstrap.min.js">_</script>
+
+		<div class="navbar navbar-default navbar-fixed-top " role="navigation">
+			<div class="container">
+		
+				<div class="navbar-header ">
+				    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+				      <span class="sr-only">Toggle navigation</span>
+				      <span class="icon-bar"></span>
+				      <span class="icon-bar"></span>
+				      <span class="icon-bar"></span>
+				    </button>
+				    <div class="navbar-brand">
+				    <a href="/polestar/">
+						<table cellspacing="0" cellpadding="0">
+							<tr>
+								<td><img xrl:eval="src" src="arg:icon"/></td>
+								<td>
+									<div class="title" >
+										<span xrl:eval="text">arg:title</span>
+										<a href="/polestar/sensors?filter=error">
+											<span class="label label-danger">Errors</span>
+										</a>
+									</div>
+									<div class="tag" xrl:eval="text">arg:subtitle</div>
+								</td>
+							</tr>
+						</table>
+					</a>
+					</div>
+				</div>				
+		
+				<div class="collapse navbar-collapse navbar-ex1-collapse pull-right">
+					<ul class="nav navbar-nav">
+                        <li><a href="/polestar/help">Help</a></li>
+						<li><a href="/polestar/log">Log</a></li>
+						<li><a href="/polestar/scripts">Scripts</a></li>
+						<li><a href="/polestar/sensors">Sensors</a></li>
+						<li><a href="/polestar/logout">Logout</a></li>
+					</ul>
+				</div>
+				
+			</div>
+		</div>
+
+		<xrl:include identifier="arg:content" />
+	</body>
+</html>

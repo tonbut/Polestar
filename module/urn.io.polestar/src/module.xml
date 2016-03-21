@@ -216,6 +216,11 @@
 			<grammar>active:polestarQuickPoll</grammar>
 			<class>io.polestar.data.poll.QuickPollAccessor</class>
 		</endpoint>
+		<endpoint>
+			<id>polestar:data:5sPoll</id>
+			<grammar>active:polestar5sPoll</grammar>
+			<class>io.polestar.data.poll.FiveSecPollAccessor</class>
+		</endpoint>
         <endpoint>
             <id>polestar:data:mediumPoll</id>
             <grammar>active:polestarMediumPoll</grammar>

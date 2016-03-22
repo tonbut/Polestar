@@ -80,7 +80,12 @@ public class SensorListAccessor extends StandardAccessorImpl
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("shutdown"), true, aContext);		
 		
 		aContext.logRaw(INKFLocale.LEVEL_INFO,"Monitor Stopped");
+		saveSensorState(aContext);
 		
+	}
+	
+	private void saveSensorState(INKFRequestContext aContext) throws Exception
+	{
 		//save current sensor state
 		IHDSDocument state=getState(aContext);
 		IBinaryStreamRepresentation bs=aContext.transrept(state, IBinaryStreamRepresentation.class);
@@ -113,6 +118,9 @@ public class SensorListAccessor extends StandardAccessorImpl
 		}
 		else if (action.equals("polestarSensorReadingCheck"))
 		{	onReadingCheck(aContext);
+		}
+		else if (action.equals("polestarSensorStatePersist"))
+		{	saveSensorState(aContext);
 		}
 	}
 	

@@ -135,6 +135,7 @@
 				<identifier>active:polestarSensorChanges</identifier>
 				<identifier>active:polestarSensorUpdate</identifier>
 				<identifier>active:polestarSensorReadingCheck</identifier>
+				<identifier>active:polestarSensorStatePersist</identifier>
 				<argument name="state" min="0"/>
 			</active></grammar>
 			<class>io.polestar.data.sensors.SensorListAccessor</class>

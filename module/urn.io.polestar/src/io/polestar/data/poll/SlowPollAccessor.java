@@ -115,6 +115,9 @@ public class SlowPollAccessor extends StandardAccessorImpl
 		
 		//fire all capture scripts
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("capture"), true, aContext);
+		
+		//persist sensor state including lastModified in case we crash
+		aContext.source("active:polestarSensorStatePersist");
 	}
 }
 

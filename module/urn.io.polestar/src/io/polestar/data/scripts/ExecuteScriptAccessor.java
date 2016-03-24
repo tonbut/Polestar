@@ -14,6 +14,8 @@
 */
 package io.polestar.data.scripts;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.netkernel.layer0.nkf.*;
 import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
@@ -29,12 +31,21 @@ import com.mongodb.DBObject;
 
 public class ExecuteScriptAccessor extends StandardAccessorImpl
 {
+	public final static int BEAN_CACHE_CLEAR_PERIOD=97;
+	private AtomicInteger mBeanCacheClearCountdown=new AtomicInteger(BEAN_CACHE_CLEAR_PERIOD);
+	
 	public ExecuteScriptAccessor()
 	{	declareThreadSafe();
 	}
 	
 	public void onSource(INKFRequestContext aContext) throws Exception
 	{
+		//hack - the bean cache seems to cause leaks when combined with groovy
+		if (mBeanCacheClearCountdown.decrementAndGet()==0)
+		{	mBeanCacheClearCountdown.set(BEAN_CACHE_CLEAR_PERIOD);
+			java.beans.Introspector.flushCaches();
+		}
+		
 		String resolvedId=aContext.getThisRequest().getResolvedElementId();
 		if (resolvedId.equals("polestar:data:scriptExecute"))
 		{	onSourceData(aContext);

@@ -29,7 +29,7 @@
 		<overlay name="Session" next="BM2">
 				<prototype>HTTPSession</prototype>
 				<config>
-						<maxSessions>16</maxSessions>
+						<maxSessions>64</maxSessions>
 						<minDuration>10000</minDuration> <!-- 30 seconds -->
 						<maxDuration>30000000</maxDuration> <!-- one day -->
 						<cookiePath>/polestar/</cookiePath>

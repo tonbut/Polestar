@@ -10,8 +10,8 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .list-group-item { padding: 6px 10px; }
 #sensor-list .list-group-item { padding: 2px 4px; }
 .list-group-item .title { font-weight: bold; font-size: 16px; }
-.list-group-item .changed { font-style: italic; font-size: 12px; }
-.list-group-item .value { font-weight: bold; font-size: 16px; color: #2020C0; }
+.list-group-item .changed { font-style: italic; font-size: 11px; }
+.list-group-item .value { font-weight: bold; font-size: 16px; color: #2020C0; text-align: right; }
 .list-group-item .icon { margin-right: 4px; }
 .list-group-item-danger { background: #d9534f; color: #333; }
 .list-group-item-danger .title, .list-group-item-danger .changed, .list-group-item-danger .value { color: #333 }
@@ -22,3 +22,5 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .ticker { text-align: right; }
 .micon { display: inline-block; width: 128px; border: solid 2px #EEE; margin: 2px; text-align: center;}
 .micon .caption {  }
+#script-keywords { line-height: 1.7; }
+#sensor-keywords { line-height: 1.7; }

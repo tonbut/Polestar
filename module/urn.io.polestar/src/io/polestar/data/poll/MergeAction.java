@@ -24,7 +24,7 @@ public abstract class MergeAction
 	{	/* basic */
 		SAMPLE,
 		/* numeric functions */
-		AVERAGE, MAX, MIN, DIFF, SUM, RUNNING_TOTAL, ROTATION_360_AVERAGE,
+		AVERAGE, MAX, MIN, DIFF, POSITIVE_DIFF, SUM, RUNNING_TOTAL, ROTATION_360_AVERAGE,
 		/* boolean functions */
 		BOOLEAN_CHANGE,
 		/* map functions */
@@ -53,6 +53,9 @@ public abstract class MergeAction
 			break;
 		case DIFF:
 			result=new DiffAction();
+			break;
+		case POSITIVE_DIFF:
+			result=new PositiveDiffAction();
 			break;
 		case SUM:
 			result=new SumAction();
@@ -204,6 +207,26 @@ public abstract class MergeAction
 		}
 	}
 	
+	private static class PositiveDiffAction extends MergeAction
+	{	private double mValue;
+		private double mLast;
+		public void update(Object aValue)
+		{	if (aValue!=null)
+			{	double v=Double.parseDouble(aValue.toString());
+				if (mLast==0.0)
+				{	mLast=v;
+				}
+				mValue=v;
+			}
+		}
+		public Object getValue()
+		{	double v= mValue-mLast;
+			if (v<0.0) v=0.0;
+			mLast=mValue;
+			return v;
+		}
+	}
+
 	private static class SumAction extends MergeAction
 	{	private double mValue;
 		public void update(Object aValue)

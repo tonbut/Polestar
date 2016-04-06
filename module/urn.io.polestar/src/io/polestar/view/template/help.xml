@@ -120,10 +120,12 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 		<li><b>errorIfNoReadingsFor</b> <span class="label label-info">optional</span> An integer number of seconds after which an error will be reported in a sensor if it's
 		value is not updated by a script.</li>
 
-		<li><b>errorIfGreaterThan</b> <span class="label label-info">optional</span>A numeric value that is compared against the sensor value.
-		If sensor value is numeric and it's value greater then this sensor is in error.</li>
-		<li><b>errorIfLessThan</b> <span class="label label-info">optional</span>A numeric value that is compared against the sensor value.
-		If sensor value is numeric and it's value lesser then this sensor is in error.</li>
+		<li><b>errorIfGreaterThan</b> <span class="label label-info">optional</span> A numeric value that is compared against the sensor value.
+		If sensor value is numeric and it's value greater then this sensor is in error. To add hysteresis to this error you can an additional field
+		of <b>errorClearIfLessThan</b>. The sensor will then remain in error status until the value falls below the value specified in this field.</li>
+		<li><b>errorIfLessThan</b> <span class="label label-info">optional</span> A numeric value that is compared against the sensor value.
+		If sensor value is numeric and it's value lesser then this sensor is in error. To add hysteresis to this error you can an additional field
+		of <b>errorClearIfGreaterThan</b>. The sensor will then remain in error status until the value rises above falls the value specified in this field.</li>
 		<li><b>errorIfEquals</b> <span class="label label-info">optional</span> A numeric or boolean value that is compared against the sensor value.
 		If sensor value is equal then this sensor is in error.</li>
 		<li><b>errorIfNotEquals</b> <span class="label label-info">optional</span> A numeric or boolean value that is compared against the sensor value.

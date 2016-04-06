@@ -16,6 +16,7 @@
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:nk="http://1060.org">
     <xsl:output method="xml"/>
+    <xsl:param name="keywords"/>
     <xsl:param name="filtered" nk:class="java.lang.String"/>
 	<xsl:param name="filter" nk:class="java.lang.String"></xsl:param>
     <xsl:template match="/">
@@ -155,7 +156,12 @@
                         <button style="margin-left: 1em;" id="toggle-stats" class="btn btn-default"><span class="glyphicon glyphicon-stats"></span>&#160;</button>
                     </td>
                 </tr></table>
-                
+                <div  id="sensor-keywords"> <!--class="hidden-xs"-->
+                	<xsl:for-each select="$keywords/keywords/keyword">
+                		<a href="sensors?filter={.}"><span class="label label-info"><xsl:value-of select="."/></span></a>
+                		<xsl:text> </xsl:text>
+                	</xsl:for-each>
+                </div>
 			</div>
     		<div id="sensor-list-container">
     			<ul class="list-group" id="sensor-list" >
@@ -182,7 +188,8 @@
 				<table style="width:100%">
 					<tr>
 						<td style="width: 0%">
-							<img class="icon" src="{defn/icon}" width="48" height="48"/>
+							<div class="hidden-xs"><img class="icon" src="{defn/icon}" width="48" height="48"/></div>
+							<div class="visible-xs"><img class="icon" src="{defn/icon}" width="24" height="24"/></div>
 						</td>
 						<td style="width: 100%">
 							<div>
@@ -200,6 +207,9 @@
 				</table>
 				</div>
 				<div class="col-xs-4">
+					<xsl:if test="string-length(valueHuman)&gt;10">
+						<xsl:attribute name="class">col-xs-4 hidden-xs</xsl:attribute>
+					</xsl:if>
                     <div style="float: right;">
 	                    <div class="value">
 	                        <xsl:choose>
@@ -218,7 +228,7 @@
 						</div>
 						<xsl:choose>
 							<xsl:when test="error">
-								<xsl:value-of select="error"/>
+								<div><xsl:value-of select="error"/></div>
 							</xsl:when>
 							<xsl:otherwise>
 							</xsl:otherwise>

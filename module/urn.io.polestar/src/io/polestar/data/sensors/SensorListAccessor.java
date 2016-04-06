@@ -224,6 +224,8 @@ public class SensorListAccessor extends StandardAccessorImpl
 	public void onUpdate(IHDSReader aState,INKFRequestContext aContext) throws Exception
 	{
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		IHDSReader currentState=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
+		
 		for (IHDSReader sensorStateNode : aState.getNodes("/sensors/sensor"))
 		{	String sensorId=(String)sensorStateNode.getFirstValue("id");
 			String exception=(String)sensorStateNode.getFirstValueOrNull("error");
@@ -239,15 +241,63 @@ public class SensorListAccessor extends StandardAccessorImpl
 				Number errorIfGreaterThan=(Number)sensorDef.getFirstValueOrNull("errorIfGreaterThan");
 				if (errorIfGreaterThan!=null && newValue instanceof Number)
 				{	Number nn=(Number)newValue;
-					if (nn.doubleValue()>errorIfGreaterThan.doubleValue())
-					{	exception="Value exceeds "+errorIfGreaterThan;
+				
+					boolean isError=false;
+					String errorText="Value has exceeded "+errorIfGreaterThan;
+					Number errorClearIfLessThan=(Number)sensorDef.getFirstValueOrNull("errorClearIfLessThan");
+					if (errorClearIfLessThan!=null)
+					{	//hysteresis
+						String currentError=(String)currentState.getFirstValueOrNull("key('byId','"+sensorId+"')/error");
+						if (currentError!=null && currentError.equals(errorText))
+						{	if (nn.doubleValue()>=errorClearIfLessThan.doubleValue())
+							{	isError=true;
+							}
+						}
+						else
+						{	if (nn.doubleValue()>errorIfGreaterThan.doubleValue())
+							{	isError=true;
+							}
+						}
+					}
+					else
+					{	if (nn.doubleValue()>errorIfGreaterThan.doubleValue())
+						{	isError=true;
+						}
+					}
+					
+					if (isError)
+					{	exception=errorText;
 					}
 				}
 				Number errorIfLessThan=(Number)sensorDef.getFirstValueOrNull("errorIfLessThan");
 				if (errorIfLessThan!=null && newValue instanceof Number)
 				{	Number nn=(Number)newValue;
-					if (nn.doubleValue()<errorIfLessThan.doubleValue())
-					{	exception="Value below "+errorIfLessThan;
+					boolean isError=false;
+					String errorText="Value has fallen below "+errorIfLessThan;
+				
+					Number errorClearIfGreaterThan=(Number)sensorDef.getFirstValueOrNull("errorClearIfGreaterThan");
+					if (errorClearIfGreaterThan!=null)
+					{	//hysteresis
+						String currentError=(String)currentState.getFirstValueOrNull("key('byId','"+sensorId+"')/error");
+						if (currentError!=null && currentError.equals(errorText))
+						{	if (nn.doubleValue()<=errorClearIfGreaterThan.doubleValue())
+							{	isError=true;
+							}
+						}
+						else
+						{	if (nn.doubleValue()<errorIfLessThan.doubleValue())
+							{	isError=true;
+							}
+						}
+					}
+					else
+					{	if (nn.doubleValue()<errorIfLessThan.doubleValue())
+						{	isError=true;
+						}
+					}
+					
+					if (isError)
+					{	exception=errorText;
 					}
 				}
 				

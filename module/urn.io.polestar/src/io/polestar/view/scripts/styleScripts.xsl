@@ -14,8 +14,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" >
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:nk="http://1060.org">
     <xsl:output method="xml"/>
+
+	<xsl:param name="tags"/>
+	<xsl:param name="filter" nk:class="java.lang.String"></xsl:param>
+	
 
     <xsl:template match="/*">
     	<xsl:choose>
@@ -58,6 +62,9 @@
 						}
 					});
 					
+					if ($("#filter").val()!="")
+                    {	doFilterUpdate();
+                    }					
 					
 				});
 				
@@ -110,7 +117,9 @@
 							<button type="button" class="btn btn-default" onclick="showUpload()" title="restore"><span class="glyphicon glyphicon-cloud-upload"></span></button>
 						</span>
 						</td>
-					<td ><input id="filter" type="text" placeholder="Filter list of {$count} scripts" class="form-control" value=""/></td>
+					<td ><input id="filter" type="text" placeholder="Filter list of {$count} scripts" class="form-control" value="">
+						<xsl:attribute name="value"><xsl:value-of select="$filter"/></xsl:attribute>
+					</input></td>
 				</tr>
 				<tr id="upload" style="display: none"><td colspan="2" style="padding-top: 4px;">
 					<div class="alert alert-info">Restore will not overwrite existing scripts</div>
@@ -119,6 +128,16 @@
 					</form>
 				</td></tr>
 				</table>
+				<div id="script-keywords"> <!--class="hidden-xs" -->
+                	<xsl:for-each select="$tags/tags/keywords/keyword">
+                		<a href="scripts?filter={.}"><span class="label label-info"><xsl:value-of select="."/></span></a>
+                		<xsl:text> </xsl:text>
+                	</xsl:for-each>
+                	<xsl:for-each select="$tags/tags/triggers/trigger">
+                		<a href="scripts?filter={.}"><span class="label label-success"><xsl:value-of select="."/></span></a>
+                		<xsl:text> </xsl:text>
+                	</xsl:for-each>
+                </div>
 			</div>
 			<div id="script-list-container">
 				<xsl:call-template name="filtered-results"/>

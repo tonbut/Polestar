@@ -35,8 +35,13 @@ import io.polestar.data.util.MonitorUtils;
 import io.polestar.view.template.TemplateWrapper;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.zip.*;
 
 public class ScriptAccessor extends StandardAccessorImpl
@@ -169,11 +174,50 @@ public class ScriptAccessor extends StandardAccessorImpl
 	{
 		MonitorUtils.isLoggedIn(aContext);
 		
-		IHDSDocument list=aContext.source("active:polestarListScripts",IHDSDocument.class);
+		IHDSReader list=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
+		
+		//System.out.println(list);
+		//build list of keywords and triggers
+		Set<String> keywordSet=new HashSet<>();
+		Set<String> triggerSet=new HashSet<>();
+		for (IHDSReader sensor : list.getNodes("/scripts/script"))
+		{	String keywords=(String)sensor.getFirstValueOrNull("keywords");
+			if (keywords!=null)
+			{	String[] kws=Utils.splitString(keywords, ", ");
+				for (String kw : kws)
+				{	keywordSet.add(kw);
+				}
+			}
+			String triggers=(String)sensor.getFirstValueOrNull("triggers");
+			if (triggers!=null)
+			{	String[] kws=Utils.splitString(triggers, ", ");
+				for (String kw : kws)
+				{	triggerSet.add(kw);
+				}
+			}
+		}
+		List<String> keywordList=new ArrayList<>(keywordSet);
+		Collections.sort(keywordList);
+		List<String> triggerList=new ArrayList<>(triggerSet);
+		Collections.sort(triggerList);
+		IHDSMutator keywords=HDSFactory.newDocument();
+		keywords.pushNode("tags").pushNode("keywords");
+		for (String keyword: keywordList)
+		{	keywords.addNode("keyword", keyword);
+		}
+		keywords.popNode().pushNode("triggers");
+		for (String trigger: triggerList)
+		{	keywords.addNode("trigger", trigger);
+		}		
 		
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleScripts.xsl");
-		req.addArgumentByValue("operand", list);
+		req.addArgumentByValue("operand", list.toDocument());
+		req.addArgumentByValue("tags", keywords.toDocument(false));
+		String filter=aContext.source("httpRequest:/param/filter",String.class);
+		if (filter!=null)
+		{	req.addArgumentByValue("filter", filter);
+		}
 		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
 		INKFResponse resp=aContext.createResponseFrom(subresp);
 		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);
@@ -190,6 +234,8 @@ public class ScriptAccessor extends StandardAccessorImpl
 				if (name.toLowerCase().contains(f)) found=true;
 				String keywords=(String)scriptNode.getFirstValue("keywords");
 				if (keywords!=null && keywords.toLowerCase().contains(f)) found=true;
+				String triggers=(String)scriptNode.getFirstValue("triggers");
+				if (triggers!=null && triggers.toLowerCase().contains(f)) found=true;
 				
 				if (!found)
 				{	scriptNode.delete();

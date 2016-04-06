@@ -14,8 +14,13 @@
 */
 package io.polestar.view.sensors;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.IllegalFormatConversionException;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.netkernel.layer0.nkf.INKFRequest;
 import org.netkernel.layer0.nkf.INKFRequestContext;
@@ -109,7 +114,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			
 			String format=(String)sensor.getFirstValueOrNull("format");
 			if ("count".equals(format))
-			{	mergeAction="diff";
+			{	mergeAction="positive_diff";
 			}
 			if (value!=null && value instanceof Boolean)
 			{	mergeAction="boolean_change";
@@ -296,9 +301,31 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			list.addNode("error", msg);
 			sensorList=list.toDocument(false);
 		}
+		
+		//build list of keywords
+		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		Set<String> keywordSet=new HashSet<>();
+		for (IHDSReader sensor : config.getNodes("/sensors/sensor"))
+		{	String keywords=(String)sensor.getFirstValueOrNull("keywords");
+			if (keywords!=null)
+			{	String[] kws=Utils.splitString(keywords, ", ");
+				for (String kw : kws)
+				{	keywordSet.add(kw);
+				}
+			}
+		}
+		List<String> keywordList=new ArrayList<>(keywordSet);
+		Collections.sort(keywordList);
+		IHDSMutator keywords=HDSFactory.newDocument();
+		keywords.pushNode("keywords");
+		for (String keyword: keywordList)
+		{	keywords.addNode("keyword", keyword);
+		}
+		
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensors.xsl");
 		req.addArgumentByValue("operand", sensorList);
+		req.addArgumentByValue("keywords", keywords.toDocument(false));
 		String filter=aContext.source("httpRequest:/param/filter",String.class);
 		if (filter!=null)
 		{	req.addArgumentByValue("filter", filter);

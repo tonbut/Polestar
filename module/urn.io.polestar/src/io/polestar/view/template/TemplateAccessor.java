@@ -13,8 +13,14 @@ public class TemplateAccessor extends StandardAccessorImpl
 	
 	public void onSource(INKFRequestContext aContext) throws Exception
 	{
-		IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
-		Double errors=(Double)state.getFirstValue("count(/sensors/sensor[error])");
+		Double errors;
+		try
+		{	IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
+			errors=(Double)state.getFirstValue("count(/sensors/sensor[error])");
+		}
+		catch (Exception e)
+		{	errors=0.0;
+		}
 		
 		Object rep;
 		if (errors==0.0)

@@ -39,16 +39,7 @@
     		<script><xsl:comment>
     			var updateTimeout;
 				$(function() {
-					$(".execute").each(function() {
-						var dthis=$(this);
-						var id=dthis.attr('id');
-						var scriptId=id.substring(8);
-						$("#"+id).on( "click", function(e) {
-							e.preventDefault();
-							location.href="/polestar/scripts/execute/"+scriptId;
-						});
-					});
-					
+					initialiseExecButtons();					
 					resetSorting();
 					
 					$("#filter").keyup( function(evt) {
@@ -67,6 +58,19 @@
                     }					
 					
 				});
+				
+				function initialiseExecButtons()
+				{
+					$(".execute").each(function() {
+						var dthis=$(this);
+						var id=dthis.attr('id');
+						var scriptId=id.substring(8);
+						$("#"+id).on( "click", function(e) {
+							e.preventDefault();
+							location.href="/polestar/scripts/execute/"+scriptId;
+						});
+					});
+				}
 				
 				function resetSorting()
 				{
@@ -96,6 +100,7 @@
 					$.get("/polestar/scripts/filtered?f="+f, function(d) {
 						$("#script-list-container").empty();
 						$("#script-list-container").html(d);
+						initialiseExecButtons();
 					},"html");	
 				}
 				

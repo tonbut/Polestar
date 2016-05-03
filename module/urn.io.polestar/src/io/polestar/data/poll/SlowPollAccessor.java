@@ -43,7 +43,7 @@ public class SlowPollAccessor extends StandardAccessorImpl
 		DBCollection col=MongoUtils.getCollection("capture");
 		//if (indices.size()==0)
 		{
-			col.createIndex(new BasicDBObject("timestamp", 1));
+			col.createIndex(new BasicDBObject("time", 1));
 			//col.dropIndex(new BasicDBObject("name", 1));
 		}
 		//List<DBObject> indices=col.getIndexInfo();

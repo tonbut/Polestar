@@ -24,3 +24,4 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .micon .caption {  }
 #script-keywords { line-height: 1.7; }
 #sensor-keywords { line-height: 1.7; }
+.sensor-id { font-style: normal; }

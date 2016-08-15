@@ -156,7 +156,7 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
   		<div class="micon"><img src="/polestar/pub/icon/rain.png"/><div class="caption">rain.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/security.png"/><div class="caption">security.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/shower.png"/><div class="caption">shower.png</div></div>
-  		<div class="micon"><img src="/polestar/pub/icon/snowflake.png"/><div class="caption">slowflake.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/snowflake.png"/><div class="caption">snowflake.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/socket.png"/><div class="caption">socket.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/sun.png"/><div class="caption">sun.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/switch.png"/><div class="caption">switch.png</div></div>

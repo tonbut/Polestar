@@ -201,7 +201,9 @@
                                     </xsl:for-each>
                                 </span>
                             </div>
-							<div class="changed">Changed <xsl:value-of select="lastModifiedHuman"/></div>
+							<div class="changed">
+								<span class="label label-default hidden-xs sensor-id"><xsl:value-of select="defn/id"/></span>
+								Changed <xsl:value-of select="lastModifiedHuman"/></div>
 						</td>
 					</tr>
 				</table>

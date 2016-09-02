@@ -25,3 +25,6 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 #script-keywords { line-height: 1.7; }
 #sensor-keywords { line-height: 1.7; }
 .sensor-id { font-style: normal; }
+
+.alpaca-form-buttons-container { text-align: left !important; }
+.polestarSensor .alpaca-container-item { background: #F0F0F0; }

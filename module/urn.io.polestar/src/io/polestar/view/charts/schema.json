@@ -1,0 +1,172 @@
+{
+    "type": "object",
+    "properties": {
+        "title": {
+            "type": "string",
+            "title": "Title"
+        },
+        "keywords": {
+            "type": "string",
+            "title": "Keywords"
+        },
+        "public": {
+            "type": "string",
+            "title": "Access",
+            "enum": [ "secret", "private", "guest", "public" ]
+        },
+    	"type": {
+    		"type": "string",
+    		"title": "Chart Type",
+    		"enum": [ "TimeSeriesData" ]
+    	},
+        "width": {
+            "type": "integer",
+            "title": "Width",
+            "minimum":"128",
+            "maximum":"1024"
+        },
+        "height": {
+            "type": "integer",
+            "title": "Height",
+            "minimum":"128",
+            "maximum":"1024"
+        },
+        "backgroundColor": {
+            "type": "alphacolor",
+            "title": "Background"
+        },
+        "textColor": {
+            "type": "alphacolor",
+            "title": "Text"
+        },
+        "axisColor": {
+            "type": "alphacolor",
+            "title": "Axes"
+        },
+        "legend": {
+            "type": "boolean",
+            "title": "Show Legend"
+        },
+        "chartPeriod": {
+            "type": "string",
+            "title": "Chart Period",
+            "enum": [ "3600000", "14400000", "43200000", "86400000", "172800000", "604800000", "1209600000", "2678400000"]
+        },
+        "endSnap": {
+        	"type": "string",
+            "title": "Chart End",
+            "enum": [ "now", "hour", "day", "week", "month", "year" ],
+            "default": "now"
+        },
+        "endOffset": {
+        	"type": "integer",
+        	"title": "End Offset",
+        	"minimum": "-65535",
+            "maximum": "0",
+        	"default": 0
+        },
+        "samplePeriod": {
+            "type": "string",
+            "title": "Sample Period",
+            "enum": [ "300000", "900000","1800000","3600000","7200000","21600000","86400000"]
+        },
+        "timeFormat": {
+            "type": "string",
+            "title": "X-axis format",
+            "enum": [ "kk:mm", "E", "d MMM"]
+        },
+        "yAxisTop": {
+            "type": "number",
+            "title": "X-axis upper"            
+        },
+        "yAxisBottom": {
+            "type": "number",
+            "title": "X-axis lower"            
+        },
+        "sensors": {
+        	"type": "array",
+        	"items": {
+        		"type": "object",
+        		"title": "Sensor",
+        		"properties": {
+        			"id": {
+        				"type": "string",
+        				"title":"Sensor",
+        				"enum": [ %SENSORS% ]
+        			},
+        			"mergeAction": {
+        				"type": "string",
+        				"title": "Processing",
+        				"enum": [ "sample","average", "max", "min", "diff", "positive_diff", "sum", "running_total", "rotation_360_average", "boolean_change" ],
+        				"default": "sample"
+        			},        				
+        			
+        			"baseline": {
+        				"type": "number",
+        				"title":"Baseline",
+        				"default":0
+        			},
+        			"valueOffset": {
+        				"type": "number",
+        				"title":"Value Offset",
+        				"default":0
+        			},
+        			"valueMultiply": {
+        				"type": "number",
+        				"title":"Value Multiplier",
+        				"default":1
+        			},
+        			"type": {
+        				"type": "string",
+        				"title":"Chart Element",
+        				"enum": [ "bar","area", "line", "boolean" ],
+        				"default": "line"
+        			},
+        			"interpolate": {
+        				"type": "string",
+        				"title":"Interpolate",
+        				"enum": [ "linear","cardinal","basis","step-before", "step-after" ],
+        				"default": "cardinal"
+        			},
+        			"fill": {
+        				"type": "alphacolor",
+        				"title":"Color",
+        				"default": "#00FF00"
+        			},
+        			"stroke": {
+        				"type": "alphacolor",
+        				"title":"Outline",
+        				"default": "rgba(0,0,0,0)"
+        			},
+        			"lineWidth": {
+        				"type": "integer",
+        				"title":"Line Width",
+        				"default":2
+        			},
+        			"strokeDasharray": {
+        				"type": "String",
+        				"title":"Line Style",
+        				"enum": [ "","1,1","3,1","5,2","7,4" ],
+        				"default": ""
+        			},
+        			"shape": {
+        				"type": "String",
+        				"title":"Show Data Points",
+        				"enum": [ "square","circle","triangle","diamond","cross"],
+        				"default": ""
+        			}
+        		},
+        		"dependencies": {
+        			"baseline": ["type"],
+        			"interpolate": ["type"],
+        			"lineWidth": ["type"],
+        			"strokeDasharray": ["type"],
+        			"shape": ["type"]
+        		}
+        	}
+        }
+        				
+        
+        
+    }
+}

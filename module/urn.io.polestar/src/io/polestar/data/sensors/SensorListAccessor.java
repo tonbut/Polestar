@@ -54,7 +54,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 	}
 	
 	public void postCommission(INKFRequestContext aContext) throws Exception
-	{	aContext.logRaw(INKFLocale.LEVEL_INFO,"Monitor Started");
+	{	aContext.logRaw(INKFLocale.LEVEL_INFO,"## Polestar Started ##");
 	
 		BasicDBObject query = new BasicDBObject("id",0);
 		DBCollection col=MongoUtils.getCollection("sensorState");

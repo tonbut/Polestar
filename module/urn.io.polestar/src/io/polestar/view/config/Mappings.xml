@@ -159,4 +159,33 @@
 		<header name="polestar_wrap"><literal type="boolean">true</literal></header>
 	</endpoint>	
 	
+	<!-- chart -->
+	<endpoint>
+		<id>polestar:declarativeChart</id>
+		<grammar>
+			<active>
+				<identifier>active:polestarDeclarativeChart</identifier>
+				<argument name="operator"/>
+			</active>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.charts.GenerateDeclarativeChartAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+	<endpoint>
+		<id>polestar:charts</id>
+		<grammar>res:/polestar/charts
+			<optional>/<group name="action"><regex type="nmtoken"/></group>
+				<optional>/<group name="id"><regex type="anything"/></group></optional>
+			</optional>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.charts.ChartViewAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+	
 </config>

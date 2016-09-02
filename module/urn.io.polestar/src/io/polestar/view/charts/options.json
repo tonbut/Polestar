@@ -1,0 +1,97 @@
+{
+
+	"fields": {
+		"type": {
+			"type":"select",
+			"sort":false
+		},
+		"public": {
+			"type":"select",
+			"sort":false,
+			"hideNone":true
+		},
+		"chartPeriod": {
+			"type":"select",
+			"optionLabels": ["1h", "4h", "12h", "24h", "2d", "7d", "14d", "31d" ],
+			"sort":false,
+			"hideNone":true
+		},
+		"samplePeriod": {
+			"type":"select",
+			"optionLabels": [ "5m", "15m", "30m", "1h", "2h", "6h", "1d" ],
+			"sort":false,
+			"hideNone":true
+		},
+		"timeFormat": {
+			"type":"select",
+			"optionLabels": [ "time","day of week", "date" ],
+			"sort":false,
+			"hideNone":true
+		},
+		"endSnap": {
+			"type":"select",
+			"optionLabels": [ "Now", "Snap to Hour", "Snap to Day", "Snap to Week", "Snap to Month", "Snap to Year" ],
+			"sort":false,
+			"hideNone":true
+		},
+		"sensors": {
+			"toolbarSticky": true,
+			"toolbar": {
+	            "actions": [{
+	                "label": "Add Sensor to Chart",
+	                "action": "add"
+	            }]
+	        },
+			"fieldClass": "polestarSensor",
+			"fields": {
+				"item": {
+					"fields": {
+						"id": {
+							"optionLabels": [ %SENSOR_NAMES% ],
+							"sort":false,
+							"hideNone":true
+						},
+						"mergeType": {
+							"hideNone":true
+						},
+						"type": {
+							"sort":false,
+							"hideNone":true
+						},
+	            		"baseline": {
+	            			"dependencies": {
+	            				"type": ["bar","area"]
+	            			}
+	            		},
+	            		"interpolate": {
+	            			"dependencies": {
+	            				"type": ["line","area"]
+	            			},
+	            			"sort":false,
+							"hideNone":true
+	            		},
+	            		
+	            		"lineWidth": {
+	            			"dependencies": {
+	            				"type": ["line"]
+	            			}
+	            		},
+	            		"strokeDasharray": {
+	            			"optionLabels": [ "continuous", "dotted", "short dash", "long dash", "extra long dash"],
+	            			"sort":false,
+	            			"hideNone":true,
+	            			"dependencies": {
+	            				"type": ["line"]
+	            			}
+	            		},
+	            		"shape": {
+	            			"dependencies": {
+	            				"type": ["line","area"]
+	            			}
+	            		}
+	            	}
+	            }
+	        }
+	    }
+	}
+}

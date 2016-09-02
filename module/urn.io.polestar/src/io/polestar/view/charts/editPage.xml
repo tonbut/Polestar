@@ -1,0 +1,247 @@
+<div>    
+	<link type="text/css" href="/polestar/pub/alpaca/alpaca.min.css" rel="stylesheet" />
+	<script type="text/javascript" src="/polestar/pub/alpaca/handlebars.js"></script>
+	<script type="text/javascript" src="/polestar/pub/alpaca/alpaca.min.js"></script>
+	
+	<script type="text/javascript" src="/polestar/pub/alpaca/spectrum.js"></script>
+	<link type="text/css" href="/polestar/pub/alpaca/spectrum.css" rel="stylesheet" />
+	<script type="text/javascript" src="/polestar/pub/alpaca/PolestarColorField.js"></script>
+    
+ 	<div class="container">
+	 	<div class="row">
+	 		<div class="col-sm-12">
+	    		<div id="exampleChart"/>
+	    		<div>
+	    			<div class="btn-group" role="group">
+		    			<button id="sb" type="button" class="btn btn-default" aria-label="Step Back">
+	  						<span class="glyphicon glyphicon-backward" aria-hidden="true"></span>
+						</button>
+		    			<button id="refresh" type="button" class="btn btn-default" aria-label="Refresh">
+	  						<span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+						</button>
+		    			<button id="sf" type="button" class="btn btn-default" aria-label="Step Forward">
+	  						<span class="glyphicon glyphicon-forward" aria-hidden="true"></span>
+						</button>
+		    			<button id="stp" type="button" class="btn btn-default" aria-label="Step to Present">
+	  						<span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+						</button>
+					</div>	    		
+	    		</div>
+	    	</div>
+	    </div>
+    
+	    <div class="row">
+			<div id="form"></div>
+		</div>
+	</div>
+            
+	<script type="text/javascript">
+		var id="%ID%";
+		var gControl;
+		//var alpaca;
+           $(document).ready(function() {
+               alpaca=$("#form").alpaca({
+               	
+               	"dataSource": "/polestar/charts/data/"+id,
+               	"schemaSource": "/polestar/charts/schema",
+               	"optionsSource": "/polestar/charts/options",
+                "options": {
+                   	"fields": {
+                   		"type": {
+                   			"type":"select"
+                   		},
+                   		"period": {
+                   			"type":"select"
+                   		},
+                   		"timeFormat": {
+                   			"type":"select"
+                   		},
+                   		"sensors": {
+                   			"fields": {
+                   				"item": {
+                   					"fields": {
+                       		"baseline": {
+                       			"dependencies": {
+                       				"dtype": ["bar","area"]
+                       			}
+                       		},
+                       		"fill": {
+                       			"dependencies": {
+                       				"dtype": ["bar","area","boolean"]
+                       			}
+                       		},
+                       		"lineWidth": {
+                       			"dependencies": {
+                       				"dtype": ["line"]
+                       			}
+                       		},
+                       		"strokeDasharray": {
+                       			"dependencies": {
+                       				"dtype": ["line"]
+                       			}
+                       		},
+                       		"shape": {
+                       			"dependencies": {
+                       				"dtype": ["line","area"]
+                       			}
+                       		}
+                       		
+                       		
+                       	}
+                       }
+                   }
+               }
+                   	},
+                   	"form":{
+	        "attributes":{
+	            "action":"/polestar/alpaca/post",
+	            "method":"post"
+	        },
+	        "buttons":{
+	        	"cancel":{
+	            	"title": "Cancel",
+	            	"styles": "btn btn-default",
+	            	"click": function() {
+	            		window.location.href = "/polestar/charts";
+	            	}
+	            },
+	            "saveas":{
+	            	"title": "Save as Copy",
+	            	"styles": "btn btn-default",
+	            	"click": function() {
+	                    var val = this.getValue();
+	                    if (this.isValid(true))
+	                    {	var jsonData=JSON.stringify(val, null, "  ");
+	                    	$.post("/polestar/charts/saveas/"+id,jsonData,function(d) {
+	                    		var newId=d.id;
+	                    		//console.log(d);
+	                    		window.location.href = "/polestar/charts/edit/"+newId;
+	                    	});
+	                    }
+	                }
+	            },
+	            "save":{
+	            	"title": "Save",
+	            	"styles": "btn btn-primary",
+	            	"click": function() {
+	                    var val = this.getValue();
+	                    if (this.isValid(true))
+	                    {	var jsonData=JSON.stringify(val, null, "  ");
+	                    	$.post("/polestar/charts/save/"+id,jsonData,function(d) {
+	                    		window.location.href = "/polestar/charts";
+	                    	});
+	                    }
+	                }
+	            },
+	            
+	            "submit":{
+	                "title": "Preview",
+	                "styles": "btn btn-success",
+	                "click": function() {
+	                    var val = this.getValue();
+	                    if (this.isValid(true)) {
+	                    	var jsonData=JSON.stringify(val, null, "  ");
+	                    	$.post("/polestar/charts/preview/"+id,jsonData,function(d) {
+	                    		$("#exampleChart").html(d);
+	                    	});
+	                    
+	                        //this.ajaxSubmit().done(function() {
+	                            //alert("Posted!");
+	                        //});
+	                    } else {
+	                        alert("Invalid value: " + JSON.stringify(val, null, "  "));
+	                    }
+	                }
+	            }
+	        }
+	    }
+		
+	},
+	
+	"view" : "bootstrap-edit-horizontal",
+	
+	"postRender": function(control) {
+		gControl=control;
+		//console.log("postRender");
+		//insert delete button manually as alpaca doesn't give much control over buttons
+		var btn='<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#confirmDeleteDialog"><span class="glyphicon glyphicon-trash"></span>Delete</button>';
+		$(".alpaca-form-buttons-container").prepend(btn);
+		
+		preview();
+		updateTimeButtons();
+		var offsetField=$("input[name='endOffset']");
+		$("#sb").on("click",function(){
+    		offsetField.val(offsetField.val()-1);
+    		updateTimeButtons();
+    		preview();    		
+		});
+		$("#sf").on("click",function(){
+    		offsetField.val(1+parseInt(offsetField.val()));
+    		updateTimeButtons();
+    		preview();
+		});
+		$("#stp").on("click",function(){
+    		offsetField.val(0);
+    		updateTimeButtons();
+    		preview();
+		});
+		$("#refresh").on("click",function(){
+    		preview();
+		});
+		
+	}
+	
+    	});
+    	
+    	$("#form").on("change",function(e) {
+    		preview();
+    	});
+    	
+    });
+    
+    function preview()
+    {
+    	var val = gControl.getValue();
+    	var jsonData=JSON.stringify(val, null, "  ");
+    	$.post("/polestar/charts/preview/"+id,jsonData,function(d) {
+      		$("#exampleChart").html(d);
+       	});
+    }
+    
+    function updateTimeButtons()
+    {
+    	var offsetField=$("input[name='endOffset']");
+    	var offsetValue=offsetField.val();
+    	if (offsetValue==0)
+    	{	$("#sf").prop('disabled', true);
+    		$("#stp").prop('disabled', true);
+    	}
+    	else
+    	{	$("#sf").prop('disabled', false);
+    		$("#stp").prop('disabled', false);
+    	}
+    }
+    
+    
+    function doDelete()
+	{	location.href="/polestar/charts/delete/"+id;
+	}
+    
+	</script>
+	
+	<div class="modal" id="confirmDeleteDialog" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog">
+  				<div class="modal-content">
+  					<div class="modal-body">
+  						<div class="alert alert-danger">
+  							<p>Please confirm you really want to delete chart?</p> 
+  						</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-danger" data-dismiss="modal" onclick="javascript:doDelete()">Delete</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

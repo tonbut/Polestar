@@ -1,0 +1,23 @@
+source="""
+<chart>
+	<type>TimeSeriesData</type>
+	<width>440</width>
+	<height>220</height>
+	<title></title>
+	<backgroundColor>#FFFFFF</backgroundColor>
+	<textColor>#404040</textColor>
+	<axisColor>#E0E0E0</axisColor>
+	<timeFormat>kk:mm</timeFormat>
+	<yAxisTop>1.0</yAxisTop>
+	<yAxisBottom>0.0</yAxisBottom>
+	<chartPeriod>86400000</chartPeriod>
+	<samplePeriod>900000</samplePeriod>
+	<endOffset>0</endOffset>
+	<legend>true</legend>
+</chart>
+""";
+
+req=context.createRequest("active:polestarDeclarativeChart");
+req.addArgumentByValue("operator",source);
+data=context.issueRequestForResponse(req)
+respOut=context.createResponseFrom(data);

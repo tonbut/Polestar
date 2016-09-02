@@ -40,7 +40,7 @@
 		<overlay name="BM2" next="TemplateWrap">
 			<class>org.netkernel.module.standard.builtin.branchmerge.BranchMergeOverlay</class>
 			<config>
-				<branch name="Unsecure" overlay="" targets="polestar:execute"/>
+				<branch name="Unsecure" overlay="" targets="polestar:execute2"/>
 				<branch name="Secure" overlay="AuthenticationChallenge"/>
 	
 				<overlay name="AuthenticationChallenge" next="">

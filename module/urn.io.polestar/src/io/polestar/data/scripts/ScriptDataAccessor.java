@@ -195,7 +195,7 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 		doc.append("order", (int)size);
 		
 		col.insert(doc);
-		aContext.createResponseFrom("res:/polestar/data/script/"+idString);
+		aContext.createResponseFrom("res:/md/script/"+idString);
 		MonitorUtils.cutGoldenThread(aContext, ListScriptsAccessor.GT_SCRIPT_LIST);
 	}
 

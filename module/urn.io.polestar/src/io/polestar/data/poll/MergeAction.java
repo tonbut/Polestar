@@ -34,6 +34,7 @@ public abstract class MergeAction
 	private String mId;
 	private String mName;
 	private String mFormat;
+	protected boolean mDataPoint;
 	
 	public static MergeAction getMergeAction(String aId, String aName, String aFormat, Type aType)
 	{	MergeAction result;
@@ -96,6 +97,10 @@ public abstract class MergeAction
 	public String getFormat()
 	{	return mFormat;
 	}
+	
+	public boolean isDataPoint()
+	{	return mDataPoint;
+	}
 
 	public abstract void update(Object aValue);
 	public abstract Object getValue();
@@ -117,9 +122,12 @@ public abstract class MergeAction
 	{	private Object mValue;
 		public void update(Object aValue)
 		{	mValue=aValue;
+			mDataPoint=true;
 		}
 		public Object getValue()
-		{ return mValue;
+		{	boolean dp=mDataPoint;
+			mDataPoint=false;
+			return dp?mValue:null;
 		}
 	}
 	
@@ -134,13 +142,13 @@ public abstract class MergeAction
 			}
 		}
 		public Object getValue()
-		{	double result;
+		{	Double result;
 			if (mCount>0)
 			{	result=mValue/mCount;
 				mCount=mValue=0.0;
 			}
 			else
-			{	result=0.0;
+			{	result=(Double)null;
 			}
 			return result;
 		}
@@ -155,13 +163,13 @@ public abstract class MergeAction
 			}
 		}
 		public Object getValue()
-		{	double result;
+		{	Double result;
 			if (mValue!=Double.NEGATIVE_INFINITY)
 			{	result=mValue;
 				mValue=Double.NEGATIVE_INFINITY;
 			}
 			else
-			{	result=0.0;
+			{	result=(Double)null;
 			}
 			return result;
 		}
@@ -176,13 +184,13 @@ public abstract class MergeAction
 			}
 		}
 		public Object getValue()
-		{	double result;
+		{	Double result;
 			if (mValue!=Double.MAX_VALUE)
 			{	result=mValue;
 				mValue=Double.MAX_VALUE;
 			}
 			else
-			{	result=0.0;
+			{	result=(Double)null;
 			}
 			return result;
 		}

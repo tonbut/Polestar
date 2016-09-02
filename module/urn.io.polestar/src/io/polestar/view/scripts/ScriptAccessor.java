@@ -32,6 +32,7 @@ import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 import io.polestar.data.util.MonitorUtils;
+import io.polestar.view.charts.ChartViewAccessor;
 import io.polestar.view.template.TemplateWrapper;
 
 import java.io.*;
@@ -174,18 +175,25 @@ public class ScriptAccessor extends StandardAccessorImpl
 	{
 		MonitorUtils.isLoggedIn(aContext);
 		
-		IHDSReader list=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
+		//IHDSReader list=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
+		IHDSMutator list=aContext.source("active:polestarListScripts",IHDSDocument.class).getMutableClone();
 		
 		//System.out.println(list);
 		//build list of keywords and triggers
 		Set<String> keywordSet=new HashSet<>();
 		Set<String> triggerSet=new HashSet<>();
-		for (IHDSReader sensor : list.getNodes("/scripts/script"))
-		{	String keywords=(String)sensor.getFirstValueOrNull("keywords");
+		for (IHDSMutator sensor : list.getNodes("/scripts/script"))
+		{	boolean found=true;
+			String keywords=(String)sensor.getFirstValueOrNull("keywords");
 			if (keywords!=null)
-			{	String[] kws=Utils.splitString(keywords, ", ");
-				for (String kw : kws)
-				{	keywordSet.add(kw);
+			{	if (keywords.contains(ChartViewAccessor.KEYWORD_CHART))
+				{	found=false;
+				}
+				else
+				{	String[] kws=Utils.splitString(keywords, ", ");
+					for (String kw : kws)
+					{	keywordSet.add(kw);
+					}
 				}
 			}
 			String triggers=(String)sensor.getFirstValueOrNull("triggers");
@@ -195,6 +203,11 @@ public class ScriptAccessor extends StandardAccessorImpl
 				{	triggerSet.add(kw);
 				}
 			}
+			
+			if (!found)
+			{	sensor.delete();
+			}
+			
 		}
 		List<String> keywordList=new ArrayList<>(keywordSet);
 		Collections.sort(keywordList);
@@ -212,7 +225,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 		
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleScripts.xsl");
-		req.addArgumentByValue("operand", list.toDocument());
+		req.addArgumentByValue("operand", list.toDocument(false));
 		req.addArgumentByValue("tags", keywords.toDocument(false));
 		String filter=aContext.source("httpRequest:/param/filter",String.class);
 		if (filter!=null)

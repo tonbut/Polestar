@@ -83,7 +83,7 @@ import org.netkernel.layer0.nkf.*;
 m=HDSFactory.newDocument()
 	.addNode("title","Tony's Deathstar")
 	.addNode("subtitle","deathstar automation!")
-	.addNode("icon","/polestar/pub/deathstar.png")
+	.addNode("icon","/polestar/pub/icon/deathstar.png")
 	.pushNode("sensor-ticker")
 	.addNode("period",1000L*60*60*24*1)
 	.addNode("merge",6);
@@ -172,6 +172,9 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
   		<div class="micon"><img src="/polestar/pub/icon/toxic.png"/><div class="caption">toxic.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/dust.png"/><div class="caption">dust.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/workload.png"/><div class="caption">workload.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/battery.png"/><div class="caption">battery.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/oil.png"/><div class="caption">oil.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/radiation.png"/><div class="caption">radiation.png</div></div>
   	</div>
 	
 	

@@ -1,0 +1,139 @@
+<html><body><div>
+
+<div id="chartCanvas" style="background: %BACKGROUND_COLOR%; width: %CWIDTH%px; height: %CHEIGHT%px;"/>
+<script type="text/javascript" src="/polestar/pub/protovis-d3.2.js"></script>
+<script type="text/javascript"><!--
+
+gd = %DATA%;
+len=gd.length;
+
+var ybottom=%BOTTOM%;
+var ytop=%TOP%;
+var backgroundColor="%BACKGROUND_COLOR%";
+var textColor="%TEXT_COLOR%";
+var gridColor="%GRID_COLOR%";
+
+var w = %WIDTH%,
+    h = %HEIGHT%,
+    x = pv.Scale.linear(0, len-1).range(0, w),
+    y = pv.Scale.linear(ybottom,ytop).range(0, h);
+
+var vis = new pv.Panel()
+	.canvas("chartCanvas")
+    .width(w)
+    .height(h)
+    .top(%TOPMARGIN%)
+    .left(10)
+    .right(30)
+    .bottom(%BOTTOMMARGIN%);
+
+
+time = extractArray(gd,1,"");
+
+//X-Axis
+vis.add(pv.Rule)
+    .data(x.ticks(8))
+    .strokeStyle(gridColor)
+    .left(x)
+  .anchor("bottom").add(pv.Label).textAngle(Math.PI / 6)
+	.textStyle(textColor)
+    .text(function(d) { return time[d]; });
+
+//Y-Axis
+vis.add(pv.Rule)
+    .data(y.ticks() )
+    .strokeStyle(gridColor)
+    .bottom(y)
+  .anchor("right").add(pv.Label)
+  	.textStyle(textColor)
+    .text(y.tickFormat);
+
+%ELEMENTS%
+
+%LEGEND%
+
+%TITLE%
+
+vis.render();
+
+function extractArray(a, idx, defval)
+{   result = [];
+    for (i=0; i<a.length; i++)
+    { b=a[i];
+      v=b[idx];
+      if (v==null) v=defval;
+      result.push(v);
+    }
+    return result;
+}
+
+function drawArea(idx, fillStyle, strokeStyle, shape, heightFunction, baseline, interpolate, data, vis)
+{	var d = extractArray(data,idx,null);
+	var area=vis.add(pv.Area);
+	area.data(d)
+		.interpolate(interpolate)
+		.bottom(y(baseline))
+		.height(function(d) { return d==null?0:(heightFunction(d)-y(baseline)) } )
+		.left(function() { return x(this.index);} )
+		.fillStyle( fillStyle );
+	if (strokeStyle!=null)
+		area.strokeStyle(strokeStyle);
+	if (shape!=null)
+	{	area.add(pv.Dot)
+			.shape(shape)
+			.lineWidth(2)
+			.strokeStyle(function(d){return d==null?null:strokeStyle;})
+	    	.fillStyle(function(d){return d==null?null:fillStyle;})
+			.bottom(function(d) { return heightFunction(d) });
+	}
+}
+
+function drawLine(idx, strokeStyle, fillStyle, dashArray, lineWidth, shape, heightFunction, interpolate, data, vis)
+{	var d = extractArray(data,idx,null);
+	var line=vis.add(pv.Line);
+	line.data(d).interpolate(interpolate)
+		.bottom(heightFunction)
+		.left(function() {return x(this.index)})
+		.lineWidth(lineWidth)
+		.strokeDasharray(dashArray)
+		.strokeStyle( strokeStyle );
+	if (shape!=null)
+	{	line.add(pv.Dot)
+			.shape(shape)
+			.lineWidth(lineWidth)
+	    	.strokeStyle(function(d){return d==null?null:strokeStyle;})
+	    	.fillStyle(function(d){return d==null?null:fillStyle;});
+	}
+}
+
+function drawBar(idx, fillStyle, strokeStyle, heightFunction, baseline, width, data, vis)
+{	var d=extractArray(gd,idx, null);
+	var bar=vis.add(pv.Bar);
+	bar.data(d)
+		.bottom(function(d) { return heightFunction(d)>y(baseline)?y(baseline):heightFunction(d); } )
+		.width(function() { return (this.index==0 || this.index==data.length-1)?width/2:width; })
+		.height(function(d) { return d==null?0: (heightFunction(d)>y(baseline)?(heightFunction(d)-y(baseline)):(y(baseline)-heightFunction(d))) })
+		.left(function() { return x(this.index)-((this.index==0)?0:(width*0.5)); } )
+		.fillStyle( fillStyle );
+	if (strokeStyle!=null)
+		bar.strokeStyle(strokeStyle);
+}
+
+function drawBoolean(idx, fillStyle, strokeStyle, origin, height, data, vis)
+{	var d=extractArray(data,idx, 0);
+	var area=vis.add(pv.Area);
+	area.data(d)
+		.interpolate("step-before")
+        .bottom(function(d) { return y(d?origin-height/2:origin-height/16); } )
+        .height(function(d) { return y(d?height:height/8)-y(0); } )
+        .left(function() { return x(this.index);} )
+        .fillStyle( fillStyle );
+   if (strokeStyle!=null)
+		area.strokeStyle(strokeStyle);
+}
+
+-->
+</script>
+
+
+</div></body></html>

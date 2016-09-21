@@ -33,6 +33,7 @@ public class SlowPollAccessor extends StandardAccessorImpl
 {
 	private Map<String,Object> mLastStored=Collections.EMPTY_MAP;
 	private AtomicBoolean mBusy=new AtomicBoolean(false);
+	private AtomicBoolean mBusyFirstError=new AtomicBoolean(true);
 	
 	public SlowPollAccessor()
 	{	declareThreadSafe();
@@ -64,6 +65,14 @@ public class SlowPollAccessor extends StandardAccessorImpl
 				}
 				finally
 				{	mBusy.set(false);
+					if (mBusyFirstError.compareAndSet(false, true))
+					{	aContext.logRaw(INKFLocale.LEVEL_INFO, "Scripts on 5m trigger restarted");
+					}
+				}
+			}
+			else
+			{	if (mBusyFirstError.compareAndSet(true, false))
+				{	aContext.logRaw(INKFLocale.LEVEL_WARNING, "Scripts on 5m trigger stopped due to blockage");
 				}
 			}
 		}

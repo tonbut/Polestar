@@ -213,8 +213,9 @@ public class ChartViewAccessor extends StandardAccessorImpl
 		String keywords=(String)scriptData.getFirstValue("/script/keywords");
 		keywords=keywords.replace(KEYWORD_CHART, "").trim();
 		chartHDS.setCursor("/chart")
-			.addNode("keywords", keywords)
-			.addNode("public", scriptData.getFirstValue("/script/public"));
+			.createIfNotExists("keywords").setValue(keywords);
+		chartHDS.setCursor("/chart")
+			.createIfNotExists("public").setValue(scriptData.getFirstValue("/script/public"));
 		chartHDS.setCursor("/chart/title").setValue(scriptData.getFirstValue("/script/name"));
 		
 		INKFRequest req=aContext.createRequest("active:JSONFromHDS");
@@ -285,7 +286,8 @@ public class ChartViewAccessor extends StandardAccessorImpl
 		
 		//set other fields
 		m2.setCursor("/script/name").setValue(m.getFirstValue("/chart/title"));
-		String keywords=(String)m.getFirstValue("/chart/keywords");
+		String keywords=(String)m.getFirstValueOrNull("/chart/keywords");
+		if (keywords==null) keywords="";
 		keywords+=" "+KEYWORD_CHART;
 		m2.setCursor("/script/keywords").setValue(keywords);
 		m2.setCursor("/script/public").setValue(m.getFirstValue("/chart/public"));		

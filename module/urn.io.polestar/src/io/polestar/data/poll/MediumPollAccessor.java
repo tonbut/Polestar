@@ -24,6 +24,7 @@ import io.polestar.data.util.MonitorUtils;
 public class MediumPollAccessor extends StandardAccessorImpl
 {
 	private AtomicBoolean mBusy=new AtomicBoolean(false);
+	private AtomicBoolean mBusyFirstError=new AtomicBoolean(true);
 	
 	public MediumPollAccessor()
 	{	declareThreadSafe();
@@ -38,6 +39,14 @@ public class MediumPollAccessor extends StandardAccessorImpl
 				}
 				finally
 				{	mBusy.set(false);
+					if (mBusyFirstError.compareAndSet(false, true))
+					{	aContext.logRaw(INKFLocale.LEVEL_INFO, "Scripts on 30s trigger restarted");
+					}
+				}
+			}
+			else
+			{	if (mBusyFirstError.compareAndSet(true, false))
+				{	aContext.logRaw(INKFLocale.LEVEL_WARNING, "Scripts on 30s trigger stopped due to blockage");
 				}
 			}
 		}

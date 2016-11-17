@@ -17,7 +17,7 @@
 	<meta>
 		<identity>
 			<uri>urn:io:polestar</uri>
-			<version>0.1.0</version>
+			<version>0.3.0</version>
 		</identity>
 		<info>
 			<name>Polestar IoT Hub</name>

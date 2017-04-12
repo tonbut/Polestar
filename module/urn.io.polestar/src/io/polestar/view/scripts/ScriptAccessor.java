@@ -178,6 +178,11 @@ public class ScriptAccessor extends StandardAccessorImpl
 		//IHDSReader list=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
 		IHDSMutator list=aContext.source("active:polestarListScripts",IHDSDocument.class).getMutableClone();
 		
+		IHDSReader mconf=aContext.source("res:/md/execute/named/Configuration",IHDSDocument.class).getReader();
+		Object showScriptTriggers=mconf.getFirstValueOrNull("show-script-triggers");
+		boolean showScriptTriggersBool = showScriptTriggers==null || showScriptTriggers.equals(Boolean.TRUE);
+		System.out.println(showScriptTriggers+" "+showScriptTriggersBool);
+		
 		//System.out.println(list);
 		//build list of keywords and triggers
 		Set<String> keywordSet=new HashSet<>();
@@ -196,14 +201,18 @@ public class ScriptAccessor extends StandardAccessorImpl
 					}
 				}
 			}
-			String triggers=(String)sensor.getFirstValueOrNull("triggers");
-			if (triggers!=null)
-			{	String[] kws=Utils.splitString(triggers, ", ");
-				for (String kw : kws)
-				{	triggerSet.add(kw);
+			if (showScriptTriggersBool)
+			{
+				String triggers=(String)sensor.getFirstValueOrNull("triggers");
+				if (triggers!=null)
+				{	String[] kws=Utils.splitString(triggers, ", ");
+					for (String kw : kws)
+					{	triggerSet.add(kw);
+					}
 				}
 			}
 			
+				
 			if (!found)
 			{	sensor.delete();
 			}
@@ -239,6 +248,8 @@ public class ScriptAccessor extends StandardAccessorImpl
 	public void onFilteredList(INKFRequestContext aContext) throws Exception
 	{
 		String f=aContext.source("httpRequest:/param/f",String.class).toLowerCase();
+		String tts=aContext.source("httpRequest:/param/tts",String.class).toLowerCase();
+
 		IHDSMutator list=aContext.source("active:polestarListScripts",IHDSDocument.class).getMutableClone();
 		if (f.length()>0)
 		{	for (IHDSMutator scriptNode : list.getNodes("/scripts/script"))
@@ -249,6 +260,15 @@ public class ScriptAccessor extends StandardAccessorImpl
 				if (keywords!=null && keywords.toLowerCase().contains(f)) found=true;
 				String triggers=(String)scriptNode.getFirstValue("triggers");
 				if (triggers!=null && triggers.toLowerCase().contains(f)) found=true;
+				
+				if ("true".equals(tts))
+				{
+					String id=(String)scriptNode.getFirstValue("id");
+					IHDSReader script=aContext.source("res:/md/script/"+id,IHDSDocument.class).getReader();
+					String scriptSrc=(String)script.getFirstValue("/script/script");
+					if (scriptSrc.contains(f)) found=true;
+				}
+				
 				
 				if (!found)
 				{	scriptNode.delete();

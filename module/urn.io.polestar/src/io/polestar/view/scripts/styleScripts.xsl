@@ -38,6 +38,8 @@
 			<script src="/polestar/pub/jquery.ui.touch-punch.js"></script>
     		<script><xsl:comment>
     			var updateTimeout;
+    			var scriptTextSearch=false;
+    			
 				$(function() {
 					initialiseExecButtons();					
 					resetSorting();
@@ -97,7 +99,7 @@
 				
 				function doFilterUpdate()
 				{	var f=$("#filter").val();
-					$.get("/polestar/scripts/filtered?f="+f, function(d) {
+					$.get("/polestar/scripts/filtered?tts="+scriptTextSearch+"&amp;f="+f, function(d) {
 						$("#script-list-container").empty();
 						$("#script-list-container").html(d);
 						initialiseExecButtons();
@@ -106,6 +108,13 @@
 				
 				function showUpload()
 				{	$("#upload").css("display","");
+				}
+				
+				function toggleTextSearch()
+				{	active=$("#tts").hasClass("active");
+					if (active) $("#tts").removeClass("active");
+					else $("#tts").addClass("active");
+					scriptTextSearch=!active;
 				}
 				
 			</xsl:comment></script>
@@ -120,11 +129,15 @@
 							<a class="btn btn-default" href="/polestar/scripts/backup" title="backup"><span class="glyphicon glyphicon-cloud-download"></span></a>
 							<xsl:text> </xsl:text>
 							<button type="button" class="btn btn-default" onclick="showUpload()" title="restore"><span class="glyphicon glyphicon-cloud-upload"></span></button>
+							<xsl:text> </xsl:text>
+							<button class="btn btn-default" title="search script contents" onclick="toggleTextSearch()" id="tts"><span class="glyphicon glyphicon-paperclip"></span></button>
 						</span>
 						</td>
 					<td ><input id="filter" type="text" placeholder="Filter list of {$count} scripts" class="form-control" value="">
-						<xsl:attribute name="value"><xsl:value-of select="$filter"/></xsl:attribute>
-					</input></td>
+							<xsl:attribute name="value"><xsl:value-of select="$filter"/></xsl:attribute>
+						</input>
+						<input id="tts-field" type="hidden"/>
+					</td>
 				</tr>
 				<tr id="upload" style="display: none"><td colspan="2" style="padding-top: 4px;">
 					<div class="alert alert-info">Restore will not overwrite existing scripts</div>

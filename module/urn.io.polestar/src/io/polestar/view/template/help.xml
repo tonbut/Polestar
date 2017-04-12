@@ -84,6 +84,7 @@ m=HDSFactory.newDocument()
 	.addNode("title","Tony's Deathstar")
 	.addNode("subtitle","deathstar automation!")
 	.addNode("icon","/polestar/pub/icon/deathstar.png")
+	.addNode("show-script-triggers",false)
 	.pushNode("sensor-ticker")
 	.addNode("period",1000L*60*60*24*1)
 	.addNode("merge",6);
@@ -175,6 +176,7 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
   		<div class="micon"><img src="/polestar/pub/icon/battery.png"/><div class="caption">battery.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/oil.png"/><div class="caption">oil.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/radiation.png"/><div class="caption">radiation.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/paw.png"/><div class="caption">paw.png</div></div>
   	</div>
 	
 	
@@ -325,6 +327,8 @@ now=System.currentTimeMillis();
 if (atHome &amp;&amp; now-lastAtHome&gt;24*60*60*1000)
 {	context.logRaw(INKFLocale.WARNING,"Did you know you really need to get out more?");
 }</code></pre></p>
+
+	<h4>booleanChangeDetect</h4>
 	<p>The problem with the above script is that after 24 hours of being at home you will be
 	warned everytime the script is run. Usually you determine a condition and then act when that
 	condition becomes true or stops being true. To do this we need to remember state to know
@@ -359,6 +363,8 @@ if (changed &amp;&amp; atHomeToLong)
 		named path into the persistent state of a script to store the information needed for the
 		condition</li>
 	</ul></p>
+	
+	<h4>analogueLevelChangeDetect</h4>
 	<p>ScriptUtils also contain the analogue equivalent of booleanChangeDetect() called
 	analogueLevelChangeDetect(). It works in a similar way but looks for a numeric value
 	to be above a trigger level for the condition to become true.
@@ -392,6 +398,35 @@ if (changed)
 		named path into the persistent state of a script to store the information needed for the
 		condition</li>
 	</ul></p>
+	
+	
+	<h4>atMostEvery</h4>
+	<p>Sometimes it is useful to stop a particular action from happening too often.
+	For example my kids love to press the door bell about 10 times but if I'm not
+	at home I only want to be send a message if the door bell rings for the first time
+	in 5 minutes.
+	<pre><code>import org.netkernel.mod.hds.*;
+import org.netkernel.layer0.nkf.*;
+
+newEvent=io.polestar.ScriptUtils.atMostEvery(
+	period: 300000L,
+	requireQuiet: true,
+	context:context );
+
+if (newEvent)
+{	context.logRaw(INKFLocale.LEVEL_INFO,"This might actually be a new person ringing");
+}</code></pre></p>
+
+	<p>It supports the following optional arguments:<ul>
+		<li><b>period</b> <span class="label label-default">java.lang.Long</span> minimum milliseconds
+		between reported events.</li>
+		<li><b>statePath</b> <span class="label label-default">java.lang.String</span> an optional named
+		path into the persistent state of a script to store the information needed for the condition.</li>
+		<li><b>requireQuiet</b> <span class="label label-default">java.lang.Boolean</span> if true
+		then period timer between events is reset every time an event occurs.</li>
+	</ul></p>
+
+	
 	<h4>Script persistent state</h4>
 	<p>You can access the scripts persistent state directly:
 	<pre><code>import org.netkernel.layer0.nkf.*;
@@ -407,6 +442,9 @@ state.createIfNotExists("state/count").setValue(count);
 context.sink("arg:state",state.toDocument(true));
 resp=context.createResponseFrom(state.toString());
 resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);</code></pre></p>
+
+	
+	
 	<h4>Calling other scripts</h4>
 	<p>One script can call another script. This is useful for generic services such as sending a message.
 	You can pass arbitrary arguments between scripts:

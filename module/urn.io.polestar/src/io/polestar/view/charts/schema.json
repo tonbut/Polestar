@@ -50,7 +50,7 @@
         "chartPeriod": {
             "type": "string",
             "title": "Chart Period",
-            "enum": [ "3600000", "14400000", "43200000", "86400000", "172800000", "604800000", "1209600000", "2678400000"]
+            "enum": [ "3600000", "14400000", "43200000", "86400000", "172800000", "604800000", "1209600000", "2678400000", "15768000000", "31536000000"]
         },
         "endSnap": {
         	"type": "string",
@@ -68,7 +68,7 @@
         "samplePeriod": {
             "type": "string",
             "title": "Sample Period",
-            "enum": [ "300000", "900000","1800000","3600000","7200000","21600000","86400000"]
+            "enum": [ "60000", "300000", "900000","1800000","3600000","7200000","21600000","86400000", "604800000"]
         },
         "timeFormat": {
             "type": "string",
@@ -94,13 +94,16 @@
         				"title":"Sensor",
         				"enum": [ %SENSORS% ]
         			},
+        			"dname": {
+        				"type": "string",
+        				"title": "Display Name"
+        			},
         			"mergeAction": {
         				"type": "string",
         				"title": "Processing",
-        				"enum": [ "sample","average", "max", "min", "diff", "positive_diff", "sum", "running_total", "rotation_360_average", "boolean_change" ],
+        				"enum": [ "sample","average", "max", "min", "diff", "positive_diff", "sum", "running_total", "rotation_360_average", "boolean_change","count", "boolean_rising_edge_count", "boolean_falling_edge_count" ],
         				"default": "sample"
-        			},        				
-        			
+        			},
         			"baseline": {
         				"type": "number",
         				"title":"Baseline",

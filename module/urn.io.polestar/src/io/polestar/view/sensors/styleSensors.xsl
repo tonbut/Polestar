@@ -75,6 +75,9 @@
                     
                     showTickerFlag=window.innerWidth&gt;768;
                     $("#toggle-stats").click( toggleTicker );
+                    $("#sensor-info").click( function() {
+                    	window.location.href = "/polestar/sensorinfo";
+                    } );
 
                     if ($("#filter").val()!="")
                     {	doFilterUpdate();
@@ -153,7 +156,10 @@
                     </div>
                     </td>
                     <td width="1%">
-                        <button style="margin-left: 1em;" id="toggle-stats" class="btn btn-default"><span class="glyphicon glyphicon-stats"></span>&#160;</button>
+                        <button style="margin-left: 0.5em;" id="toggle-stats" class="btn btn-default"><span class="glyphicon glyphicon-stats"></span>&#160;</button>
+                    </td>
+                    <td width="1%">
+                        <button style="margin-left: 0.5em;" id="sensor-info" class="btn btn-default"><span class="glyphicon glyphicon-info-sign"></span>&#160;</button>
                     </td>
                 </tr></table>
                 <div  id="sensor-keywords"> <!--class="hidden-xs"-->

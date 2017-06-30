@@ -247,7 +247,8 @@ public class ScriptAccessor extends StandardAccessorImpl
 	
 	public void onFilteredList(INKFRequestContext aContext) throws Exception
 	{
-		String f=aContext.source("httpRequest:/param/f",String.class).toLowerCase();
+		String f=aContext.source("httpRequest:/param/f",String.class);
+		String flow=f.toLowerCase();
 		String tts=aContext.source("httpRequest:/param/tts",String.class).toLowerCase();
 
 		IHDSMutator list=aContext.source("active:polestarListScripts",IHDSDocument.class).getMutableClone();
@@ -255,11 +256,11 @@ public class ScriptAccessor extends StandardAccessorImpl
 		{	for (IHDSMutator scriptNode : list.getNodes("/scripts/script"))
 			{	boolean found=false;
 				String name=(String)scriptNode.getFirstValue("name");
-				if (name.toLowerCase().contains(f)) found=true;
+				if (name.toLowerCase().contains(flow)) found=true;
 				String keywords=(String)scriptNode.getFirstValue("keywords");
-				if (keywords!=null && keywords.toLowerCase().contains(f)) found=true;
+				if (keywords!=null && keywords.toLowerCase().contains(flow)) found=true;
 				String triggers=(String)scriptNode.getFirstValue("triggers");
-				if (triggers!=null && triggers.toLowerCase().contains(f)) found=true;
+				if (triggers!=null && triggers.toLowerCase().contains(flow)) found=true;
 				
 				if ("true".equals(tts))
 				{
@@ -341,10 +342,13 @@ public class ScriptAccessor extends StandardAccessorImpl
 		}
 		else if (params.getFirstNodeOrNull("save")!=null || params.getFirstNodeOrNull("execute")!=null)
 		{	MonitorUtils.assertAdmin(aContext);
+			//System.out.println(params);
 			IHDSMutator m=HDSFactory.newDocument();
 			m.pushNode("script");
 			m.addNode("name",params.getFirstValue("name"));
 			m.addNode("triggers",params.getFirstValue("triggers"));
+			m.addNode("period",params.getFirstValue("period"));
+			m.addNode("target",params.getFirstValue("target"));
 			m.addNode("keywords",params.getFirstValue("keywords"));
 			m.addNode("script",params.getFirstValue("script"));
 			m.addNode("public",params.getFirstValue("public"));
@@ -373,6 +377,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleEdit.xsl");
 		req.addArgument("operand", "res:/md/script/"+aId);
+		req.addArgument("sensors","active:polestarSensorConfig");
 		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
 		INKFResponse resp=aContext.createResponseFrom(subresp);
 		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);

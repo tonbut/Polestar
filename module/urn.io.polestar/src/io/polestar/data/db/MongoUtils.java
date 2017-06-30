@@ -22,21 +22,22 @@ import com.mongodb.MongoClient;
 
 public class MongoUtils
 {
-	static MongoClient sMongoClient;
+	public static final String DBNAME="homemonitor";
+	private static MongoClient sMongoClient;
 	static
-	{
-		try
-		{	sMongoClient = new MongoClient( "localhost" , 27017 );
-		}
-		catch (UnknownHostException e)
-		{	e.printStackTrace();
-		}
+	{	sMongoClient = new MongoClient( "localhost" , 27017 );
+	}
+	
+	public static DB getDB()
+	{	return sMongoClient.getDB(DBNAME);
 	}
 	
 	public static DBCollection getCollection(String aName) throws UnknownHostException
-	{
-		DB db = sMongoClient.getDB( "homemonitor" );
-		return db.getCollection(aName);
+	{	return getDB().getCollection(aName);
+	}
+	
+	public static DBCollection getCollectionForSensor(String aSensorId) throws UnknownHostException
+	{	return getCollection("sensor:"+aSensorId);
 	}
 
 }

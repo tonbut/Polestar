@@ -45,7 +45,21 @@
 		</grammar>
 		<request>
 			<identifier>active:java</identifier>
-			<argument name="class">io.polestar.data.poll.CaptureQueryAccessor</argument>
+			<argument name="class">io.polestar.data.sensors.SensorQueryAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+	<endpoint>
+		<id>polestar:data:sensorQuery</id>
+		<grammar>
+			<active>
+				<identifier>active:polestarSensorQuery</identifier>
+				<argument name="operator"/>
+			</active>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.data.sensors.SensorQueryAccessor</argument>
 			<varargs/>
 		</request>
 	</endpoint>
@@ -59,6 +73,20 @@
 		<request>
 			<identifier>active:java</identifier>
 			<argument name="class">io.polestar.data.util.SelfSignedConnectionManagerAccessor</argument>
+		</request>
+	</endpoint>
+	<endpoint>
+		<id>polestar:data:migration</id>
+		<grammar>
+			<active>
+				<identifier>active:polestarDataMigration</identifier>
+				<argument name="action"/>
+			</active>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.data.db.DataMigrationAccessor</argument>
+			<argument name="action">arg:action</argument>
 		</request>
 	</endpoint>
 		

@@ -57,6 +57,8 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 					m.addNode("script",(String)dbo.get("script"));
 					m.addNode("state",(String)dbo.get("state"));
 					m.addNode("triggers",(String)dbo.get("triggers"));
+					m.addNode("period",(String)dbo.get("period"));
+					m.addNode("target",(String)dbo.get("target"));
 					m.addNode("keywords",(String)dbo.get("keywords"));
 					m.addNode("public",dbo.get("public"));
 					m.popNode();
@@ -112,6 +114,18 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 			Object triggers=primary.getFirstValueOrNull("triggers");	
 			if (triggers!=null)
 			{	update.append("triggers", triggers);
+				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id, ListScriptsAccessor.GT_SCRIPT_LIST);
+				needsUpdate=true;
+			}
+			Object period=primary.getFirstValueOrNull("period");	
+			if (period!=null)
+			{	update.append("period", period);
+				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id, ListScriptsAccessor.GT_SCRIPT_LIST);
+				needsUpdate=true;
+			}
+			Object target=primary.getFirstValueOrNull("target");	
+			if (target!=null)
+			{	update.append("target", target);
 				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id, ListScriptsAccessor.GT_SCRIPT_LIST);
 				needsUpdate=true;
 			}

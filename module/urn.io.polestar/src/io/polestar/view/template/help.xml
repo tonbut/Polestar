@@ -194,19 +194,14 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 		<li><b>Triggers</b> the triggers field is primarily a comma separated list of sensor ids. When any of the listed
 		sensors change the script will be executed automatically. In addition to sensor ids the following
 		values are supported:<ul>
-			<li><span class="label label-success">1s</span> execute script every second.</li>
-			<li><span class="label label-success">5s</span> execute script every five seconds.</li>
-			<li><span class="label label-success">30s</span> execute script every thirty seconds.</li>
-			<li><span class="label label-success">5m</span> execute script every five minutes just before sensor state
-			is captured and stored in the historical database.</li>
-			<li><span class="label label-success">capture</span> execute immediately after sensor state has been
-			stored in the historical database. This trigger is useful for uploading sensor state to cloud storage.</li>
 			<li><span class="label label-success">error</span> execute script when a new error is reported by any sensor.</li>
 			<li><span class="label label-success">startup</span> execute script when Polestar is started.</li>
 			<li><span class="label label-success">shutdown</span> execute script before Polestar is stopped.</li>
 		</ul>
 		</li>
 		<li><b>Keywords</b> the keywords field is a comma separated list of keywords that are displayed in the script list and can be used to filter scripts.</li>
+		<li><b>Periodicity</b> selecting a value other than none here will cause the script to be automatically called periodically.</li>
+		<li><b>Target</b> a sensor to update with response. See <a href="#ondemand">on-demand sensors</a> below.</li>
 		<li><b>Access</b> by default a script is private and can only be executed internally, either triggered or from another script, or manually by admin.
 		Change to guest to allow guest user to execute too. Change to public to make this script executable without authentication.
 		This is useful for providing "webhooks" for updating of sensors by external systems. If a script is marked as secret then the guest
@@ -491,14 +486,19 @@ rep=context.issueRequest(req)</code></pre>
 	<p>The merge actions available are:
 	<ul>
 	<li>AVERAGE - average floating point sensor samples</li>
+	<li>AVERAGE_MAP - average floating point sensor samples from a sensor with map values</li>
 	<li>MAX - take the maximum value from the sensor samples</li>
 	<li>MIN - take the minimum</li>
 	<li>DIFF - take the difference between the last and first sensor samples</li>
+	<li>POSITIVE_DIFF - take the difference between the last and first sensor samples. If below zero return zero.</li>
 	<li>SUM - sum all the samples</li>
 	<li>ROTATION_360_AVERAGE - average floating point samples assuming they are a rotational value between 0 and 360 degrees</li>
 	<li>SAMPLE - take first samples value</li>
 	<li>RUNNING_TOTAL - sum all the samples and add to sum of all previous values (integration)</li>
 	<li>BOOLEAN_CHANGE - return false if all samples are false, true if all are true. Otherwise if there is any change return the inverse of the last return value. This is useful for detecting momentary changes.</li>
+	<li>COUNT - return number of samples within period.</li>
+	<li>BOOLEAN_RISING_EDGE_COUNT - return number of rising edges on boolean sensor</li>
+	<li>BOOLEAN_FALLING_EDGE_COUNT - return number of falling edges on boolean sensor</li>
 	</ul>
 	</p>
 	<p>Once you have the resultset in JSON format it is quite easy to generate charts and visualizations from it using 
@@ -519,6 +519,7 @@ resp=context.createResponseFrom(s.toString());
 resp.setHeader("polestar_wrap",true);
 	</code></pre>
 	
+	<h3 id="ondemand">On Demand Sensors</h3>
 	
 	<h3>Backup/Restore</h3>
 	<p>You can backup and restore all the scripts through the 

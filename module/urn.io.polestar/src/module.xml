@@ -136,6 +136,8 @@
 				<identifier>active:polestarSensorUpdate</identifier>
 				<identifier>active:polestarSensorReadingCheck</identifier>
 				<identifier>active:polestarSensorStatePersist</identifier>
+				<identifier>active:polestarSensorInfo</identifier>
+				<identifier>active:polestarSensorInfoDelete</identifier>
 				<argument name="state" min="0"/>
 			</active></grammar>
 			<class>io.polestar.data.sensors.SensorListAccessor</class>
@@ -213,24 +215,12 @@
 			<rewrite>res:/io/polestar/data/config/CronConfig.xml</rewrite>
 		</fileset>
 		<endpoint>
-			<id>polestar:data:quickPoll</id>
-			<grammar>active:polestarQuickPoll</grammar>
-			<class>io.polestar.data.poll.QuickPollAccessor</class>
-		</endpoint>
-		<endpoint>
-			<id>polestar:data:5sPoll</id>
-			<grammar>active:polestar5sPoll</grammar>
-			<class>io.polestar.data.poll.FiveSecPollAccessor</class>
-		</endpoint>
-        <endpoint>
-            <id>polestar:data:mediumPoll</id>
-            <grammar>active:polestarMediumPoll</grammar>
-            <class>io.polestar.data.poll.MediumPollAccessor</class>
-        </endpoint>
-		<endpoint>
-			<id>polestar:data:slowPoll</id>
-			<grammar>active:polestarSlowPoll</grammar>
-			<class>io.polestar.data.poll.SlowPollAccessor</class>
+			<id>polestar:data:periodPoll</id>
+			<grammar><active>
+				<identifier>active:polestarPeriodPoll</identifier>
+				<argument name="period"/>
+			</active></grammar>
+			<class>io.polestar.data.poll.PeriodPollAccessor</class>
 		</endpoint>
 		<import>
 			<uri>urn:io:polestar:data</uri>

@@ -14,8 +14,10 @@
 */
 package io.polestar.data.scripts;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.netkernel.layer0.nkf.*;
 import org.netkernel.layer0.util.MultiMap;
@@ -36,35 +38,83 @@ import com.mongodb.MongoClient;
 
 public class ScriptTriggersAccessor extends StandardAccessorImpl
 {
+	private Map<String,String> mLegacyPeriodLookup=new HashMap<>();
+	
 	public ScriptTriggersAccessor()
-	{	declareThreadSafe();
+	{	
+		declareThreadSafe();
+		
+		mLegacyPeriodLookup.put("1s", "1000");
+		mLegacyPeriodLookup.put("5s", "5000");
+		mLegacyPeriodLookup.put("30s", "30000");
+		mLegacyPeriodLookup.put("5m", "300000");		
 	}
 	
 	public void onSource(INKFRequestContext aContext) throws Exception
 	{
 		IHDSReader scriptList=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
-		MultiMap mm=new MultiMap(40, 8);
+		MultiMap trigMap=new MultiMap(40, 8);
+		MultiMap periodMap=new MultiMap(40, 8);
 		for (IHDSReader scriptNode : scriptList.getNodes("/scripts/script"))
 		{	String scriptId=(String)scriptNode.getFirstValueOrNull("id");
-			for (Object trigger : scriptNode.getValues("triggers/trigger"))
-			{	mm.put(trigger, scriptId);
+			boolean hasPeriod=false;
+			String period=(String)scriptNode.getFirstValueOrNull("period");
+			String target=(String)scriptNode.getFirstValueOrNull("target");
+			if ((period!=null && period.length()>0) && (target==null || target.length()==0))
+			{	periodMap.put(period, scriptId);
+				hasPeriod=true;
 			}
+			for (Object trigger : scriptNode.getValues("triggers/trigger"))
+			{	trigMap.put(trigger, scriptId);
+			
+				//legacy triggers converted into period
+				if (!hasPeriod)
+				{	period=mLegacyPeriodLookup.get(trigger);
+					if (period!=null)
+					{	periodMap.put(period, scriptId);
+						hasPeriod=true;
+					}
+				}
+			}
+			
 		}
+		
+		
+		
+		
 		IHDSMutator m=HDSFactory.newDocument();
-		m.pushNode("sensors");
-		for (Iterator<String> i=mm.keyIterator(); i.hasNext(); )
+		m.pushNode("triggers");
+		for (Iterator<String> i=trigMap.keyIterator(); i.hasNext(); )
 		{	String sensor=i.next();
-			m.pushNode("sensor");
+			m.pushNode("trigger");
 			m.addNode("id",sensor);
 			m.pushNode("scripts");
-			List<String> scripts=mm.get(sensor);
+			List<String> scripts=trigMap.get(sensor);
 			for (String script : scripts)
 			{	m.addNode("script",script);
 			}
 			m.popNode();
 			m.popNode();
 		}
-		m.declareKey("byId", "/sensors/sensor", "id");
+		m.popNode();
+		m.pushNode("periods");
+		for (Iterator<String> i=periodMap.keyIterator(); i.hasNext(); )
+		{	String period=i.next();
+			m.pushNode("period");
+			m.addNode("id",period);
+			m.pushNode("scripts");
+			List<String> scripts=periodMap.get(period);
+			for (String script : scripts)
+			{	m.addNode("script",script);
+			}
+			m.popNode();
+			m.popNode();
+		}
+		
+		
+		m.declareKey("scriptsForTrigger", "/triggers/trigger", "id");
+		m.declareKey("scriptsForPeriod", "/periods/period", "id");
+		//System.out.println(m);
 		aContext.createResponseFrom(m.toDocument(false));
 	}
 }

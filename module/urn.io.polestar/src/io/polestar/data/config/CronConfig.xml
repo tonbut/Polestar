@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jobs>
+	<!--
 	<job>
 		<request>
 			<identifier>active:polestarQuickPoll</identifier>
@@ -53,5 +54,118 @@
             <repeatCount></repeatCount>
             <repeatInterval>300000</repeatInterval>
         </simple>
-    </job>  
+    </job>
+    -->
+    
+    
+    <job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">1000</argument>
+		</request>
+		<name>Polestar 1s poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>/1 * * * * ?</expr>
+		</cron>
+	</job>
+	<job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">5000</argument>
+		</request>
+		<name>Polestar 5s poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>/5 * * * * ?</expr>
+		</cron>
+	</job>	
+	<job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">30000</argument>
+		</request>
+		<name>Polestar 30s poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>/30 * * * * ?</expr>
+		</cron>
+	</job>
+	<job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">60000</argument>
+		</request>
+		<name>Polestar 1m poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>0 /1 * * * ?</expr>
+		</cron>
+	</job>
+	<job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">300000</argument>
+		</request>
+		<name>Polestar 5m poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>0 /5 * * * ?</expr>
+		</cron>
+	</job>
+	<job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">1800000</argument>
+		</request>
+		<name>Polestar 30m poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>0 /30 * * * ?</expr>
+		</cron>
+	</job>
+	<job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">3600000</argument>
+		</request>
+		<name>Polestar 1h poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>0 0 /1 * * ?</expr>
+		</cron>
+	</job>		
+    <job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">21600000</argument>
+		</request>
+		<name>Polestar 6h poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>0 0 /6 * * ?</expr>
+		</cron>
+	</job>
+	<job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">86400000</argument>
+		</request>
+		<name>Polestar 1d poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>0 0 0 /1 * ?</expr>
+		</cron>
+	</job>
+	<job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">604800000</argument>
+		</request>
+		<name>Polestar 7d poll</name>
+		<desc>periodic scripts</desc>
+		<cron>
+			<expr>0 0 0 ? * 2</expr> <!-- 0am on monday morning -->
+		</cron>
+	</job>
 </jobs>

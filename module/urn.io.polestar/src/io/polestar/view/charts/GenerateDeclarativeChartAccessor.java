@@ -130,6 +130,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		m.addNode("start",endTime-period);
 		m.addNode("end",endTime);
 		m.addNode("merge",(int)mergeCount);
+		m.addNode("samplePeriod",samplesPeriod);
 		if (timeFormat!=null) m.addNode("timeFormat",timeFormat);
 		m.addNode("json",true);
 		m.pushNode("sensors");
@@ -141,7 +142,8 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 			m.pushNode("sensor").addNode("id",sensorId).addNode("mergeAction",mergeAction).popNode();
 		}
 		
-		INKFRequest req=aContext.createRequest("active:polestarHistoricalQuery");
+		//INKFRequest req=aContext.createRequest("active:polestarHistoricalQuery");
+		INKFRequest req=aContext.createRequest("active:polestarSensorQuery");
 		req.addArgumentByValue("operator",m.toDocument(false));
 		req.setRepresentationClass(String.class);
 		String data=(String)aContext.issueRequest(req);
@@ -253,8 +255,12 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 			for (IHDSReader sensorNode : aOp.getNodes("sensors/sensor"))
 			{
 				String id=(String)sensorNode.getFirstValue("id");
-				IHDSReader sensorConfigNode=sensorConfig.getFirstNode("key('byId','"+id+"')");
-				String sensorName=(String)sensorConfigNode.getFirstValue("name");
+				
+				String sensorName=(String)sensorNode.getFirstValueOrNull("dname");
+				if (sensorName==null || sensorName.length()==0)
+				{	IHDSReader sensorConfigNode=sensorConfig.getFirstNode("key('byId','"+id+"')");
+					sensorName=(String)sensorConfigNode.getFirstValue("name");
+				}
 				
 				String fill=(String)sensorNode.getFirstValueOrNull("fill");
 				String stroke=(String)sensorNode.getFirstValueOrNull("stroke");

@@ -55,6 +55,8 @@ public class ListScriptsAccessor extends StandardAccessorImpl
 				m.addNode("id",MonitorUtils.hexString(id));
 				m.addNode("order",dbo.get("order"));
 				m.addNode("name",dbo.get("name"));
+				m.addNode("target",dbo.get("target"));
+				m.addNode("period",dbo.get("period"));
 				
 				String triggers=(String)dbo.get("triggers");
 				m.pushNode("triggers",triggers);
@@ -82,6 +84,7 @@ public class ListScriptsAccessor extends StandardAccessorImpl
 		} finally
 		{	cursor.close();
 		}
+		m.declareKey("byId", "/scripts/script", "id");
 		INKFResponse resp=aContext.createResponseFrom(m.toDocument(false));
 		//resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 		MonitorUtils.attachGoldenThread(aContext, GT_SCRIPT_LIST);

@@ -15,9 +15,11 @@
 package io.polestar.data.sensors;
 
 import java.io.ByteArrayOutputStream;
+import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bson.BSONObject;
 import org.netkernel.layer0.nkf.*;
 import org.netkernel.layer0.representation.ByteArrayRepresentation;
 import org.netkernel.layer0.representation.IBinaryStreamRepresentation;
@@ -29,10 +31,13 @@ import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
+import org.netkernel.util.Utils;
+
 import io.polestar.data.db.MongoUtils;
 import io.polestar.data.util.MonitorUtils;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.CommandResult;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
@@ -46,11 +51,13 @@ public class SensorListAccessor extends StandardAccessorImpl
 	private GoldenThreadExpiryFunction mStateUpdateExpiry;
 	
 	public static final String SENSOR_ERROR="error";
+	public static SensorListAccessor sInstance;
 	
 	public SensorListAccessor()
 	{	this.declareThreadSafe();
 		DEFAULT_SENSOR_STATE=new SensorState();
 		mStateUpdateExpiry=new GoldenThreadExpiryFunction("SensorListAccessor");
+		sInstance=this;
 	}
 	
 	public void postCommission(INKFRequestContext aContext) throws Exception
@@ -70,6 +77,28 @@ public class SensorListAccessor extends StandardAccessorImpl
 		{	cursor.close();
 		}
 		
+	
+		//index all sensors
+		Set<String> collections=MongoUtils.getDB().getCollectionNames();
+		for (String collection : collections)
+		{	try
+			{	if (collection.startsWith("sensor:"))
+				{	
+					col=MongoUtils.getCollection(collection);
+					List<DBObject> indexes=col.getIndexInfo();
+					if (indexes.size()<2)
+					{
+						aContext.logRaw(INKFLocale.LEVEL_INFO, "Creating time index for "+collection);
+						col.createIndex(new BasicDBObject("t", 1));
+					}
+				}
+			}
+			catch (Exception e)
+			{	aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
+			}
+		}
+		
+		
 		//run startup scripts
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("startup"), true, aContext);
 	}
@@ -78,7 +107,6 @@ public class SensorListAccessor extends StandardAccessorImpl
 	{	
 		//run shutdown scripts
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("shutdown"), true, aContext);		
-		
 		aContext.logRaw(INKFLocale.LEVEL_INFO,"Monitor Stopped");
 		saveSensorState(aContext);
 		
@@ -122,6 +150,72 @@ public class SensorListAccessor extends StandardAccessorImpl
 		else if (action.equals("polestarSensorStatePersist"))
 		{	saveSensorState(aContext);
 		}
+		else if (action.equals("polestarSensorInfo"))
+		{	onSensorInfo(aContext);
+		}
+		else if (action.equals("polestarSensorInfoDelete"))
+		{	onSensorInfoDelete(aContext);
+		}
+	}
+	
+	public void onSensorInfoDelete(INKFRequestContext aContext) throws Exception
+	{
+		String toDelete=aContext.source("arg:state",String.class);
+		//System.out.println("toDelete "+toDelete);
+		DBCollection col=MongoUtils.getCollectionForSensor(toDelete);
+		col.remove(new BasicDBObject());
+	}
+	
+	public void onSensorInfo(INKFRequestContext aContext) throws Exception
+	{
+		IHDSMutator m=HDSFactory.newDocument();
+		m.pushNode("sensors");
+		Set<String> collections=MongoUtils.getDB().getCollectionNames();
+		for (String collection : collections)
+		{
+			DBCollection col=MongoUtils.getCollection(collection);
+			
+			if (collection.startsWith("sensor:"))
+			{	
+				CommandResult cr=col.getStats();
+				Long count=cr.getLong("count");
+				Long size=cr.getLong("size");
+
+				long first=-1;
+				long last=-1;
+				DBCursor cursor;
+				
+				cursor = col.find().sort(new BasicDBObject("t",1)).limit(1);
+				if (cursor.hasNext())
+				{	DBObject entry=cursor.next();
+					first=(Long)entry.get("t");
+				}
+				cursor = col.find().sort(new BasicDBObject("t",-1)).limit(1);
+				if (cursor.hasNext())
+				{	DBObject entry=cursor.next();
+					last=(Long)entry.get("t");
+				}
+				
+				String id=collection.substring(7);
+				
+				DateFormat df=DateFormat.getDateInstance(DateFormat.SHORT);
+				String firstString=first>0?df.format(new Date(first)):"none";
+				String lastString=first>0?df.format(new Date(last)):"none";
+				long avgSize=count>0?size/count:0L;
+				m.pushNode("sensor")
+				.addNode("id",id)
+				.addNode("count", count)
+				.addNode("size", size)
+				.addNode("avgSize", avgSize)
+				.addNode("first", firstString)
+				.addNode("last", lastString)
+				.popNode();
+
+				//System.out.println(collection+" "+count+" "+size+" "+size/count);
+			}
+		}
+		INKFResponse resp=aContext.createResponseFrom(m.toDocument(false));
+		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 	}
 	
 	//check to see if any sensors are not updating
@@ -136,12 +230,9 @@ public class SensorListAccessor extends StandardAccessorImpl
 				long lastUpdated=ss.getLastUpdated();
 				if (now-lastUpdated>=errorIfNoReadingsFor*1000L && ss.getError()==null)
 				{	String error="No fresh readings";
-					updateSensorState(id, sensorDef, ss.getValue(), error);
+					updateSensorState(id, ss.getValue(), now, error);
 				}
 			}
-			
-			
-			
 		}				
 	}
 
@@ -166,14 +257,27 @@ public class SensorListAccessor extends StandardAccessorImpl
 
 	public void onConfig(INKFRequestContext aContext) throws Exception
 	{	IHDSMutator config=aContext.source("res:/md/execute/named/SensorList",IHDSDocument.class).getMutableClone();
+		IHDSReader scripts=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
+		//System.out.println(scripts);
+		scripts.declareKey("byTarget", "/scripts/script", "target");
 		for (IHDSMutator sensorNode : config.getNodes("/sensors/sensor"))
 		{	String icon=(String)sensorNode.getFirstValueOrNull("icon");
 			if (icon==null)
 			{	icon="/polestar/pub/icon/circle-dashed.png";
 				sensorNode.createIfNotExists("icon").setValue(icon).resetCursor();
 			}
+			String sensorId=(String)sensorNode.getFirstValue("id");
+			String xpath="key('byTarget','"+sensorId+"')";
+			IHDSReader targetScript=scripts.getFirstNodeOrNull(xpath);
+			if (targetScript!=null)
+			{	//System.out.println(targetScript.getFirstValue("name")+" "+sensorId);
+				String scriptId=(String)targetScript.getFirstValue("id");
+				sensorNode.addNode("script", scriptId);
+			}
+			//System.out.println(targetScript+" "+sensorId+" "+xpath);
 		}
 		config.declareKey("byId", "/sensors/sensor", "id");
+		//System.out.println(config);
 		INKFResponse resp=aContext.createResponseFrom(config.toDocument(false));
 	}
 
@@ -225,6 +329,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 	{
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
 		IHDSReader currentState=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
+		long now=System.currentTimeMillis();
 		
 		for (IHDSReader sensorStateNode : aState.getNodes("/sensors/sensor"))
 		{	String sensorId=(String)sensorStateNode.getFirstValue("id");
@@ -330,33 +435,63 @@ public class SensorListAccessor extends StandardAccessorImpl
 				}
 			}
 			
-			updateSensorState(sensorId,sensorDef,newValue,exception);
+			boolean valueChanged=updateSensorState(sensorId,newValue,now,exception);
+			if (valueChanged)
+			{	DBCollection col=MongoUtils.getCollectionForSensor(sensorId);
+				storeSensorState(sensorId,newValue,now,col,aContext);
+			}
 		}
 	}
 	
-	private void updateSensorState(String aId, IHDSReader aSensorDef, Object aValue, String aException)
+	public static void storeSensorState(String aId, Object aValue, long aNow, DBCollection aCol, INKFRequestContext aContext) throws Exception
+	{
+		if (aValue!=null)
+		{	Class c=aValue.getClass();
+			if (c==String.class||c==Boolean.class||c==Integer.class||c==Long.class||c==Float.class||c==Double.class||Map.class.isAssignableFrom(c))
+			{	
+				BasicDBObject sensor=new BasicDBObject();
+				sensor.append("t", aNow);
+				sensor.append("v", aValue);
+				//DBCollection col=MongoUtils.getCollectionForSensor(aId);
+				WriteResult wr=aCol.insert(sensor);
+			}
+			else
+			{	String msg=String.format("Unsupported datatype for %s of %s",aId,c.getName());
+				aContext.logRaw(INKFLocale.LEVEL_WARNING, msg);
+			}
+		}
+	}
+	
+	boolean updateSensorState(String aId, Object aValue, long aNow, String aException)
 	{	SensorState existing=mSensorStates.get(aId);
-		long now=System.currentTimeMillis();
+		boolean valueChanged;
 		if (aException==null)
-		{	Object oldValue=null;
-			if (existing!=null)
-			{	oldValue=existing.getValue();
+		{	
+			if (aNow>existing.getLastModified() || existing.getError()!=null)
+			{
+				Object oldValue=null;
+				if (existing!=null)
+				{	oldValue=existing.getValue();
+				}
+				
+				valueChanged=(aValue==null && oldValue!=null)
+						|| (oldValue==null && aValue!=null)
+						|| (oldValue!=null && aValue!=null && !oldValue.equals(aValue));
+				
+				long lastModified=valueChanged?aNow:existing.getLastModified();
+				SensorState ss=new SensorState(aValue, aNow, lastModified, null);
+				mSensorStates.put(aId, ss);
+				if (valueChanged && existing!=null)
+				{	mChanges.put(aId,aId);
+				}
+				
+				if (existing!=null && existing.hasError())
+				{	//error is now cleared on sensor
+					mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
+				}
 			}
-			
-			boolean valueChanged=(aValue==null && oldValue!=null)
-					|| (oldValue==null && aValue!=null)
-					|| (oldValue!=null && aValue!=null && !oldValue.equals(aValue));
-			
-			long lastModified=valueChanged?now:existing.getLastModified();
-			SensorState ss=new SensorState(aValue, now, lastModified, null);
-			mSensorStates.put(aId, ss);
-			if (valueChanged && existing!=null)
-			{	mChanges.put(aId,aId);
-			}
-			
-			if (existing!=null && existing.hasError())
-			{	//error is now cleared on sensor
-				mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
+			else
+			{	valueChanged=false;
 			}
 		}
 		else
@@ -365,12 +500,12 @@ public class SensorListAccessor extends StandardAccessorImpl
 			if (existing!=null)
 			{	oldValue=existing.getError();
 			}
-			boolean valueChanged=(aException==null && oldValue!=null)
+			valueChanged=(aException==null && oldValue!=null)
 					|| (oldValue==null && aException!=null)
 					|| (oldValue!=null && aException!=null && !oldValue.equals(aException));
 			
-			long lastModified=valueChanged?now:existing.getLastModified();
-			SensorState ss=new SensorState(aValue, now, lastModified, aException);
+			long lastModified=valueChanged?aNow:existing.getLastModified();
+			SensorState ss=new SensorState(aValue, aNow, lastModified, aException);
 			mSensorStates.put(aId, ss);
 			if (valueChanged && existing!=null)
 			{	mChanges.put(aId,aId);
@@ -381,6 +516,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			{	mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 			}
 		}
+		return valueChanged;
 	}
 	
 	

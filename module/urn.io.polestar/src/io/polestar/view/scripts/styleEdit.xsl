@@ -16,6 +16,7 @@
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:output method="xml"/>
+    <xsl:param name="sensors"/>
 
     <xsl:template match="/*">
     	<div id="fill" class="container top" style="height: 100%">
@@ -24,7 +25,7 @@
 				function resize()
 				{	height=$("#fill").height();
   					//console.log(height);
-  					$('textarea').css('height',height-250);
+  					$('textarea').css('height',height-310);
 				}
     		
     			$(window).resize(function()
@@ -87,13 +88,71 @@
 					</div>
 				</div>
 				<div class="form-group">
+					<label class="col-sm-1 control-label" for="period">Periodicity</label>
+					<div class="col-sm-5">
+						<select name="period" class="form-control">
+							<option value="">
+								<xsl:if test="period=''"><xsl:attribute name="selected"/></xsl:if>
+								None</option>
+							<option value="1000">
+								<xsl:if test="period='1000'"><xsl:attribute name="selected"/></xsl:if>
+								1 second</option>
+							<option value="5000">
+								<xsl:if test="period='5000'"><xsl:attribute name="selected"/></xsl:if>
+								5 seconds</option>
+							<option value="30000">
+								<xsl:if test="period='30000'"><xsl:attribute name="selected"/></xsl:if>
+								30 seconds</option>
+							<option value="60000">
+								<xsl:if test="period='60000'"><xsl:attribute name="selected"/></xsl:if>
+								1 minute</option>
+							<option value="300000">
+								<xsl:if test="period='300000'"><xsl:attribute name="selected"/></xsl:if>
+								5 minutes</option>
+							<option value="1800000">
+								<xsl:if test="period='1800000'"><xsl:attribute name="selected"/></xsl:if>
+								30 minutes</option>
+							<option value="3600000">
+								<xsl:if test="period='3600000'"><xsl:attribute name="selected"/></xsl:if>
+								1 hour</option>
+							<option value="21600000">
+								<xsl:if test="period='21600000'"><xsl:attribute name="selected"/></xsl:if>
+								6 hours</option>
+							<option value="86400000">
+								<xsl:if test="period='86400000'"><xsl:attribute name="selected"/></xsl:if>
+								1 day</option>
+							<option value="604800000">
+								<xsl:if test="period='604800000'"><xsl:attribute name="selected"/></xsl:if>
+								7 days</option>	
+						</select>
+					</div>
+					<label class="col-sm-1 control-label" for="target">Target</label>
+					<div class="col-sm-5">
+						<select name="target" class="form-control">
+							<xsl:variable name="sel" select="target"/>
+							<option>
+								<xsl:if test="target=''"><xsl:attribute name="selected"/></xsl:if>
+								None</option>
+							
+							<xsl:for-each select="$sensors/sensors/sensor">
+								<option value="{id}">
+									<xsl:if test="$sel=id"><xsl:attribute name="selected"/></xsl:if>
+									<xsl:value-of select="name"/>
+								</option>
+							</xsl:for-each>
+						</select>
+						
+					</div>
+				</div>
+				
+				<div class="form-group">
 					<label class="col-sm-1 control-label" for="keywords">Keyword</label>
 					<div class="col-sm-11">
 						<input type="text" class="form-control" name="keywords" value="{keywords}" placeholder="comma separated list of keywords"/>
 					</div>
 				</div>
 				<div class="form-group">
-					<label class="col-sm-1 control-label" for="name">Access</label>
+					<label class="col-sm-1 control-label" for="public">Access</label>
 					<div class="col-sm-5">
 						<select name="public" class="form-control">
 							<option>

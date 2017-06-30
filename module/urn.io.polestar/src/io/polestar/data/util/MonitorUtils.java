@@ -18,8 +18,10 @@ import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.Cookie;
@@ -27,11 +29,13 @@ import javax.servlet.http.Cookie;
 import org.netkernel.layer0.nkf.*;
 import org.netkernel.layer0.representation.IHDSNode;
 import org.netkernel.mod.hds.IHDSDocument;
+import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import io.polestar.view.login.RememberMeCookie;
 
 public class MonitorUtils
 {
+	
 	public static String hexString(long aLong)
 	{	return String.format("%016X",aLong);
 	}
@@ -203,7 +207,7 @@ public class MonitorUtils
 
 		for (Object o : aSensors)
 		{	String changedSensor=(String)o;
-			for (Object o2 : triggers.getValues(String.format("key('byId','%s')/scripts/script",changedSensor)))
+			for (Object o2 : triggers.getValues(String.format("key('scriptsForTrigger','%s')/scripts/script",changedSensor)))
 			{	String triggeredScript=(String)o2;
 			triggeredScripts.add(triggeredScript);
 			}
@@ -225,6 +229,63 @@ public class MonitorUtils
 			}
 		}
 	}
+	
+	public static void executePeriodicScripts(String aPeriod, boolean aJoin, INKFRequestContext aContext) throws Exception
+	{
+		Set<String> triggeredScripts = new HashSet<String>();
+		IHDSReader triggers=aContext.source("active:polestarScriptTriggers",IHDSDocument.class).getReader();
+
+		for (Object o2 : triggers.getValues(String.format("key('scriptsForPeriod','%s')/scripts/script",aPeriod)))
+		{	String triggeredScript=(String)o2;
+			triggeredScripts.add(triggeredScript);
+		}
+		
+		Map<INKFAsyncRequestHandle,String> handles=new HashMap<INKFAsyncRequestHandle,String>();
+		for (String script : triggeredScripts)
+		{	
+			//System.out.println("executePeriodicScripts "+aPeriod+" "+script);
+			
+			INKFRequest ereq=aContext.createRequest("res:/md/execute/"+script);
+			handles.put(aContext.issueAsyncRequest(ereq),script);
+		}
+		
+		if (aJoin)
+		{	long start=System.currentTimeMillis();
+			long period=Long.parseLong(aPeriod);
+			Set<INKFAsyncRequestHandle> completeRequests=new HashSet<>();
+			boolean warned=false;
+			while (completeRequests.size()<handles.size())
+			{	long elapsed=System.currentTimeMillis()-start;
+				boolean warnedInner=false;
+				for (INKFAsyncRequestHandle handle : handles.keySet())
+				{	if (!completeRequests.contains(handle))
+					{	try
+						{	INKFResponseReadOnly resp=handle.joinForResponse(period/4);
+							if (resp==null)
+							{	if (elapsed>period/2 && !warned)
+								{	//script is too slow to complete
+									String script=handles.get(handle);
+									IHDSReader list=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
+									String name=(String)list.getFirstValue(String.format("key('byId','%s')/name",script));
+									String msg=String.format("Slow execution of '%s' script for %s period",name,aPeriod);
+									aContext.logRaw(INKFLocale.LEVEL_WARNING, msg);
+									warnedInner=true;
+								}
+							}
+							else
+							{	completeRequests.add(handle);
+							}
+						}
+						catch (NKFException e)
+						{	completeRequests.add(handle);
+						}
+					}
+				}
+				warned|=warnedInner;
+			}
+		}
+	}
+	
 	
 	private static Boolean sInhibitPolling=null;
 	public static boolean inhibitPolling()

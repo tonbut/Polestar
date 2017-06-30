@@ -66,36 +66,64 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			else if (action.equals("ticker"))
 			{	onTicker(aContext);
 			}
+			else if (action.equals("info"))
+			{	onInfo(aContext);
+			}
 		}
+	}
+	
+	public void onInfo(INKFRequestContext aContext) throws Exception
+	{
+		//System.out.println("onInfo");
+		String toDelete=aContext.source("httpRequest:/param/delete",String.class);
+		if (toDelete!=null)
+		{
+			//System.out.println("delete "+toDelete);
+			INKFRequest req=aContext.createRequest("active:polestarSensorInfoDelete");
+			req.addArgumentByValue("state", toDelete);
+			aContext.issueRequest(req);
+		}
+		
+		
+		IHDSDocument state=aContext.source("active:polestarSensorInfo",IHDSDocument.class);
+		//System.out.println(state);
+		
+		INKFRequest req = aContext.createRequest("active:xslt");
+		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensorInfo.xsl");
+		req.addArgumentByValue("operand", state);
+		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);
+		
+		INKFResponse resp=aContext.createResponseFrom(subresp);
+		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);
 	}
 	
 	public void onTicker(INKFRequestContext aContext) throws Exception
 	{
-		//System.out.println("ticker");
+		
 		
 		IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
 		
 		Long period=null;
-		Integer merge=null;
+		Long samplePeriod=null;
 		try
 		{	IHDSReader mconf=aContext.source("res:/md/execute/named/Configuration",IHDSDocument.class).getReader();
 			Object periodValue=mconf.getFirstValueOrNull("sensor-ticker/period");
 			if (periodValue!=null) period=Long.parseLong(periodValue.toString());
-			Object mergeValue=mconf.getFirstValueOrNull("sensor-ticker/merge");
-			if (mergeValue!=null) merge=Integer.parseInt(mergeValue.toString());
+			Object samplePeriodValue=mconf.getFirstValueOrNull("sensor-ticker/samplePeriod");
+			if (samplePeriodValue!=null) samplePeriod=Long.parseLong(samplePeriodValue.toString());
 		}
 		catch (Exception e)
 		{	//e.printStackTrace();
 		}
 		if (period==null) period=1000L*60*60*24;
-		if (merge==null) merge=6;
+		if (samplePeriod==null) samplePeriod=1000L*60*30;
 		
 		//build query config
 		IHDSMutator m=HDSFactory.newDocument();
 		m.pushNode("query");
 		m.addNode("start",-period);
-		m.addNode("merge",merge);
+		m.addNode("samplePeriod",samplePeriod);
 		m.addNode("json","");
 		m.pushNode("sensors");
 		
@@ -127,7 +155,8 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		m.popNode();
 		
 		
-		INKFRequest req=aContext.createRequest("active:polestarHistoricalQuery");
+		//INKFRequest req=aContext.createRequest("active:polestarHistoricalQuery");
+		INKFRequest req=aContext.createRequest("active:polestarSensorQuery");
 		req.addArgumentByValue("operator",m.toDocument(false));
 		req.setRepresentationClass(String.class);
 		String data=(String)aContext.issueRequest(req);

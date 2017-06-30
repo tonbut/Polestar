@@ -520,6 +520,16 @@ resp.setHeader("polestar_wrap",true);
 	</code></pre>
 	
 	<h3 id="ondemand">On Demand Sensors</h3>
+	<p>On demand sensors are sensors which are updated by scripts when they are queried. Maybe the term sensor is being stretched a bit far.
+	These sensors represent a single value over time and it's value is usually defined from data available in other sensors. For example we
+	could define an on-demand sensor for maximum temperature in day. This sensor will update at midnight each day with a value of the maximum temperature
+	over that day. So typical these sensors provide aggregated higher level data. 
+	</p>
+	<p>To define an on demand sensor define a sensor in the Sensors script as usual (see above.) Then create a script which will update the sensor.
+	This script should have a periodicity of how often the sensor should update and target of the on-demand sensor. The script will receive a timestamp
+	argument of a Long millisecond timestamp when it is called. It should return a single sensor value as it's response.
+	</p>
+	
 	
 	<h3>Backup/Restore</h3>
 	<p>You can backup and restore all the scripts through the 

@@ -96,18 +96,26 @@ public abstract class MergeAction
 	/** take first value or null **/
 	private static class SampleAction extends MergeAction
 	{	private Object mValue;
+		private Object mLast;
 		private boolean mDataPoint;
 		
 		public void update(Object aValue, long aTime)
 		{	if (!mDataPoint && aValue!=null)
 			{	mValue=aValue;
 			}
+			mLast=aValue;
 			mDataPoint=true;
 		}
 		public Object getValue(long aTime)
-		{	boolean dp=mDataPoint;
+		{	Object result;
+			if (mDataPoint)
+			{	result=mValue;
+			}
+		else
+		{	result=mLast;
+		}
 			mDataPoint=false;
-			return mValue;
+			return result;
 		}
 	}
 	
@@ -332,6 +340,7 @@ public abstract class MergeAction
 		private boolean mHadTrue;
 		private boolean mLast;
 		private boolean mLastReal;
+		
 		public void update(Object aValue, long aTime)
 		{	boolean v=(Boolean)aValue;
 			if (v)
@@ -340,16 +349,17 @@ public abstract class MergeAction
 			else
 			{	mHadFalse=true;
 			}
+			mLastReal=v;
 		}
 		public Object getValue(long aTime)
 		{ 	boolean result;
 			if (mHadFalse && !mHadTrue)
 			{	result=false;
-				mLastReal=false;
+				//mLastReal=false;
 			}
 			else if (mHadTrue && !mHadFalse)
 			{	result=true;
-				mLastReal=true;
+				//mLastReal=true;
 			}
 			else if (mHadTrue && mHadFalse)
 			{	result=!mLast;

@@ -16,6 +16,7 @@ package io.polestar.data.poll;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.netkernel.layer0.nkf.*;
 import org.netkernel.mod.hds.IHDSDocument;
@@ -26,7 +27,7 @@ import io.polestar.data.util.MonitorUtils;
 public class PeriodPollAccessor extends StandardAccessorImpl
 {
 	private Map<String,AtomicBoolean> mBusyMap = new HashMap<String, AtomicBoolean>();
-	private Map<String,AtomicBoolean> mFirstErrorMap = new HashMap<String, AtomicBoolean>();
+	private Map<String,AtomicInteger> mFirstErrorMap = new HashMap<String, AtomicInteger>();
 	
 	public PeriodPollAccessor()
 	{	declareThreadSafe();
@@ -38,45 +39,38 @@ public class PeriodPollAccessor extends StandardAccessorImpl
 		{
 			String period=aContext.getThisRequest().getArgumentValue("period");
 			AtomicBoolean busyFlag=mBusyMap.get(period);
-			AtomicBoolean firstErrorFlag=mFirstErrorMap.get(period);
+			AtomicInteger firstErrorFlag=mFirstErrorMap.get(period);
+			int errorCountBeforeMsg=(Long.parseLong(period)<=5000)?3:1;
 			if (busyFlag==null)
 			{	busyFlag=new AtomicBoolean(false);
 				mBusyMap.put(period, busyFlag);
-				firstErrorFlag=new AtomicBoolean(true);
+				firstErrorFlag=new AtomicInteger(0);
 				mFirstErrorMap.put(period, firstErrorFlag);
 			}
 			if (busyFlag.compareAndSet(false, true))
 			{	try
-				{	MonitorUtils.executePeriodicScripts(period, true, aContext);
+				{
+					//propagate any changes
+					IHDSReader changes=aContext.source("active:polestarSensorChanges",IHDSDocument.class).getReader();
+					List<String> changedSensors=new ArrayList(changes.getValues("/sensors/sensor"));
+					MonitorUtils.executeTriggeredScripts(changedSensors, false, aContext);
+					
+					MonitorUtils.executePeriodicScripts(period, true, aContext);
 				}
 				finally
 				{	busyFlag.set(false);
-					if (firstErrorFlag.compareAndSet(false, true))
+					if (firstErrorFlag.getAndSet(0)>=errorCountBeforeMsg)
 					{	aContext.logRaw(INKFLocale.LEVEL_INFO, "Period scripts for "+period+" restarted");
 					}
 				}
 			}
 			else
-			{	if (firstErrorFlag.compareAndSet(true, false))
+			{	int count=firstErrorFlag.incrementAndGet();
+				if (count==errorCountBeforeMsg)
 				{	aContext.logRaw(INKFLocale.LEVEL_WARNING, "Periodic scripts for "+period+" stopped due to blockage");
 				}
 			}
 		}
-			
-		
-		
-		//long t=System.currentTimeMillis();
-		//System.out.println(t);
-		//System.out.println(t+" "+period);
-		
-		//IHDSReader triggers=aContext.source("active:polestarScriptTriggers",IHDSDocument.class).getReader();
-		
-		
-		
-		//System.out.println("TestPoll");
-		//System.out.println("S TestPoll "+aContext.getThisRequest().getArgumentValue("v")+" "+new Date());
-		//Thread.sleep(2000);
-		//System.out.println("E TestPoll");
 	}
 }
 

@@ -92,6 +92,12 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 		PairList resultTuple = new PairList(sensors.size());
 		for (IHDSReader sensor : sensors)
 		{	String id=(String)sensor.getFirstValue("id");
+			String fragment=null;
+			int i=id.indexOf('#');
+			if (i>=0)
+			{	fragment=id.substring(i+1);
+				id=id.substring(0, i);
+			}
 			try
 			{
 				IHDSReader configNode=config.getFirstNodeOrNull("key('byId','"+id+"')");
@@ -124,7 +130,7 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 					mergeAction=MergeAction.getMergeAction(name,format,mergeActionType);
 				}
 				
-				PairList data=getSensorData(id,start,end,samplePeriod,mergeAction);
+				PairList data=getSensorData(id,fragment,start,end,samplePeriod,mergeAction);
 				resultTuple.put(mergeAction, data);
 			}
 			catch (Exception e)
@@ -288,7 +294,7 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 	}
 	
 	
-	private PairList getSensorData(String sensorId, long start, long end, long samplePeriod, MergeAction merge) throws Exception
+	private PairList getSensorData(String sensorId, String fragment, long start, long end, long samplePeriod, MergeAction merge) throws Exception
 	{
 		//IHDSMutator m=HDSFactory.newDocument();
 		int size=(int)((end-start)/samplePeriod);
@@ -344,7 +350,12 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 				if (time<sampleEndTime)
 				{
 					Object v=capture.get("v");
-					//System.out.println("   "+v);
+					if (fragment!=null && v instanceof Map)
+					{
+						Map m=(Map)v;
+						v=m.get(fragment);
+					}
+
 					//process merge action on sensors
 					merge.update(v,time);
 					capture=null;

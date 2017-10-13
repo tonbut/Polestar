@@ -251,7 +251,7 @@ public class MonitorUtils
 		
 		if (aJoin)
 		{	long start=System.currentTimeMillis();
-			long period=Long.parseLong(aPeriod);
+			long period=Long.parseLong(aPeriod)*3/2;
 			Set<INKFAsyncRequestHandle> completeRequests=new HashSet<>();
 			boolean warned=false;
 			while (completeRequests.size()<handles.size())
@@ -262,7 +262,7 @@ public class MonitorUtils
 					{	try
 						{	INKFResponseReadOnly resp=handle.joinForResponse(period/4);
 							if (resp==null)
-							{	if (elapsed>period/2 && !warned)
+							{	if (elapsed>period && !warned)
 								{	//script is too slow to complete
 									String script=handles.get(handle);
 									IHDSReader list=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();

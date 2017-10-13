@@ -138,6 +138,11 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		for (IHDSReader sensorNode : aOp.getNodes("sensors/sensor"))
 		{
 			String sensorId=(String)sensorNode.getFirstValue("id");
+			String dname=(String)sensorNode.getFirstValueOrNull("dname");
+			if (dname!=null && dname.indexOf('#')>=0)
+			{	String fragment=dname.substring(dname.indexOf('#')+1);
+				sensorId=sensorId+"#"+fragment;
+			}
 			String mergeAction=(String)sensorNode.getFirstValue("mergeAction");
 			m.pushNode("sensor").addNode("id",sensorId).addNode("mergeAction",mergeAction).popNode();
 		}
@@ -257,9 +262,13 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				String id=(String)sensorNode.getFirstValue("id");
 				
 				String sensorName=(String)sensorNode.getFirstValueOrNull("dname");
-				if (sensorName==null || sensorName.length()==0)
+				if (sensorName==null || sensorName.length()==0 || sensorName.indexOf('#')==0 )
 				{	IHDSReader sensorConfigNode=sensorConfig.getFirstNode("key('byId','"+id+"')");
 					sensorName=(String)sensorConfigNode.getFirstValue("name");
+				}
+				else if (sensorName.indexOf('#')>0)
+				{	int i=sensorName.indexOf('#');
+					sensorName=sensorName.substring(0,i);
 				}
 				
 				String fill=(String)sensorNode.getFirstValueOrNull("fill");

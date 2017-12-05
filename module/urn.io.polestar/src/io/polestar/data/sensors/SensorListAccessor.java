@@ -256,28 +256,38 @@ public class SensorListAccessor extends StandardAccessorImpl
 	}
 
 	public void onConfig(INKFRequestContext aContext) throws Exception
-	{	IHDSMutator config=aContext.source("res:/md/execute/named/SensorList",IHDSDocument.class).getMutableClone();
-		IHDSReader scripts=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
-		//System.out.println(scripts);
-		scripts.declareKey("byTarget", "/scripts/script", "target");
-		for (IHDSMutator sensorNode : config.getNodes("/sensors/sensor"))
-		{	String icon=(String)sensorNode.getFirstValueOrNull("icon");
-			if (icon==null)
-			{	icon="/polestar/pub/icon/circle-dashed.png";
-				sensorNode.createIfNotExists("icon").setValue(icon).resetCursor();
+	{	IHDSMutator config;
+		try
+		{	config=aContext.source("res:/md/execute/named/SensorList",IHDSDocument.class).getMutableClone();
+			IHDSReader scripts=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
+			scripts.declareKey("byTarget", "/scripts/script", "target");
+			for (IHDSMutator sensorNode : config.getNodes("/sensors/sensor"))
+			{	String icon=(String)sensorNode.getFirstValueOrNull("icon");
+				if (icon==null)
+				{	icon="/polestar/pub/icon/circle-dashed.png";
+					sensorNode.createIfNotExists("icon").setValue(icon).resetCursor();
+				}
+				String sensorId=(String)sensorNode.getFirstValue("id");
+				String xpath="key('byTarget','"+sensorId+"')";
+				IHDSReader targetScript=scripts.getFirstNodeOrNull(xpath);
+				if (targetScript!=null)
+				{	String scriptId=(String)targetScript.getFirstValue("id");
+					sensorNode.addNode("script", scriptId);
+				}
 			}
-			String sensorId=(String)sensorNode.getFirstValue("id");
-			String xpath="key('byTarget','"+sensorId+"')";
-			IHDSReader targetScript=scripts.getFirstNodeOrNull(xpath);
-			if (targetScript!=null)
-			{	//System.out.println(targetScript.getFirstValue("name")+" "+sensorId);
-				String scriptId=(String)targetScript.getFirstValue("id");
-				sensorNode.addNode("script", scriptId);
-			}
-			//System.out.println(targetScript+" "+sensorId+" "+xpath);
+			config.declareKey("byId", "/sensors/sensor", "id");
 		}
-		config.declareKey("byId", "/sensors/sensor", "id");
-		//System.out.println(config);
+		catch (NKFException e)
+		{	
+			if (e.getDeepestId().equals("Script not found"))
+			{	aContext.logRaw(INKFLocale.LEVEL_WARNING, "\"SensorList\" script not defined yet");
+			}
+			else
+			{	aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
+			}
+			config=HDSFactory.newDocument();
+			config.pushNode("sensors");
+		}
 		INKFResponse resp=aContext.createResponseFrom(config.toDocument(false));
 	}
 

@@ -19,7 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.netkernel.layer0.nkf.*;
+import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
+import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 import io.polestar.data.util.MonitorUtils;
@@ -28,9 +30,25 @@ public class PeriodPollAccessor extends StandardAccessorImpl
 {
 	private Map<String,AtomicBoolean> mBusyMap = new HashMap<String, AtomicBoolean>();
 	private Map<String,AtomicInteger> mFirstErrorMap = new HashMap<String, AtomicInteger>();
+	private static PeriodPollAccessor sInstance;
+	
 	
 	public PeriodPollAccessor()
 	{	declareThreadSafe();
+		sInstance=this;
+	}
+	
+	public static IHDSDocument getPollingState()
+	{	IHDSMutator m=HDSFactory.newDocument();
+		m.pushNode("polls");
+		for (Map.Entry<String, AtomicBoolean> e : sInstance.mBusyMap.entrySet())
+		{	m.pushNode("poll");
+			m.addNode("period",e.getKey());
+			m.addNode("error", e.getValue().get());
+			m.addNode("count", sInstance.mFirstErrorMap.get(e.getKey()).get());
+			m.popNode();
+		}
+		return m.toDocument(false);
 	}
 	
 	public void onSource(INKFRequestContext aContext) throws Exception
@@ -38,6 +56,7 @@ public class PeriodPollAccessor extends StandardAccessorImpl
 		if (!MonitorUtils.inhibitPolling())
 		{
 			String period=aContext.getThisRequest().getArgumentValue("period");
+			
 			AtomicBoolean busyFlag=mBusyMap.get(period);
 			AtomicInteger firstErrorFlag=mFirstErrorMap.get(period);
 			int errorCountBeforeMsg=(Long.parseLong(period)<=5000)?3:1;

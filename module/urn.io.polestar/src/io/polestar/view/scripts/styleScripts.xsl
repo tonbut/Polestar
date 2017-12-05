@@ -19,7 +19,7 @@
 
 	<xsl:param name="tags"/>
 	<xsl:param name="filter" nk:class="java.lang.String"></xsl:param>
-	
+	<xsl:param name="polling"/>
 
     <xsl:template match="/*">
     	<xsl:choose>
@@ -118,6 +118,16 @@
 				}
 				
 			</xsl:comment></script>
+			
+			<xsl:if test="$polling/polls/poll[error='true']">
+				<div class="alert alert-danger" ><b>Some scripts stopped due to blockage</b> -
+					<xsl:for-each select="$polling/polls/poll[error='true']">
+						<xsl:text> </xsl:text>
+						<xsl:value-of select="period"/>
+					</xsl:for-each>
+					<br/>See log for more details.
+				</div>
+			</xsl:if>
     	
 			<div class="list-group-item list-header">
 				<xsl:variable name="count" select="count(/scripts/script)"/>
@@ -146,7 +156,7 @@
 					</form>
 				</td></tr>
 				</table>
-				<div id="script-keywords"> <!--class="hidden-xs" -->
+				<div id="script-keywords"> 
                 	<xsl:for-each select="$tags/tags/keywords/keyword">
                 		<a href="scripts?filter={.}"><span class="label label-info"><xsl:value-of select="."/></span></a>
                 		<xsl:text> </xsl:text>
@@ -156,6 +166,8 @@
                 		<xsl:text> </xsl:text>
                 	</xsl:for-each>
                 </div>
+                
+                
 			</div>
 			<div id="script-list-container">
 				<xsl:call-template name="filtered-results"/>

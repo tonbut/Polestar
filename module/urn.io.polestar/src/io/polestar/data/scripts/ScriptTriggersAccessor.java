@@ -60,7 +60,7 @@ public class ScriptTriggersAccessor extends StandardAccessorImpl
 			boolean hasPeriod=false;
 			String period=(String)scriptNode.getFirstValueOrNull("period");
 			String target=(String)scriptNode.getFirstValueOrNull("target");
-			if ((period!=null && period.length()>0) && (target==null || target.length()==0))
+			if ((period!=null && period.length()>0) && (target==null || target.length()==0 || target.equals("None")))
 			{	periodMap.put(period, scriptId);
 				hasPeriod=true;
 			}
@@ -78,9 +78,6 @@ public class ScriptTriggersAccessor extends StandardAccessorImpl
 			}
 			
 		}
-		
-		
-		
 		
 		IHDSMutator m=HDSFactory.newDocument();
 		m.pushNode("triggers");
@@ -111,10 +108,8 @@ public class ScriptTriggersAccessor extends StandardAccessorImpl
 			m.popNode();
 		}
 		
-		
 		m.declareKey("scriptsForTrigger", "/triggers/trigger", "id");
 		m.declareKey("scriptsForPeriod", "/periods/period", "id");
-		//System.out.println(m);
 		aContext.createResponseFrom(m.toDocument(false));
 	}
 }

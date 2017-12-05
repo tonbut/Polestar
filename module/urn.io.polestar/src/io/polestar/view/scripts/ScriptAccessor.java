@@ -149,7 +149,6 @@ public class ScriptAccessor extends StandardAccessorImpl
 			name=safeName(name);
 			String dataIdentifier="res:/md/script/"+id;
 			IBinaryStreamRepresentation scriptData=aContext.source(dataIdentifier,IBinaryStreamRepresentation.class);
-			//System.out.println(scriptData);
 			zos.putNextEntry(new ZipEntry("script/"+name+"+"+id+".xml"));
 			scriptData.write(zos);
 			zos.closeEntry();
@@ -175,15 +174,18 @@ public class ScriptAccessor extends StandardAccessorImpl
 	{
 		MonitorUtils.isLoggedIn(aContext);
 		
-		//IHDSReader list=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
 		IHDSMutator list=aContext.source("active:polestarListScripts",IHDSDocument.class).getMutableClone();
 		
-		IHDSReader mconf=aContext.source("res:/md/execute/named/Configuration",IHDSDocument.class).getReader();
-		Object showScriptTriggers=mconf.getFirstValueOrNull("show-script-triggers");
-		boolean showScriptTriggersBool = showScriptTriggers==null || showScriptTriggers.equals(Boolean.TRUE);
-		System.out.println(showScriptTriggers+" "+showScriptTriggersBool);
+		boolean showScriptTriggersBool=true;
+		try
+		{	IHDSReader mconf=aContext.source("res:/md/execute/named/Configuration",IHDSDocument.class).getReader();
+			Object showScriptTriggers=mconf.getFirstValueOrNull("show-script-triggers");
+			showScriptTriggersBool = showScriptTriggers==null || showScriptTriggers.equals(Boolean.TRUE);
+		}
+		catch (Exception e)
+		{ 
+		}
 		
-		//System.out.println(list);
 		//build list of keywords and triggers
 		Set<String> keywordSet=new HashSet<>();
 		Set<String> triggerSet=new HashSet<>();
@@ -236,6 +238,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleScripts.xsl");
 		req.addArgumentByValue("operand", list.toDocument(false));
 		req.addArgumentByValue("tags", keywords.toDocument(false));
+		req.addArgument("polling", "active:polestarPollingState");
 		String filter=aContext.source("httpRequest:/param/filter",String.class);
 		if (filter!=null)
 		{	req.addArgumentByValue("filter", filter);
@@ -333,16 +336,13 @@ public class ScriptAccessor extends StandardAccessorImpl
 
 	public void onEdit(String aId,INKFRequestContext aContext) throws Exception
 	{
-		
 		IHDSReader params=aContext.source("httpRequest:/params",IHDSDocument.class).getReader();
-		//System.out.println(params);
 		if (params.getFirstNodeOrNull("cancel")!=null)
 		{	aContext.sink("httpResponse:/redirect","/polestar/scripts");
 			return;
 		}
 		else if (params.getFirstNodeOrNull("save")!=null || params.getFirstNodeOrNull("execute")!=null)
 		{	MonitorUtils.assertAdmin(aContext);
-			//System.out.println(params);
 			IHDSMutator m=HDSFactory.newDocument();
 			m.pushNode("script");
 			m.addNode("name",params.getFirstValue("name"));

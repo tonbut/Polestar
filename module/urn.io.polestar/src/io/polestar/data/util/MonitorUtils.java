@@ -242,10 +242,7 @@ public class MonitorUtils
 		
 		Map<INKFAsyncRequestHandle,String> handles=new HashMap<INKFAsyncRequestHandle,String>();
 		for (String script : triggeredScripts)
-		{	
-			//System.out.println("executePeriodicScripts "+aPeriod+" "+script);
-			
-			INKFRequest ereq=aContext.createRequest("res:/md/execute/"+script);
+		{	INKFRequest ereq=aContext.createRequest("res:/md/execute/"+script);
 			handles.put(aContext.issueAsyncRequest(ereq),script);
 		}
 		
@@ -294,20 +291,4 @@ public class MonitorUtils
 		}
 		return sInhibitPolling;
 	}
-	
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args)
-	{
-		long l=-4236037447797807431L;
-		System.out.println(l);
-		String hex=hexString(l);
-		System.out.println(hex);
-		long l2 = fromHexString(hex);
-		System.out.println(l2);
-
-	}
-
 }

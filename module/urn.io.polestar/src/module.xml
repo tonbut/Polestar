@@ -125,6 +125,14 @@
             </grammar>
             <class>io.polestar.data.scripts.ListScriptsAccessor</class>
         </endpoint>
+        
+        <endpoint>
+			<id>polestar:data:pollingState</id>
+			<grammar><active>
+				<identifier>active:polestarPollingState</identifier>
+			</active></grammar>
+			<class>io.polestar.data.poll.PollingStateAccessor</class>
+		</endpoint>
 		
 		<!-- sensor stuff -->
 		<endpoint>

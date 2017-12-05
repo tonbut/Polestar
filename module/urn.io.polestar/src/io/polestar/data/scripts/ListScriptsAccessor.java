@@ -66,6 +66,15 @@ public class ListScriptsAccessor extends StandardAccessorImpl
 					{	m.addNode("trigger",trigger);
 					}
 				}
+				
+				String period=(String)dbo.get("period");
+				if (period!=null && period.length()>0 && !period.equals("None"))
+				{
+					long p=Long.parseLong(period);
+					String ts=MonitorUtils.formatPeriod(p);
+					m.addNode("trigger",ts);
+				}
+				
 				m.popNode();
 
 				String keywords=(String)dbo.get("keywords");

@@ -44,8 +44,10 @@ public class PeriodPollAccessor extends StandardAccessorImpl
 		for (Map.Entry<String, AtomicBoolean> e : sInstance.mBusyMap.entrySet())
 		{	m.pushNode("poll");
 			m.addNode("period",e.getKey());
-			m.addNode("error", e.getValue().get());
-			m.addNode("count", sInstance.mFirstErrorMap.get(e.getKey()).get());
+			boolean busy=e.getValue().get();
+			int count=sInstance.mFirstErrorMap.get(e.getKey()).get();
+			m.addNode("error", busy && count>0 );
+			m.addNode("count", count);
 			m.popNode();
 		}
 		return m.toDocument(false);

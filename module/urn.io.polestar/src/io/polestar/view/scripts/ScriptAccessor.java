@@ -78,7 +78,10 @@ public class ScriptAccessor extends StandardAccessorImpl
 				onReorder(aContext,scriptId,newPosition);
 			}
 			else if (action.equals("execute"))
-			{	onExecute(id,aContext);
+			{	onExecute(id,aContext,false);
+			}
+			else if (action.equals("webhook"))
+			{	onExecute(id,aContext,true);
 			}
 			else if (action.equals("delete"))
 			{	onDelete(id,aContext);
@@ -186,6 +189,8 @@ public class ScriptAccessor extends StandardAccessorImpl
 		{ 
 		}
 		
+		boolean isAdmin=MonitorUtils.isAdmin(aContext);
+		
 		//build list of keywords and triggers
 		Set<String> keywordSet=new HashSet<>();
 		Set<String> triggerSet=new HashSet<>();
@@ -214,11 +219,19 @@ public class ScriptAccessor extends StandardAccessorImpl
 				}
 			}
 			
-				
-			if (!found)
-			{	sensor.delete();
+			boolean delete=false;
+			Object ip=sensor.getFirstValueOrNull("public");
+			if (!isAdmin && "secret".equals(ip))
+			{	delete=true;
 			}
 			
+			if (!found)
+			{	delete=true;
+			}
+			if (delete)
+			{	sensor.delete();
+			}
+		
 		}
 		List<String> keywordList=new ArrayList<>(keywordSet);
 		Collections.sort(keywordList);
@@ -254,32 +267,42 @@ public class ScriptAccessor extends StandardAccessorImpl
 		String flow=f.toLowerCase();
 		String tts=aContext.source("httpRequest:/param/tts",String.class).toLowerCase();
 
+		boolean isAdmin=MonitorUtils.isAdmin(aContext);
+		
 		IHDSMutator list=aContext.source("active:polestarListScripts",IHDSDocument.class).getMutableClone();
-		if (f.length()>0)
-		{	for (IHDSMutator scriptNode : list.getNodes("/scripts/script"))
-			{	boolean found=false;
-				String name=(String)scriptNode.getFirstValue("name");
-				if (name.toLowerCase().contains(flow)) found=true;
-				String keywords=(String)scriptNode.getFirstValue("keywords");
-				if (keywords!=null && keywords.toLowerCase().contains(flow)) found=true;
-				String triggers=(String)scriptNode.getFirstValue("triggers");
-				if (triggers!=null && triggers.toLowerCase().contains(flow)) found=true;
-				
-				if ("true".equals(tts))
-				{
-					String id=(String)scriptNode.getFirstValue("id");
-					IHDSReader script=aContext.source("res:/md/script/"+id,IHDSDocument.class).getReader();
-					String scriptSrc=(String)script.getFirstValue("/script/script");
-					if (scriptSrc.contains(f)) found=true;
-				}
-				
-				
-				if (!found)
-				{	scriptNode.delete();
-				}
+		//if (f.length()>0)
+		for (IHDSMutator scriptNode : list.getNodes("/scripts/script"))
+		{	boolean found=f.length()==0;
+			String name=(String)scriptNode.getFirstValue("name");
+			if (name.toLowerCase().contains(flow)) found=true;
+			String keywords=(String)scriptNode.getFirstValue("keywords");
+			if (keywords!=null && keywords.toLowerCase().contains(flow)) found=true;
+			String triggers=(String)scriptNode.getFirstValue("triggers");
+			if (triggers!=null && triggers.toLowerCase().contains(flow)) found=true;
+			
+			if ("true".equals(tts))
+			{
+				String id=(String)scriptNode.getFirstValue("id");
+				IHDSReader script=aContext.source("res:/md/script/"+id,IHDSDocument.class).getReader();
+				String scriptSrc=(String)script.getFirstValue("/script/script");
+				if (scriptSrc.contains(f)) found=true;
+			}
+			
+			boolean delete=false;
+			Object ip=scriptNode.getFirstValueOrNull("public");
+			if (!isAdmin && "secret".equals(ip))
+			{	delete=true;
+			}
+			
+			if (!found)
+			{	delete=true;
+			}
+			if (delete)
+			{	scriptNode.delete();
 			}
 		}
 		list.setCursor("/scripts").addNode("@filtered", "true");
+		
 		
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleScripts.xsl");
@@ -301,7 +324,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 		aContext.delete("res:/md/script/"+aId);
 		aContext.sink("httpResponse:/redirect","/polestar/scripts");
 	}
-	public void onExecute(String aId,INKFRequestContext aContext) throws Exception
+	public void onExecute(String aId,INKFRequestContext aContext, boolean aIsWebhook) throws Exception
 	{
 		//check that we are logged in or that script is public
 		IHDSReader scriptData=aContext.source("res:/md/script/"+aId,IHDSDocument.class).getReader();
@@ -313,6 +336,11 @@ public class ScriptAccessor extends StandardAccessorImpl
 			}
 			else if (isPublic.equals("private"))
 			{	MonitorUtils.assertAdmin(aContext);
+			}
+			else if (isPublic.equals("secret"))
+			{	if (!aIsWebhook)
+				{	MonitorUtils.assertAdmin(aContext);
+				}
 			}
 			else if (isPublic.equals("guest"))
 			{	if (!MonitorUtils.isLoggedIn(aContext))

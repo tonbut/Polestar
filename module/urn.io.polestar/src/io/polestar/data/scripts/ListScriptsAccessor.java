@@ -57,6 +57,7 @@ public class ListScriptsAccessor extends StandardAccessorImpl
 				m.addNode("name",dbo.get("name"));
 				m.addNode("target",dbo.get("target"));
 				m.addNode("period",dbo.get("period"));
+				m.addNode("public",dbo.get("public"));
 				
 				String triggers=(String)dbo.get("triggers");
 				m.pushNode("triggers",triggers);

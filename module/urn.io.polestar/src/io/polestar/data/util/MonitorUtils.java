@@ -79,15 +79,22 @@ public class MonitorUtils
 		return result;
 	}
 	
-	public static void assertAdmin(INKFRequestContext aContext) throws NKFException
-	{	try
+	public static boolean isAdmin(INKFRequestContext aContext) throws NKFException
+	{	boolean isAdmin=false;
+		try
 		{	String role=aContext.source("session:/role",String.class);
 			if (role!=null && role.equals("admin"))
-			{	return;
+			{	isAdmin=true;
 			}
 		}
 		catch (Exception e) {;}
-		throw new NKFException("Not Authorized");
+		return isAdmin;
+	}
+	
+	public static void assertAdmin(INKFRequestContext aContext) throws NKFException
+	{	if (!isAdmin(aContext))
+		{	throw new NKFException("Not Authorized");
+		}
 	}
 	
 	

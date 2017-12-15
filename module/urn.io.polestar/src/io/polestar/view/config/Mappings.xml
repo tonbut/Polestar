@@ -102,7 +102,7 @@
 		<request>
 			<identifier>active:java</identifier>
 			<argument name="class">io.polestar.view.scripts.ScriptAccessor</argument>
-			<argument name="action">execute</argument>
+			<argument name="action">webhook</argument>
 			<varargs/>
 		</request>
 	</endpoint>

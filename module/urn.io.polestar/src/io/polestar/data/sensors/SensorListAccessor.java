@@ -233,6 +233,15 @@ public class SensorListAccessor extends StandardAccessorImpl
 					updateSensorState(id, ss.getValue(), now, error);
 				}
 			}
+			Long errorIfNotModifiedFor=(Long)sensorDef.getFirstValueOrNull("errorIfNotModifiedFor");
+			if (errorIfNotModifiedFor!=null)
+			{	SensorState ss=getSensorState(id);
+				long lastModified=ss.getLastModified();
+				if (now-lastModified>=errorIfNotModifiedFor*1000L && ss.getError()==null)
+				{	String error="Not modified for too long";
+					updateSensorState(id, ss.getValue(), now, error);
+				}
+			}
 		}				
 	}
 

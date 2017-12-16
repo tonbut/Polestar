@@ -119,7 +119,9 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 		Polestar. (See below.)</li>
 		<li><b>keywords</b> <span class="label label-info">optional</span> Comma separated list of keywords that are display in sensor list and can be used to filter sensors.</li>
 		<li><b>errorIfNoReadingsFor</b> <span class="label label-info">optional</span> An integer number of seconds after which an error will be reported in a sensor if it's
-		value is not updated by a script.</li>
+		value is not updated (regardless of if it's value changed) by a script.</li>
+		<li><b>errorIfNotModifiedFor</b> <span class="label label-info">optional</span> An integer number of seconds after which an error will be reported in a sensor if it's
+		value has not been modified.</li>
 
 		<li><b>errorIfGreaterThan</b> <span class="label label-info">optional</span> A numeric value that is compared against the sensor value.
 		If sensor value is numeric and it's value greater then this sensor is in error. To add hysteresis to this error you can an additional field
@@ -420,10 +422,24 @@ if (newEvent)
 		<li><b>requireQuiet</b> <span class="label label-default">java.lang.Boolean</span> if true
 		then period timer between events is reset every time an event occurs.</li>
 	</ul></p>
+	
+	<h4>Script Variable get and set</h4>
+	<p>Convenience methods to get and set values stored within the script state are available:
+	<pre><code>count=io.polestar.ScriptUtils.getStateVariable(
+	statePath: "counter",
+	default: 0L,
+	context:context );
+	
+count=count+1L;
+	
+io.polestar.ScriptUtils.setStateVariable(
+	statePath: "counter",
+	value: count,
+	context:context );</code></pre></p>
 
 	
 	<h4>Script persistent state</h4>
-	<p>You can access the scripts persistent state directly:
+	<p>You can access the scripts persistent state directly as a HDS document:
 	<pre><code>import org.netkernel.layer0.nkf.*;
 import org.netkernel.mod.hds.*;
 

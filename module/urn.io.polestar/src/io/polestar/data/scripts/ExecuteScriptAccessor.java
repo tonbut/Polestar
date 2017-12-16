@@ -22,6 +22,8 @@ import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
+import org.netkernel.request.IRequestScopeLevel;
+
 import io.polestar.data.util.MonitorUtils;
 
 import com.mongodb.BasicDBObject;
@@ -46,6 +48,17 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 			java.beans.Introspector.flushCaches();
 		}
 		
+		//inject script state buffer into scope to capture state sink requests
+		IRequestScopeLevel originalScope=aContext.getKernelContext().getRequestScope();
+		ScriptStateBuffer ssb=new ScriptStateBuffer(originalScope);
+		ssb.onCommissionSpace(aContext.getKernelContext().getKernel());
+		aContext.getKernelContext().injectDurableRequestScope(ssb);
+		
+		//inject groovy space into scope to stop resolving out to data space to find groovy and hence stopping
+		//script state buffer being first in line to capture state sink requests
+		INKFRequest groovyRequest=aContext.createRequest("active:groovy+operator@dummy");
+		aContext.getKernelContext().rescope(groovyRequest);
+		
 		String resolvedId=aContext.getThisRequest().getResolvedElementId();
 		if (resolvedId.equals("polestar:data:scriptExecute"))
 		{	onSourceData(aContext);
@@ -53,6 +66,10 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 		else if (resolvedId.equals("polestar:data:scriptExecuteActive"))
 		{	onSourceActive(aContext);
 		}
+		
+		//now really sink state if necessary
+		aContext.getKernelContext().setRequestScope(originalScope);
+		ssb.sinkIfModified(aContext);
 	}
 	
 	public void onSourceActive(INKFRequestContext aContext) throws Exception

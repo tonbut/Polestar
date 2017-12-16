@@ -29,6 +29,9 @@ public class ScriptUtils
 	private static final Map<String, Object> sBooleanChangeDetectDefaults = new LinkedHashMap<String, Object>();
 	private static final Map<String, Object> sAnalogueLevelDetectDefaults = new LinkedHashMap<String, Object>();
 	private static final Map<String, Object> sAtMostEveryDefaults = new LinkedHashMap<String, Object>();
+
+	private static final Map<String, Object> sSetStateDefaults = new LinkedHashMap<String, Object>();
+	private static final Map<String, Object> sGetStateDefaults = new LinkedHashMap<String, Object>();
 	static
 	{
 		sBooleanChangeDetectDefaults.put("context", null);
@@ -49,6 +52,15 @@ public class ScriptUtils
 		sAtMostEveryDefaults.put("period", null);
 		sAtMostEveryDefaults.put("statePath", "value");
 		sAtMostEveryDefaults.put("requireQuiet", false);
+		
+		sSetStateDefaults.put("context", null);
+		sSetStateDefaults.put("statePath", "value");
+		sSetStateDefaults.put("value", null);
+		
+		sGetStateDefaults.put("context", null);
+		sGetStateDefaults.put("statePath", "value");
+		sGetStateDefaults.put("default", null);
+		
 	}
 	
 	
@@ -187,6 +199,33 @@ public class ScriptUtils
 		}
 		return result;
 	}
+	
+	public static void setStateVariable(Map aParams) throws NKFException
+	{	Map params=validateNamedParams(aParams,sSetStateDefaults,"setStateVariable");
+		Object value=params.get("value");
+		Object statePath=params.get("statePath");
+		INKFRequestContext context=(INKFRequestContext)params.get("context");
+		IHDSDocument stateDoc=context.source("arg:state",IHDSDocument.class);
+		IHDSMutator m=stateDoc.getMutableClone();
+		m.resetCursor().createIfNotExists("state/"+statePath).setValue(value);
+		context.sink("arg:state",m.toDocument(false));
+	}
+	
+	public static Object getStateVariable(Map aParams) throws NKFException
+	{	Map params=validateNamedParams(aParams,sGetStateDefaults,"getStateVariable");
+		Object defaultValue=params.get("default");
+		Object statePath=params.get("statePath");
+		INKFRequestContext context=(INKFRequestContext)params.get("context");
+		IHDSDocument stateDoc=context.source("arg:state",IHDSDocument.class);
+		IHDSReader state=stateDoc.getReader();
+		Object value=state.getFirstValueOrNull("/state/"+statePath);
+		if (value==null)
+		{	value=defaultValue;
+		}
+		return value;
+	}
+
+	
 
 	private static Map validateNamedParams(Map<String,Object> aParams, Map<String,Object> aDefaults, String aMethodName)
 	{	Map result=new LinkedHashMap();

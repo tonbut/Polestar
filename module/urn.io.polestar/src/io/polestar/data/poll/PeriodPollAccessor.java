@@ -71,11 +71,16 @@ public class PeriodPollAccessor extends StandardAccessorImpl
 			if (busyFlag.compareAndSet(false, true))
 			{	try
 				{
-					//propagate any changes
-					IHDSReader changes=aContext.source("active:polestarSensorChanges",IHDSDocument.class).getReader();
-					List<String> changedSensors=new ArrayList(changes.getValues("/sensors/sensor"));
-					MonitorUtils.executeTriggeredScripts(changedSensors, false, aContext);
-					
+					if (period.equals("250"))
+					{	//propagate any changes
+						IHDSReader changes=aContext.source("active:polestarSensorChanges",IHDSDocument.class).getReader();
+						List<String> changedSensors=new ArrayList(changes.getValues("/sensors/sensor"));
+						MonitorUtils.executeTriggeredScripts(changedSensors, false, aContext);
+					}
+					else if (period.equals("30000")) //5minutes //30sec
+					{	//check for any non updated sensors
+						aContext.source("active:polestarSensorReadingCheck");
+					}
 					MonitorUtils.executePeriodicScripts(period, true, aContext);
 				}
 				finally

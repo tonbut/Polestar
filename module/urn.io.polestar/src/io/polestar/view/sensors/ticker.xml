@@ -86,7 +86,7 @@ for (i=0; i<ids.length; i++)
                 .bottom(function(d){ return y(d==null?mm.min:d); })
                 .left(function() {return x(this.index+0.5)})
                 .lineWidth(2)
-                .strokeStyle( "#2020C0" );
+                .strokeStyle( "#448" );
             
             vis.add(pv.Label).bottom(-2).right(-rmargin).textAlign('right').text(mm.min);   
             vis.add(pv.Label).bottom(h-10).right(-rmargin).textAlign('right').text(mm.max);   

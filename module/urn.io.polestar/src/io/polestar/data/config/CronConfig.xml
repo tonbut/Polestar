@@ -61,6 +61,17 @@
     <job>
 		<request>
 			<identifier>active:polestarPeriodPoll</identifier>
+			<argument name="period">250</argument>
+		</request>
+		<name>Polestar 4Hz poll</name>
+		<desc>periodic scripts</desc>
+		<simple>
+			<repeatInterval>250</repeatInterval>
+		</simple>
+	</job>
+    <job>
+		<request>
+			<identifier>active:polestarPeriodPoll</identifier>
 			<argument name="period">1000</argument>
 		</request>
 		<name>Polestar 1s poll</name>

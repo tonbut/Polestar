@@ -129,7 +129,7 @@
         				"type": "string",
         				"title":"Interpolate",
         				"enum": [ "linear","cardinal","basis","step-before", "step-after" ],
-        				"default": "cardinal"
+        				"default": "basis"
         			},
         			"fill": {
         				"type": "alphacolor",

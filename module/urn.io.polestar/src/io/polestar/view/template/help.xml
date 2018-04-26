@@ -87,10 +87,10 @@ m=HDSFactory.newDocument()
 	.addNode("show-script-triggers",false)
 	.pushNode("sensor-ticker")
 	.addNode("period",1000L*60*60*24*1)
-	.addNode("merge",6);
+	.addNode("samplePeriod",1000L*60*60);
 context.createResponseFrom(m.toDocument(false));</code></pre>
 	<p>Optional title, subtitle and icon fields in the configuration are used to customise the navigation bar branding.
-	Sensor-ticker period and merge are used to customise the ticker shown in the sensor view.
+	Sensor-ticker period and samplePeriod are used to customise the ticker shown in the sensor view.
 	</p>
 	<h3>Configuring sensors</h3>
 	<p>Sensors are defined by the sensor script. This is a script named "SensorList".
@@ -122,6 +122,8 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 		value is not updated (regardless of if it's value changed) by a script.</li>
 		<li><b>errorIfNotModifiedFor</b> <span class="label label-info">optional</span> An integer number of seconds after which an error will be reported in a sensor if it's
 		value has not been modified.</li>
+		<li><b>errorOnlyAfter</b> <span class="label label-info">optional</span> An integer number of seconds to wait after an error is raised on a sensor
+		before reporting it. This is useful to avoid constant reporting of error transients that quickly resolve themselves.</li>
 
 		<li><b>errorIfGreaterThan</b> <span class="label label-info">optional</span> A numeric value that is compared against the sensor value.
 		If sensor value is numeric and it's value greater then this sensor is in error. To add hysteresis to this error you can an additional field
@@ -179,6 +181,9 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
   		<div class="micon"><img src="/polestar/pub/icon/oil.png"/><div class="caption">oil.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/radiation.png"/><div class="caption">radiation.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/paw.png"/><div class="caption">paw.png</div></div>
+
+  		<div class="micon"><img src="/polestar/pub/icon/random.png"/><div class="caption">random.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/atom.png"/><div class="caption">atom.png</div></div>
   	</div>
 	
 	

@@ -209,7 +209,10 @@
                             </div>
 							<div class="changed">
 								<span class="label label-default hidden-xs sensor-id"><xsl:value-of select="defn/id"/></span>
-								Changed <xsl:value-of select="lastModifiedHuman"/></div>
+								Changed <xsl:value-of select="lastModifiedHuman"/>
+								<span class="hidden-xs">, last reading <xsl:value-of select="lastUpdatedHuman"/></span>.
+								
+								</div>
 						</td>
 					</tr>
 				</table>

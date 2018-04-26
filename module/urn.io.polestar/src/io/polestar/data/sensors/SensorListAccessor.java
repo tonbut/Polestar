@@ -45,7 +45,7 @@ import com.mongodb.WriteResult;
 
 public class SensorListAccessor extends StandardAccessorImpl
 {
-	private final Map<String,SensorState> mSensorStates=new ConcurrentHashMap<String, SensorListAccessor.SensorState>();
+	private final Map<String,SensorState> mSensorStates=new ConcurrentHashMap<String, SensorState>();
 	private final Map<String,String> mChanges=new ConcurrentHashMap<String, String>();
 	private final SensorState DEFAULT_SENSOR_STATE;
 	private GoldenThreadExpiryFunction mStateUpdateExpiry;
@@ -71,7 +71,13 @@ public class SensorListAccessor extends StandardAccessorImpl
 			{	DBObject dbo=cursor.next();	
 				byte[] hds=(byte[])dbo.get("hds");
 				IHDSDocument state=aContext.transrept(new ByteArrayRepresentation(hds), IHDSDocument.class);
-				setState(state,aContext);
+				for (IHDSReader sensor : state.getReader().getNodes("/sensors/sensor"))
+				{	String id=(String)sensor.getFirstValue("id");
+					try
+					{	SensorState ss=new SensorState(sensor);
+						mSensorStates.put(id, ss);
+					} catch (Exception e) {;}
+				}
 			}
 		} finally
 		{	cursor.close();
@@ -98,11 +104,11 @@ public class SensorListAccessor extends StandardAccessorImpl
 			}
 		}
 		
-		
 		//run startup scripts
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("startup"), true, aContext);
 	}
 	
+
 	public void preDecommission(INKFRequestContext aContext) throws Exception
 	{	
 		//run shutdown scripts
@@ -222,27 +228,20 @@ public class SensorListAccessor extends StandardAccessorImpl
 	public void onReadingCheck(INKFRequestContext aContext) throws Exception
 	{	long now=System.currentTimeMillis();
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		boolean anyErrorChange=false;
 		for (IHDSReader sensorDef : config.getNodes("/sensors/sensor"))
 		{	String id=(String)sensorDef.getFirstValue("id");
-			Long errorIfNoReadingsFor=(Long)sensorDef.getFirstValueOrNull("errorIfNoReadingsFor");
-			if (errorIfNoReadingsFor!=null)
-			{	SensorState ss=getSensorState(id);
-				long lastUpdated=ss.getLastUpdated();
-				if (now-lastUpdated>=errorIfNoReadingsFor*1000L && ss.getError()==null)
-				{	String error="No fresh readings";
-					updateSensorState(id, ss.getValue(), now, error);
-				}
+			SensorState ss=getSensorState(id,false);
+			ss.poll(sensorDef, now);
+			if (ss.getErrorLastModified()==now)
+			{	mChanges.put(id, id);
+				anyErrorChange=true;
 			}
-			Long errorIfNotModifiedFor=(Long)sensorDef.getFirstValueOrNull("errorIfNotModifiedFor");
-			if (errorIfNotModifiedFor!=null)
-			{	SensorState ss=getSensorState(id);
-				long lastModified=ss.getLastModified();
-				if (now-lastModified>=errorIfNotModifiedFor*1000L && ss.getError()==null)
-				{	String error="Not modified for too long";
-					updateSensorState(id, ss.getValue(), now, error);
-				}
-			}
-		}				
+		}
+		if (anyErrorChange)
+		{	mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
+		}
+							
 	}
 
 	public void onChanges(INKFRequestContext aContext) throws Exception
@@ -317,37 +316,20 @@ public class SensorListAccessor extends StandardAccessorImpl
 			String id=(String)sensorDef.getFirstValue("id");
 			m.pushNode("sensor");
 			m.addNode("id", id);
-			SensorState ss=getSensorState(id);
-			long lastUpdated=ss.getLastUpdated();
-			if (ss.hasError())
-			{	m.addNode("error", ss.getError());
-			}
-			
-			m.addNode("lastUpdated", lastUpdated);
-			m.addNode("lastModified", ss.getLastModified());
-			m.addNode("value", ss.getValue());		
+			SensorState ss=getSensorState(id,false);
+			ss.serializeToHDS(m,now);
 			m.popNode();
 		}
 		m.declareKey("byId", "/sensors/sensor", "id");
 		return m.toDocument(false);
 	}
 	
-	private void setState(IHDSDocument aState, INKFRequestContext aContext) throws Exception
-	{	for (IHDSReader sensor : aState.getReader().getNodes("/sensors/sensor"))
-		{	String id=(String)sensor.getFirstValue("id");
-			Object value=sensor.getFirstValue("value");
-			String error=(String)sensor.getFirstValueOrNull("error");
-			Long lastUpdated=(Long)sensor.getFirstValue("lastUpdated");
-			Long lastModified=(Long)sensor.getFirstValue("lastModified");
-			SensorState ss=new SensorState(value, lastUpdated, lastModified, error);
-			mSensorStates.put(id, ss);
-		}
-	}
+	
 	
 	public void onUpdate(IHDSReader aState,INKFRequestContext aContext) throws Exception
 	{
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
-		IHDSReader currentState=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
+		//IHDSReader currentState=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
 		long now=System.currentTimeMillis();
 		
 		for (IHDSReader sensorStateNode : aState.getNodes("/sensors/sensor"))
@@ -360,6 +342,21 @@ public class SensorListAccessor extends StandardAccessorImpl
 			{	throw new NKFException("Sensor not found",sensorId);
 			}
 			
+			SensorState ss=getSensorState(sensorId,true);
+			ss.setUserError(exception, now);
+			ss.setValue(newValue, now, sensorDef);
+
+			if (ss.getLastModified()==now)
+			{	mChanges.put(sensorId, sensorId);
+				DBCollection col=MongoUtils.getCollectionForSensor(sensorId);
+				storeSensorState(sensorId,newValue,now,col,aContext);
+			}
+			if (ss.getErrorLastModified()==now)
+			{	mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
+			}
+		}
+			
+		/*
 			if (exception==null && newValue!=null)
 			{	//now test value if necessary
 				Number errorIfGreaterThan=(Number)sensorDef.getFirstValueOrNull("errorIfGreaterThan");
@@ -454,12 +451,14 @@ public class SensorListAccessor extends StandardAccessorImpl
 				}
 			}
 			
-			boolean valueChanged=updateSensorState(sensorId,newValue,now,exception);
+			boolean valueChanged=updateSensorState(sensorId,newValue,now,exception,false);
 			if (valueChanged)
 			{	DBCollection col=MongoUtils.getCollectionForSensor(sensorId);
 				storeSensorState(sensorId,newValue,now,col,aContext);
 			}
 		}
+		*/
+		
 	}
 	
 	public static void storeSensorState(String aId, Object aValue, long aNow, DBCollection aCol, INKFRequestContext aContext) throws Exception
@@ -481,8 +480,24 @@ public class SensorListAccessor extends StandardAccessorImpl
 		}
 	}
 	
-	boolean updateSensorState(String aId, Object aValue, long aNow, String aException)
+	void updateSensorState(String aId, Object aValue, long aNow, String aException)
+	{
+		SensorState ss=getSensorState(aId,true);
+		ss.setValue(aValue, aNow, null);
+		ss.setUserError(aException, aNow);
+
+	}
+	
+	/*
+	boolean updateSensorState(String aId, Object aValue, long aNow, String aException, boolean aResetInternalErrors)
 	{	SensorState existing=mSensorStates.get(aId);
+	
+		if (existing==null)
+		{	SensorState ss=new SensorState(aValue, aNow, aNow, null);
+			mSensorStates.put(aId, ss);
+			return true;
+		}
+		
 		boolean valueChanged;
 		if (aException==null)
 		{	
@@ -498,13 +513,19 @@ public class SensorListAccessor extends StandardAccessorImpl
 						|| (oldValue!=null && aValue!=null && !oldValue.equals(aValue));
 				
 				long lastModified=valueChanged?aNow:existing.getLastModified();
-				SensorState ss=new SensorState(aValue, aNow, lastModified, null);
+				
+				//don't reset internal detected errors
+				if (existing.hasError() && existing.getError().startsWith("*") && !aResetInternalErrors)
+				{	aException=existing.getError();
+				}
+				
+				SensorState ss=new SensorState(aValue, aNow, lastModified, aException);
 				mSensorStates.put(aId, ss);
 				if (valueChanged && existing!=null)
 				{	mChanges.put(aId,aId);
 				}
 				
-				if (existing!=null && existing.hasError())
+				if (existing!=null && existing.hasError() && aException==null)
 				{	//error is now cleared on sensor
 					mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 				}
@@ -516,15 +537,28 @@ public class SensorListAccessor extends StandardAccessorImpl
 		else
 		{	
 			Object oldValue=null;
+			
+			//also see if actual value, not error, has changed
+			if (existing!=null)
+			{	oldValue=existing.getValue();
+			}
+			
+			boolean actualValueChanged=(aValue==null && oldValue!=null)
+					|| (oldValue==null && aValue!=null)
+					|| (oldValue!=null && aValue!=null && !oldValue.equals(aValue));
+			
+			oldValue=null;
 			if (existing!=null)
 			{	oldValue=existing.getError();
 			}
-			valueChanged=(aException==null && oldValue!=null)
+			valueChanged=actualValueChanged ||
+					(aException==null && oldValue!=null)
 					|| (oldValue==null && aException!=null)
 					|| (oldValue!=null && aException!=null && !oldValue.equals(aException));
 			
-			long lastModified=valueChanged?aNow:existing.getLastModified();
-			SensorState ss=new SensorState(aValue, aNow, lastModified, aException);
+			long lastModified=actualValueChanged?aNow:existing.getLastModified();
+			long lastUpdated=existing.getLastUpdated();
+			SensorState ss=new SensorState(aValue, lastUpdated, lastModified, aException);
 			mSensorStates.put(aId, ss);
 			if (valueChanged && existing!=null)
 			{	mChanges.put(aId,aId);
@@ -537,51 +571,20 @@ public class SensorListAccessor extends StandardAccessorImpl
 		}
 		return valueChanged;
 	}
+	*/
 	
 	
-	private SensorState getSensorState(String aId)
+	private SensorState getSensorState(String aId, boolean aClone)
 	{	SensorState result=mSensorStates.get(aId);
 		if (result==null)
-		{	result=DEFAULT_SENSOR_STATE;
+		{	if (aClone)
+			{	result = new SensorState();
+				mSensorStates.put(aId, result);
+			}
+			else
+			{	result=DEFAULT_SENSOR_STATE;
+			}
 		}
 		return result;
-	}
-	
-	static class SensorState
-	{
-		private final Object mValue;
-		private final long mLastUpdated;
-		private final long mLastModified;
-		private final String mError;
-		
-		public SensorState()
-		{	mValue=null;
-			mLastUpdated=0;
-			mLastModified=0;
-			mError="No value received";
-		}
-		
-		public SensorState(Object aValue, long aLastUpdated, long aLastModified, String aError)
-		{	mValue=aValue;
-			mLastUpdated=aLastUpdated;
-			mLastModified=aLastModified;
-			mError=aError;
-		}
-
-		public Object getValue()
-		{	return mValue;
-		}
-		public long getLastModified()
-		{	return mLastModified;
-		}
-		public long getLastUpdated()
-		{	return mLastUpdated;
-		}
-		public boolean hasError()
-		{	return mError!=null;
-		}
-		public String getError()
-		{	return mError;
-		}
 	}
 }

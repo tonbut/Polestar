@@ -144,7 +144,7 @@ public class ChartViewAccessor extends StandardAccessorImpl
 		{	for (IHDSMutator scriptNode : list.getNodes("/scripts/script"))
 			{	boolean found=false;
 				String keywords=(String)scriptNode.getFirstValue("keywords");
-				if (keywords.contains(KEYWORD_CHART))
+				if (keywords!=null && keywords.contains(KEYWORD_CHART))
 				{
 					String name=(String)scriptNode.getFirstValue("name");
 					if (name.toLowerCase().contains(f)) found=true;

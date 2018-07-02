@@ -184,6 +184,7 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 
   		<div class="micon"><img src="/polestar/pub/icon/random.png"/><div class="caption">random.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/atom.png"/><div class="caption">atom.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/probe.png"/><div class="caption">probe.png</div></div>
   	</div>
 	
 	
@@ -495,7 +496,7 @@ m=HDSFactory.newDocument();
 m.pushNode("query");
 m.addNode("start",-1000L*60*60*24*4); // start 4 days ago
 //m.addNode("end",0); // end now
-m.addNode("merge",8); // merge 8 records into one
+m.addNode("samplePeriod",60000); // default to 5mins = 1000*60*5
 m.addNode("json",true);
 m.pushNode("sensors"); //list of sensors that we want to get data for
 m.pushNode("sensor").addNode("id","urn:co2").addNode("mergeAction","average").popNode();

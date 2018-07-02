@@ -83,6 +83,9 @@ public class ScriptUtils
 			{	result=true;
 			}
 		}
+		else
+		{	requireQuiet=true; // force state update on first access
+		}
 		if (requireQuiet || result)
 		{	IHDSMutator m=stateDoc.getMutableClone();
 			m.resetCursor().createIfNotExists("state/"+statePath).setValue(now);

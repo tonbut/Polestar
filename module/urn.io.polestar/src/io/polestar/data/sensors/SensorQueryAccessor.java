@@ -435,12 +435,12 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 					req.addArgumentByValue("timestamp", t);
 					Object result=aContext.issueRequest(req);
 					//System.out.println(result);
-					SensorListAccessor.sInstance.updateSensorState(id, result, t, null);
+					SensorListAccessor.sInstance.updateSensorState(id, result, t, null, aContext);
 					SensorListAccessor.storeSensorState(id, result, t, col, aContext);
 				}
 				catch (Exception e)
 				{	String msg="Script Failure";
-					SensorListAccessor.sInstance.updateSensorState(id, null, System.currentTimeMillis(), msg);
+					SensorListAccessor.sInstance.updateSensorState(id, null, System.currentTimeMillis(), msg, aContext);
 					aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
 				}
 			}

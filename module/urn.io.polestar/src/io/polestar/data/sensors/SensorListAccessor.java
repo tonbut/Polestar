@@ -232,14 +232,15 @@ public class SensorListAccessor extends StandardAccessorImpl
 		for (IHDSReader sensorDef : config.getNodes("/sensors/sensor"))
 		{	String id=(String)sensorDef.getFirstValue("id");
 			SensorState ss=getSensorState(id,false);
-			ss.poll(sensorDef, now);
+			ss.poll(sensorDef, now,aContext);
 			if (ss.getErrorLastModified()==now)
 			{	mChanges.put(id, id);
 				anyErrorChange=true;
 			}
 		}
 		if (anyErrorChange)
-		{	mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
+		{	aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onReadingCheck() anyErrorChange");
+			mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 		}
 							
 	}
@@ -344,7 +345,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			
 			SensorState ss=getSensorState(sensorId,true);
 			ss.setUserError(exception, now);
-			ss.setValue(newValue, now, sensorDef);
+			ss.setValue(newValue, now, sensorDef,aContext);
 
 			if (ss.getLastModified()==now)
 			{	mChanges.put(sensorId, sensorId);
@@ -352,112 +353,11 @@ public class SensorListAccessor extends StandardAccessorImpl
 				storeSensorState(sensorId,newValue,now,col,aContext);
 			}
 			if (ss.getErrorLastModified()==now)
-			{	mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
+			{	aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onUpdate() "+(ss.getError()!=null)+" "+sensorDef.getFirstValue("name"));
+				mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 			}
 		}
 			
-		/*
-			if (exception==null && newValue!=null)
-			{	//now test value if necessary
-				Number errorIfGreaterThan=(Number)sensorDef.getFirstValueOrNull("errorIfGreaterThan");
-				if (errorIfGreaterThan!=null && newValue instanceof Number)
-				{	Number nn=(Number)newValue;
-				
-					boolean isError=false;
-					String errorText="Value has exceeded "+errorIfGreaterThan;
-					Number errorClearIfLessThan=(Number)sensorDef.getFirstValueOrNull("errorClearIfLessThan");
-					if (errorClearIfLessThan!=null)
-					{	//hysteresis
-						String currentError=(String)currentState.getFirstValueOrNull("key('byId','"+sensorId+"')/error");
-						if (currentError!=null && currentError.equals(errorText))
-						{	if (nn.doubleValue()>=errorClearIfLessThan.doubleValue())
-							{	isError=true;
-							}
-						}
-						else
-						{	if (nn.doubleValue()>errorIfGreaterThan.doubleValue())
-							{	isError=true;
-							}
-						}
-					}
-					else
-					{	if (nn.doubleValue()>errorIfGreaterThan.doubleValue())
-						{	isError=true;
-						}
-					}
-					
-					if (isError)
-					{	exception=errorText;
-					}
-				}
-				Number errorIfLessThan=(Number)sensorDef.getFirstValueOrNull("errorIfLessThan");
-				if (errorIfLessThan!=null && newValue instanceof Number)
-				{	Number nn=(Number)newValue;
-					boolean isError=false;
-					String errorText="Value has fallen below "+errorIfLessThan;
-				
-					Number errorClearIfGreaterThan=(Number)sensorDef.getFirstValueOrNull("errorClearIfGreaterThan");
-					if (errorClearIfGreaterThan!=null)
-					{	//hysteresis
-						String currentError=(String)currentState.getFirstValueOrNull("key('byId','"+sensorId+"')/error");
-						if (currentError!=null && currentError.equals(errorText))
-						{	if (nn.doubleValue()<=errorClearIfGreaterThan.doubleValue())
-							{	isError=true;
-							}
-						}
-						else
-						{	if (nn.doubleValue()<errorIfLessThan.doubleValue())
-							{	isError=true;
-							}
-						}
-					}
-					else
-					{	if (nn.doubleValue()<errorIfLessThan.doubleValue())
-						{	isError=true;
-						}
-					}
-					
-					if (isError)
-					{	exception=errorText;
-					}
-				}
-				
-				Object errorIfEquals=sensorDef.getFirstValueOrNull("errorIfEquals");
-				if (errorIfEquals!=null && errorIfEquals instanceof Number && newValue instanceof Number)
-				{	Number nn=(Number)newValue;
-					if (nn.doubleValue()==((Number)errorIfEquals).doubleValue())
-					{	exception="Value equals "+errorIfEquals;
-					}
-				}
-				if (errorIfEquals!=null && errorIfEquals instanceof Boolean && newValue instanceof Boolean)
-				{	Boolean nn=(Boolean)newValue;
-					if (nn.equals(errorIfEquals))
-					{	exception="Value equals "+errorIfEquals;
-					}
-				}
-				
-				Object errorIfNotEquals=sensorDef.getFirstValueOrNull("errorIfNotEquals");
-				if (errorIfNotEquals!=null && errorIfNotEquals instanceof Number && newValue instanceof Number)
-				{	Number nn=(Number)newValue;
-					if (nn.doubleValue()!=((Number)errorIfNotEquals).doubleValue())
-					{	exception="Value doesn't equal "+errorIfNotEquals;
-					}
-				}
-				if (errorIfNotEquals!=null && errorIfNotEquals instanceof Boolean && newValue instanceof Boolean)
-				{	Boolean nn=(Boolean)newValue;
-					if (nn.equals(errorIfNotEquals))
-					{	exception="Value doesn't equal "+errorIfNotEquals;
-					}
-				}
-			}
-			
-			boolean valueChanged=updateSensorState(sensorId,newValue,now,exception,false);
-			if (valueChanged)
-			{	DBCollection col=MongoUtils.getCollectionForSensor(sensorId);
-				storeSensorState(sensorId,newValue,now,col,aContext);
-			}
-		}
-		*/
 		
 	}
 	
@@ -480,99 +380,13 @@ public class SensorListAccessor extends StandardAccessorImpl
 		}
 	}
 	
-	void updateSensorState(String aId, Object aValue, long aNow, String aException)
+	void updateSensorState(String aId, Object aValue, long aNow, String aException, INKFRequestContext aContext)
 	{
 		SensorState ss=getSensorState(aId,true);
-		ss.setValue(aValue, aNow, null);
+		ss.setValue(aValue, aNow, null, aContext);
 		ss.setUserError(aException, aNow);
 
 	}
-	
-	/*
-	boolean updateSensorState(String aId, Object aValue, long aNow, String aException, boolean aResetInternalErrors)
-	{	SensorState existing=mSensorStates.get(aId);
-	
-		if (existing==null)
-		{	SensorState ss=new SensorState(aValue, aNow, aNow, null);
-			mSensorStates.put(aId, ss);
-			return true;
-		}
-		
-		boolean valueChanged;
-		if (aException==null)
-		{	
-			if (aNow>existing.getLastModified() || existing.getError()!=null)
-			{
-				Object oldValue=null;
-				if (existing!=null)
-				{	oldValue=existing.getValue();
-				}
-				
-				valueChanged=(aValue==null && oldValue!=null)
-						|| (oldValue==null && aValue!=null)
-						|| (oldValue!=null && aValue!=null && !oldValue.equals(aValue));
-				
-				long lastModified=valueChanged?aNow:existing.getLastModified();
-				
-				//don't reset internal detected errors
-				if (existing.hasError() && existing.getError().startsWith("*") && !aResetInternalErrors)
-				{	aException=existing.getError();
-				}
-				
-				SensorState ss=new SensorState(aValue, aNow, lastModified, aException);
-				mSensorStates.put(aId, ss);
-				if (valueChanged && existing!=null)
-				{	mChanges.put(aId,aId);
-				}
-				
-				if (existing!=null && existing.hasError() && aException==null)
-				{	//error is now cleared on sensor
-					mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
-				}
-			}
-			else
-			{	valueChanged=false;
-			}
-		}
-		else
-		{	
-			Object oldValue=null;
-			
-			//also see if actual value, not error, has changed
-			if (existing!=null)
-			{	oldValue=existing.getValue();
-			}
-			
-			boolean actualValueChanged=(aValue==null && oldValue!=null)
-					|| (oldValue==null && aValue!=null)
-					|| (oldValue!=null && aValue!=null && !oldValue.equals(aValue));
-			
-			oldValue=null;
-			if (existing!=null)
-			{	oldValue=existing.getError();
-			}
-			valueChanged=actualValueChanged ||
-					(aException==null && oldValue!=null)
-					|| (oldValue==null && aException!=null)
-					|| (oldValue!=null && aException!=null && !oldValue.equals(aException));
-			
-			long lastModified=actualValueChanged?aNow:existing.getLastModified();
-			long lastUpdated=existing.getLastUpdated();
-			SensorState ss=new SensorState(aValue, lastUpdated, lastModified, aException);
-			mSensorStates.put(aId, ss);
-			if (valueChanged && existing!=null)
-			{	mChanges.put(aId,aId);
-			}
-			
-			boolean newError=(oldValue==null);
-			if (newError)
-			{	mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
-			}
-		}
-		return valueChanged;
-	}
-	*/
-	
 	
 	private SensorState getSensorState(String aId, boolean aClone)
 	{	SensorState result=mSensorStates.get(aId);

@@ -296,20 +296,12 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 	
 	private PairList getSensorData(String sensorId, String fragment, long start, long end, long samplePeriod, MergeAction merge) throws Exception
 	{
-		//IHDSMutator m=HDSFactory.newDocument();
 		int size=(int)((end-start)/samplePeriod);
 		PairList result=new PairList(size);
 
 		DBCollection col=MongoUtils.getCollectionForSensor(sensorId);
 		
-		/*
-		CommandResult cr=col.getStats();
-		Long count=cr.getLong("count");
-		Long size=cr.getLong("size");
-		System.out.println(sensorId+" "+count+" "+size+" "+size/count);
-		*/
-		
-		//initialise 
+		//initialise with value directly before start
 		BasicDBObject startI=new BasicDBObject("t", new BasicDBObject("$lt",start));
 		DBCursor cursorP = col.find(startI).sort(new BasicDBObject("t",-1)).limit(1);
 		if (cursorP.hasNext())
@@ -376,14 +368,6 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 			
 			
 			Object mv=merge.getValue(sampleEndTime);
-			//long i=(t-start)/samplePeriod;
-			//System.out.println("** "+i+" "+t+" "+mv);
-			/*
-			m.pushNode("d")
-				.addNode("t", t)
-				.addNode("v", mv)
-			.popNode();
-			*/
 			result.put(t,mv);
 		}
 		return result;

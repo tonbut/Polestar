@@ -29,6 +29,8 @@ import com.mongodb.*;
 
 public class ScriptDataAccessor extends StandardAccessorImpl
 {
+	private final static String SCRIPT_HEAD="context = io.polestar.data.api.PolestarContext.createContext(context);\n";
+	
 	public ScriptDataAccessor()
 	{	declareThreadSafe();
 	}
@@ -70,7 +72,10 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 				else
 				{	Object rep=null;
 					if (fragment.equals("script"))
-					{	rep=dbo.get("script");
+					{	
+						String script=(String)dbo.get("script");
+						script=SCRIPT_HEAD+script;
+						rep=script;
 						MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id);
 					}
 					else if (fragment.equals("state"))

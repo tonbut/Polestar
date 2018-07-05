@@ -216,6 +216,13 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 		user can neither execute or view the script.</li>
 		<li><b>Code</b> the code field contains the source code for the script written in the Groovy programming language.</li>
 	</ul>
+	
+	<h3>Script context</h3>
+	<p>Every script gets passed a variable called context. The context gives access to all the polestar and NetKernel functionality
+	for more details of the API see the <a href="https://rawgit.com/tonbut/polestar/master/javadoc/index.html">Javadoc</a>.
+	</p>
+	
+	
 	<h3>Script connectivity</h3>
 	<p>There are a number of services made available for the use of scripts. These will be documented
 	in the given examples. In addition you can issue web requests for data and create additional NetKernel modules with
@@ -244,8 +251,8 @@ representation=context.issueRequest(req);
 	mechanism. Once the spaces are imported you can issue requests to the services within from your scripts.
 	</p>
 	<h3>Sensor update script</h3>
-	<p>Sensors are typically updated on a periodic basis using a script with either a <span class="label label-success">1s</span>,
-	<span class="label label-success">30s</span> or <span class="label label-success">5m</span> trigger or by making a script public
+	<p>Sensors are typically updated on a periodic basis using a script by either specifying a periodicity
+	or by making a script public
 	and allowing an external system to execute the script passing in data. This is called a webhook. Let us have a look at examples of these two approaches.
 	Although these examples show only one sensor multiple sensors can be updated by adding more sensor updates into the
 	update document.
@@ -254,7 +261,7 @@ representation=context.issueRequest(req);
 	<pre><code>m.pushNode("sensor").addNode("id","urn:exampleSensor").addNode("name","Example Sensor").popNode();</code></pre>
 	</p>
 	<h4>Polled sensor script</h4>
-	<p>Create a new script and enter a trigger of <span class="label label-success">30s</span>. Add the following code:
+	<p>Create a new script and set a periodicity of 30 seconds. Add the following code:
 	<pre><code>import org.netkernel.mod.hds.*;
 import org.netkernel.layer0.nkf.*;
 

@@ -6,6 +6,10 @@ import org.netkernel.layer0.nkf.NKFException;
  */
 public interface IPolestarAPI
 {
+	/** @return true if sensor exists
+	 */
+	boolean sensorExists(String aSensorId) throws NKFException;
+	
 	/** Get the current value of a sensor
 	 * @param aSensorId the sensor to get the value of
 	 * @throws NKFException if sensor doesn't exist
@@ -88,8 +92,9 @@ public interface IPolestarAPI
 	 * @param aSensorId sensor to query
 	 * @param aType type of query to perform
 	 * @return a query to further refine or execute
+	 * @throws NKFException if sensor doesn't exist
 	 */
-	IPolestarQuery createQuery(String aSensorId, QueryType aType);
+	IPolestarQuery createQuery(String aSensorId, QueryType aType) throws NKFException;
 	
 	/** Detect changes in an analog value rising and falling below a trigger level with hysteresis
 	 * @return a two element boolean array, first value is if value is in in true threshold, second

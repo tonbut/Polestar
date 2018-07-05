@@ -262,6 +262,10 @@ public class PolestarQuery implements IPolestarQuery
 			return onMin();
 		case COUNT:
 			return onCount();
+		case STDDEV:
+			return onStandardDeviation();
+		case PERCENTILE:
+			return onPercentile();
 		case FIRST_VALUE:
 			return onFirstValue();
 		case LAST_VALUE:
@@ -338,7 +342,34 @@ public class PolestarQuery implements IPolestarQuery
 		return qic.getResult();
 	}
 	
-	
+	private Object onStandardDeviation() throws NKFException
+	{	IQueryIteratorController qic=QueryIteratorController.getStandardDeviationInstance();
+		iterateForward(qic);
+		return qic.getResult();
+	}
+	private Object onPercentile() throws NKFException
+	{	Object param=getParameter();
+		if (param instanceof Number)
+		{	float p=((Number)param).floatValue();
+			if (p<0.0 || p>1.0)
+			{	throw new NKFException("PERCENTILE parameter must be between 0 and 1");
+			}
+			
+			//get median duration (i.e. sample rate)
+			IQueryIteratorController qic1=QueryIteratorController.getMedianDurationInstance();
+			iterateForward(qic1);
+			long medianDuration=(Long)qic1.getResult();
+			//System.out.println("medianDuration="+medianDuration);
+		
+			IQueryIteratorController qic=QueryIteratorController.getPercentileInstance(p,medianDuration);
+			iterateForward(qic);
+			return qic.getResult();
+		}
+		else
+		{	throw new NKFException("PERCENTILE requires numeric parameter");
+		}
+	}
+
 	
 	
 	private Object onFirstValue() throws NKFException

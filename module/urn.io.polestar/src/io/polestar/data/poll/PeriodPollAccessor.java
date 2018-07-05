@@ -77,15 +77,19 @@ public class PeriodPollAccessor extends StandardAccessorImpl
 						List<String> changedSensors=new ArrayList(changes.getValues("/sensors/sensor"));
 						MonitorUtils.executeTriggeredScripts(changedSensors, false, aContext);
 					}
-					else if (period.equals("30000")) //5minutes //30sec
+					else if (period.equals("30000")) //30sec
 					{	//check for any non updated sensors
 						aContext.source("active:polestarSensorReadingCheck");
+					}
+					else if (period.equals("1800000")) //30minutes 
+					{	//save sensor state to db
+						aContext.source("active:polestarSensorStatePersist");
 					}
 					MonitorUtils.executePeriodicScripts(period, true, aContext);
 				}
 				finally
 				{	busyFlag.set(false);
-					if (firstErrorFlag.getAndSet(0)>=errorCountBeforeMsg)
+					if (firstErrorFlag!=null && firstErrorFlag.getAndSet(0)>=errorCountBeforeMsg)
 					{	aContext.logRaw(INKFLocale.LEVEL_INFO, "Period scripts for "+period+" restarted");
 					}
 				}

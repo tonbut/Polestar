@@ -67,6 +67,11 @@ public class PolestarContext implements InvocationHandler, IPolestarAPI
 		return mSensorState;
 	}
 	
+	public boolean sensorExists(String aSensorId) throws NKFException
+	{	IHDSReader sensor=getSensorState().getFirstNodeOrNull("key('byId','"+aSensorId+"')");
+		return sensor!=null;
+	}
+	
 	private IHDSReader getSensorState(String aSensor) throws NKFException
 	{	IHDSReader sensor=getSensorState().getFirstNodeOrNull("key('byId','"+aSensor+"')");
 		if (sensor==null)
@@ -204,8 +209,10 @@ public class PolestarContext implements InvocationHandler, IPolestarAPI
 	}
 
 	@Override
-	public IPolestarQuery createQuery(String aSensorId, QueryType aType)
-	{	return new PolestarQuery(aSensorId, aType, mContext, this);
+	public IPolestarQuery createQuery(String aSensorId, QueryType aType) throws NKFException
+	{	
+		getSensorState(aSensorId);
+		return new PolestarQuery(aSensorId, aType, mContext, this);
 	}
 
 	@Override

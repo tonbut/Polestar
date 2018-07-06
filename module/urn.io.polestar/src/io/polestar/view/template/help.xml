@@ -262,18 +262,10 @@ representation=context.issueRequest(req);
 	</p>
 	<h4>Polled sensor script</h4>
 	<p>Create a new script and set a periodicity of 30 seconds. Add the following code:
-	<pre><code>import org.netkernel.mod.hds.*;
-import org.netkernel.layer0.nkf.*;
-
-m=HDSFactory.newDocument()
-	.pushNode("sensors")
-	.pushNode("sensor")
-	.addNode("id","urn:exampleSensor")
-	.addNode("value", Math.random());
-
-req=context.createRequest("active:polestarSensorUpdate");
-req.addArgumentByValue("state",m.toDocument(false));
-context.issueRequest(req);</code></pre>
+	<pre><code>import io.polestar.api.*;
+value=Math.random();
+context.setSensorValue("urn:exampleSensor",value);
+</code></pre>
 	This script will run every 30 seconds and update this single sensor with a random number between 0 and 1.
 	</p>
 	<h4>Webhook sensor script</h4>
@@ -284,17 +276,8 @@ import org.netkernel.layer0.nkf.*;
 queryParam=context.source("httpRequest:/param/value",String.class);
 if (queryParam!=null)
 {	value=Double.parseDouble(queryParam);
-	context.sink("arg:state",queryParam);
 	context.createResponseFrom("sensor updated").setExpiry(INKFResponse.EXPIRY_ALWAYS);
-
-	m=HDSFactory.newDocument()
-		.pushNode("sensors")
-		.pushNode("sensor")
-		.addNode("id","urn:exampleSensor")
-		.addNode("value", value );
-	req=context.createRequest("active:polestarSensorUpdate");
-	req.addArgumentByValue("state",m.toDocument(false));
-	context.issueRequest(req);
+	context.setSensorValue("urn:exampleSensor",value);
 }</code></pre>
 	To update the value we now need to issue a web request to the script. So for example if our script has an id of
 	EAC75E961241D889 then we can issue the following request in our web browser addressbar
@@ -304,20 +287,14 @@ if (queryParam!=null)
 	<p>Sensors can report an error automatically if you specify an "errorIfNoReadingsFor" value in the sensor definition
 	however sometimes it is desirable to report a specific error directly if one is known. Here is an example based on the
 	polled random number example above which will report an error if the random number is above 0.95.</p>
-	<pre><code>import org.netkernel.mod.hds.*;
-import org.netkernel.layer0.nkf.*;
+	<pre><code>import org.netkernel.layer0.nkf.*;
 value=Math.random();
-m=HDSFactory.newDocument()
-	.pushNode("sensors")
-	.pushNode("sensor")
-	.addNode("id","urn:exampleSensor")
-	.addNode("value",value);
+context.setSensorValue("urn:exampleSensor",value);
 if (value>0.95)
-	m.addNode("error","Value is too large");	
-
-req=context.createRequest("active:polestarSensorUpdate");
-req.addArgumentByValue("state",m.toDocument(false));
-context.issueRequest(req);</code></pre>
+	context.setSensorError("urn:exampleSensor","Value is too large");
+else
+	context.setSensorError("urn:exampleSensor",null);
+</code></pre>
 	<h3>Control scripts</h3>
 	<p>Control scripts are used to make decisions and take actions based upon the state of sensors.
 	For example turning on/off lights, sending messages or sounding alarms. Control scripts can
@@ -326,13 +303,11 @@ context.issueRequest(req);</code></pre>
 	<p>Control scripts usual want to read the current state of sensors, detect changes and them perform
 	actions or update further "logical" sensors.</p>
 	<p>Here is an example of reading sensor values:
-	<pre><code>import org.netkernel.mod.hds.*;
-import org.netkernel.layer0.nkf.*;
+	<pre><code>import org.netkernel.layer0.nkf.*;
 
 //example of using the value and last modified time of a sensor
-sensors=context.source("active:polestarSensorState",IHDSDocument.class).getReader();
-atHome=sensors.getFirstValue("key('byId','urn:atHome')/value");
-lastAtHome=now-sensors.getFirstValue("key('byId','urn:atHome')/lastModified");
+atHome=context.getSensorValue("urn:atHome");
+lastAtHome=context.getSensorLastModified("urn:atHome");
 now=System.currentTimeMillis();
 if (atHome &amp;&amp; now-lastAtHome&gt;24*60*60*1000)
 {	context.logRaw(INKFLocale.WARNING,"Did you know you really need to get out more?");
@@ -343,71 +318,37 @@ if (atHome &amp;&amp; now-lastAtHome&gt;24*60*60*1000)
 	warned everytime the script is run. Usually you determine a condition and then act when that
 	condition becomes true or stops being true. To do this we need to remember state to know
 	the state of the condition last time the script ran.
-	<pre><code>import org.netkernel.mod.hds.*;
-import org.netkernel.layer0.nkf.*;
-import io.polestar.ScriptUtils;
+	<pre><code>import org.netkernel.layer0.nkf.*;
 
 //example of using the value and last modified time of a sensor
-sensors=context.source("active:polestarSensorState",IHDSDocument.class).getReader();
-atHome=sensors.getFirstValue("key('byId','urn:atHome')/value");
-lastAtHome=now-sensors.getFirstValue("key('byId','urn:atHome')/lastModified");
+atHome=context.getSensorValue("urn:atHome");
+lastAtHome=context.getSensorLastModified("urn:atHome");
 now=System.currentTimeMillis();
-
 atHomeToLong=atHome &amp;&amp; now-lastAtHome&gt;24*60*60*1000;
-conditionChanged=ScriptUtils.booleanChangeDetect(
-	value:atHomeToLong,
-	context:context );
-if (changed &amp;&amp; atHomeToLong)
+status=context.booleanChangeDetect(atHomeToLong,0,0,"atHomeToLong");
+changed=status[1];
+if (changed &amp;&amp; atHomeToLong)	
 {	context.logRaw(INKFLocale.LEVEL_INFO,"Did you know you really need to get out more?");
 }</code></pre></p>
-	<p>The booleanChangeDetect() method is contained within the MonitorUtils class. It
-	stores state between invocations of the script so as to detect when the condition changes.
-	It also supports the following optional arguments:<ul>
-		<li><b>trueHysteresis</b> <span class="label label-default">java.lang.Long</span> a period
-		in milliseconds after the condition has turned false before it can turn true again.</li>
-		<li><b>falseHysteresis</b> <span class="label label-default">java.lang.Long</span> a period
-		in milliseconds after the condition has turned true before it can turn false again.</li>
-		<li><b>sensorId</b> <span class="label label-default">java.lang.String</span> an optional
-		sensor id for a sensor to update with the value of the condition.</li>
-		<li><b>statePath</b> <span class="label label-default">java.lang.String</span> an optional
-		named path into the persistent state of a script to store the information needed for the
-		condition</li>
-	</ul></p>
 	
-	<h4>analogueLevelChangeDetect</h4>
-	<p>ScriptUtils also contain the analogue equivalent of booleanChangeDetect() called
-	analogueLevelChangeDetect(). It works in a similar way but looks for a numeric value
+	<h4>analogueChangeDetect</h4>
+	<p>There is also the analogue equivalent of booleanChangeDetect() called
+	analogueChangeDetect(). It works in a similar way but looks for a numeric value
 	to be above a trigger level for the condition to become true.
-	<pre><code>import org.netkernel.mod.hds.*;
-import org.netkernel.layer0.nkf.*;
+	<pre><code>import org.netkernel.layer0.nkf.*;
 
-sensors=context.source("active:polestarSensorState",IHDSDocument.class).getReader();
-light=(double)sensors.getFirstValue("key('byId','urn:daylight:db')/value");
-changed=io.polestar.ScriptUtils.analogueLevelChangeDetect(
-	value:light,
-	trueThreshold: -50.0D,
-	falseThreshold: -55.0D,
-	context:context );
-day=light>-50.0D;
+light=context.getSensorValue("urn:daylight:db");
+status=context.analogueChangeDetect(light, -55.0D, -50.0D, "light");
+changed=status[1];
+isDay=status[0];
 if (changed)
-{	if (day)
+{	if (isDay)
 	{	context.logRaw(INKFLocale.LEVEL_INFO,"Dawn");
 	}
 	else
 	{	context.logRaw(INKFLocale.LEVEL_INFO,"Dusk");
 	}
 }</code></pre></p>
-	<p>It also supports the following optional arguments:<ul>
-		<li><b>trueThreshold</b> <span class="label label-default">java.lang.Double</span> when
-		the value rises above this threshold the condition is true.</li>
-		<li><b>falseThreshold</b> <span class="label label-default">java.lang.Double</span> when
-		the value falls below this threshold the condition is false.</li>
-		<li><b>sensorId</b> <span class="label label-default">java.lang.String</span> an optional
-		sensor id for a sensor to update with the value of the condition.</li>
-		<li><b>statePath</b> <span class="label label-default">java.lang.String</span> an optional
-		named path into the persistent state of a script to store the information needed for the
-		condition</li>
-	</ul></p>
 	
 	
 	<h4>atMostEvery</h4>
@@ -418,41 +359,26 @@ if (changed)
 	<pre><code>import org.netkernel.mod.hds.*;
 import org.netkernel.layer0.nkf.*;
 
-newEvent=io.polestar.ScriptUtils.atMostEvery(
-	period: 300000L,
-	requireQuiet: true,
-	context:context );
+boolean requireQuiet=true; // timer resets everytime bell is rung
+newEvent=context.atMostEvery(period: 300000L, requireQuiet, "bell");
 
 if (newEvent)
 {	context.logRaw(INKFLocale.LEVEL_INFO,"This might actually be a new person ringing");
 }</code></pre></p>
-
-	<p>It supports the following optional arguments:<ul>
-		<li><b>period</b> <span class="label label-default">java.lang.Long</span> minimum milliseconds
-		between reported events.</li>
-		<li><b>statePath</b> <span class="label label-default">java.lang.String</span> an optional named
-		path into the persistent state of a script to store the information needed for the condition.</li>
-		<li><b>requireQuiet</b> <span class="label label-default">java.lang.Boolean</span> if true
-		then period timer between events is reset every time an event occurs.</li>
-	</ul></p>
 	
-	<h4>Script Variable get and set</h4>
-	<p>Convenience methods to get and set values stored within the script state are available:
-	<pre><code>count=io.polestar.ScriptUtils.getStateVariable(
-	statePath: "counter",
-	default: 0L,
-	context:context );
-	
-count=count+1L;
-	
-io.polestar.ScriptUtils.setStateVariable(
-	statePath: "counter",
-	value: count,
-	context:context );</code></pre></p>
-
 	
 	<h4>Script persistent state</h4>
-	<p>You can access the scripts persistent state directly as a HDS document:
+	<p>In these examples above atMostEvery, analogueChangeDetect, and booleanChangeDetect all
+	require state to be stored between invocations in order to function. Each script maintains a
+	state resource automatically between invocations.</p>
+	
+	<p>You can access values from that state easily using the API:
+	<pre><code>default=0L;
+value=context.getScriptState("myVar",default)
+value+=1;
+context.setScriptState("myVar",value);</code></pre></p>
+	
+	<p>You can also access the scripts persistent state directly as a HDS document:
 	<pre><code>import org.netkernel.layer0.nkf.*;
 import org.netkernel.mod.hds.*;
 
@@ -472,15 +398,13 @@ resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);</code></pre></p>
 	<h4>Calling other scripts</h4>
 	<p>One script can call another script. This is useful for generic services such as sending a message.
 	You can pass arbitrary arguments between scripts:
-	<pre><code>req=context.createRequest("active:polestarExecuteScript");
-req.addArgument("script","47CCD102175BC395");
-req.addArgumentByValue("argument1","abc");
-rep=context.issueRequest(req);</code></pre>
+	<pre><code>result=context.callScriptById("47CCD102175BC395",
+	"argument1","abc"
+);</code></pre>
 	You can also reference scripts by their name as well as their id:
-	<pre><code>req=context.createRequest("active:polestarExecuteScript");
-req.addArgument("name","Send Message");
-req.addArgumentByValue("message","something happened");
-rep=context.issueRequest(req);</code></pre>
+	<pre><code>result=context.callScriptByName("Send Message",
+	"message","something happened"
+);</code></pre>
 	The called script can access the argument:
 	<pre><code>argument1=context.source("arg:argument1");</code></pre> 
 	</p>
@@ -490,63 +414,18 @@ rep=context.issueRequest(req);</code></pre>
 context.logRaw(INKFLocale.LEVEL_INFO,"Something happened");
 context.logRaw(INKFLocale.LEVEL_WARNING,"Something bad happened");</code></pre>
 	</p>
-	<h3>Visualization scripts</h3>
-	<p>You can define scripts which generate visualizations of historical data captured by Polestar.
-	</p>
-	<p>You can read, aggregate and apply operations such as averaging on sensor values using the 
-	<code>active:polestarHistoricalQuery</code> data service:</p>
-	<pre><code>import org.netkernel.mod.hds.*;
-import org.netkernel.layer0.nkf.*;
-import java.text.*;
-
-m=HDSFactory.newDocument();
-m.pushNode("query");
-m.addNode("start",-1000L*60*60*24*4); // start 4 days ago
-//m.addNode("end",0); // end now
-m.addNode("samplePeriod",60000); // default to 5mins = 1000*60*5
-m.addNode("json",true);
-m.pushNode("sensors"); //list of sensors that we want to get data for
-m.pushNode("sensor").addNode("id","urn:co2").addNode("mergeAction","average").popNode();
-m.pushNode("sensor").addNode("id","urn:home").addNode("mergeAction","sample").popNode();
-m.pushNode("sensor").addNode("id","urn:daylight:db").addNode("mergeAction","average").popNode();
-req=context.createRequest("active:polestarHistoricalQuery");
-req.addArgumentByValue("operator",m.toDocument(false));
-rep=context.issueRequest(req)</code></pre>
-	<p>The merge actions available are:
-	<ul>
-	<li>AVERAGE - average floating point sensor samples</li>
-	<li>AVERAGE_MAP - average floating point sensor samples from a sensor with map values</li>
-	<li>MAX - take the maximum value from the sensor samples</li>
-	<li>MIN - take the minimum</li>
-	<li>DIFF - take the difference between the last and first sensor samples</li>
-	<li>POSITIVE_DIFF - take the difference between the last and first sensor samples. If below zero return zero.</li>
-	<li>SUM - sum all the samples</li>
-	<li>ROTATION_360_AVERAGE - average floating point samples assuming they are a rotational value between 0 and 360 degrees</li>
-	<li>SAMPLE - take first samples value</li>
-	<li>RUNNING_TOTAL - sum all the samples and add to sum of all previous values (integration)</li>
-	<li>BOOLEAN_CHANGE - return false if all samples are false, true if all are true. Otherwise if there is any change return the inverse of the last return value. This is useful for detecting momentary changes.</li>
-	<li>COUNT - return number of samples within period.</li>
-	<li>BOOLEAN_RISING_EDGE_COUNT - return number of rising edges on boolean sensor</li>
-	<li>BOOLEAN_FALLING_EDGE_COUNT - return number of falling edges on boolean sensor</li>
-	</ul>
-	</p>
-	<p>Once you have the resultset in JSON format it is quite easy to generate charts and visualizations from it using 
-	protovis (built in) or any other clientside Javascript library. Because the code sample to do this can be quite large
-	take a look at the examples on <a href="https://github.com/tonbut/polestar/tree/master/scripts/example">GitHub</a>
-	or on the <a href="https://polestar.io/polestar/login?username=guest&amp;password=password&amp;url=/polestar/scripts">Live Demo</a>.
-	</p>
 	
 	<h3>Homepage script</h3>
 	<p>To customize the homepage create a script which returns XHTML with the name "Homepage". You can use this
 	page to put visualizations or status icons.</p>
-	<pre><code>import org.netkernel.layer0.nkf.*;
+	<pre><code><![CDATA[import org.netkernel.layer0.nkf.*;
 s="""&lt;div class='container'&gt;
 &lt;iframe src="/polestar/scripts/execute/287CB3EAD99CA3A6" frameborder="0" width="280" height="160" scrolling="no"&gt;_&lt;/iframe&gt;
 &lt;/div&gt;""";
 
 resp=context.createResponseFrom(s.toString());
 resp.setHeader("polestar_wrap",true);
-	</code></pre>
+	]]></code></pre>
 	
 	<h3 id="ondemand">On Demand Sensors</h3>
 	<p>On demand sensors are sensors which are updated by scripts when they are queried. Maybe the term sensor is being stretched a bit far.

@@ -239,7 +239,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			}
 		}
 		if (anyErrorChange)
-		{	aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onReadingCheck() anyErrorChange");
+		{	//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onReadingCheck() anyErrorChange");
 			mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 		}
 							
@@ -353,7 +353,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 				storeSensorState(sensorId,newValue,now,col,aContext);
 			}
 			if (ss.getErrorLastModified()==now)
-			{	aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onUpdate() "+(ss.getError()!=null)+" "+sensorDef.getFirstValue("name"));
+			{	//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onUpdate() "+(ss.getError()!=null)+" "+sensorDef.getFirstValue("name"));
 				mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 			}
 		}

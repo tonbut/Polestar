@@ -97,6 +97,17 @@ public class MonitorUtils
 		}
 	}
 	
+	public static Cookie createRememberMeCookie(String aUsername, String aPasswordHash, long aDuration, INKFRequestContext aContext) throws Exception
+	{	String hostname=getHostname(aContext);
+		Cookie c=new RememberMeCookie("/polestar/", System.currentTimeMillis()+aDuration, aUsername, aPasswordHash, hostname, aContext);
+		return c;
+	}
+	
+	private static String getHostname(INKFRequestContext aContext) throws Exception
+	{	//return aContext.source("httpRequest:/remote-host",String.class);
+		return "whocares";
+	}
+	
 	
 	public static String onRememberMeLogin(INKFRequestContext aContext) throws Exception
 	{	String result=null;
@@ -107,7 +118,7 @@ public class MonitorUtils
 			IHDSNode user=getUserDetails(result, aContext);
 			if (user!=null)
 			{	String password=(String)user.getFirstValue("password");
-				String hostname=aContext.source("httpRequest:/remote-host",String.class);
+				String hostname=getHostname(aContext);
 				if (rmc.isValid(password,hostname,aContext))
 				{	//valid remember me login
 					aContext.sink("session:/username",result);

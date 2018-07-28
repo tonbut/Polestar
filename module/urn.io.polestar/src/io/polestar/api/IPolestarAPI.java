@@ -16,6 +16,12 @@ public interface IPolestarAPI
 	 */
 	Object getSensorValue(String aSensorId) throws NKFException;
 	
+	/** Get the current value of a sensor and format as string according to specification for this sensor
+	 * @param aSensorId the sensor to get the value of
+	 * @throws NKFException if sensor doesn't exist
+	 */
+	String formatSensorValue(String aSensorId) throws NKFException;
+	
 	/** Get the current error of a sensor
 	 * @param aSensorId the sensor to get the error for
 	 * @return null if no error is current for sensor or a java.lang.String error message

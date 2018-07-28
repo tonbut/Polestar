@@ -79,14 +79,12 @@ public class LoginChallenge extends StandardAccessorImpl
 			{	aContext.sink("session:/username", username);
 				String role=(String)user.getFirstValue("role");
 				aContext.sink("session:/role",role);
-
 				
 				if (remember)
 				{	//setup remember me cookie
 					long duration=7*24*60*60000; // 1week
-					String hostname = aContext.source("httpRequest:/remote-host",String.class);
 					String passwordHash = (String)user.getFirstValue("password");
-					Cookie c=new RememberMeCookie("/polestar/", System.currentTimeMillis()+duration, username, passwordHash, hostname, aContext);
+					Cookie c=MonitorUtils.createRememberMeCookie(username, passwordHash, duration, aContext);
 					aContext.sink("httpResponse:/cookie", c);
 				}
 				

@@ -240,74 +240,84 @@ public class SensorViewAccessor extends StandardAccessorImpl
 				
 				String format=(String)sensorDef.getFirstValueOrNull("format");
 				Object value=sensorNode.getFirstValue("value");
-				String valueHuman;
-				String valueHTML=null;
-				try
-				{
-					if (format!=null && value!=null)
-					{	if ("open".equals(format))
-						{	valueHuman=((Boolean)value)?"open":"closed";
-						}
-						else if ("on".equals(format))
-						{	valueHuman=((Boolean)value)?"on":"off";
-						}
-						else if ("rgb".equals(format))
-						{	valueHuman=null;
-							Map m=(Map)value;
-							double r=((Number)m.get("r")).doubleValue();
-							double g=((Number)m.get("g")).doubleValue();
-							double b=((Number)m.get("b")).doubleValue();
-							String rgb="rgb("+((int)(r*255.9))+","+((int)(g*255.9))+","+((int)(b*255.9))+")";
-							valueHTML="<div class='rgb' style='background: "+rgb+"'/>";
-						}
-						else if (format.contains("%"))
-						{	
-							if (value instanceof Number)
-							{
-								try
-								{	valueHuman=String.format(format,value);
-								} catch (IllegalFormatConversionException e)
-								{	valueHuman=value.toString();
-								}
-							}
-							else if (value instanceof Map)
-							{	StringBuilder sb=new StringBuilder();
-								Map<Object,Object> bdo=(Map)value;
-								boolean first=true;
-								for (Map.Entry entry : bdo.entrySet())
-								{	if (first) first=false; else sb.append(", ");
-									sb.append(entry.getKey());
-									sb.append(": ");
-									sb.append(String.format(format,entry.getValue()));
-								}
-								valueHuman=sb.toString();
-							}
-							else
-							{	valueHuman="?"+value.getClass();
-							}
-						}
-						else
-						{	valueHuman=value.toString();
-						}
-					}
-					else
-					{	if (value==null)
-						{	valueHuman="NULL";
-						}
-						else
-						{	valueHuman=value.toString();
-						}
-					}
-				}
-				catch (Exception e)
-				{	valueHuman=	value.toString();
-					e.printStackTrace();
-				}
+				
+				String[] vhh=getHumanReadable(value, format);
+				String valueHuman=vhh[0];
+				String valueHTML=vhh[1];
+				
 				sensorNode.addNode("valueHuman", valueHuman);
 				if (valueHTML!=null) sensorNode.addNode("valueHTML", valueHTML);
 			}
 		}
 		return state;
+	}
+	
+	public static String[] getHumanReadable(Object value, String format)
+	{
+		String valueHuman=null;
+		String valueHTML=null;
+		try
+		{
+			if (format!=null && value!=null)
+			{	if ("open".equals(format))
+				{	valueHuman=((Boolean)value)?"open":"closed";
+				}
+				else if ("on".equals(format))
+				{	valueHuman=((Boolean)value)?"on":"off";
+				}
+				else if ("rgb".equals(format))
+				{	valueHuman=null;
+					Map m=(Map)value;
+					double r=((Number)m.get("r")).doubleValue();
+					double g=((Number)m.get("g")).doubleValue();
+					double b=((Number)m.get("b")).doubleValue();
+					String rgb="rgb("+((int)(r*255.9))+","+((int)(g*255.9))+","+((int)(b*255.9))+")";
+					valueHTML="<div class='rgb' style='background: "+rgb+"'/>";
+				}
+				else if (format.contains("%"))
+				{	
+					if (value instanceof Number)
+					{
+						try
+						{	valueHuman=String.format(format,value);
+						} catch (IllegalFormatConversionException e)
+						{	valueHuman=value.toString();
+						}
+					}
+					else if (value instanceof Map)
+					{	StringBuilder sb=new StringBuilder();
+						Map<Object,Object> bdo=(Map)value;
+						boolean first=true;
+						for (Map.Entry entry : bdo.entrySet())
+						{	if (first) first=false; else sb.append(", ");
+							sb.append(entry.getKey());
+							sb.append(": ");
+							sb.append(String.format(format,entry.getValue()));
+						}
+						valueHuman=sb.toString();
+					}
+					else
+					{	valueHuman="?"+value.getClass();
+					}
+				}
+				else
+				{	valueHuman=value.toString();
+				}
+			}
+			else
+			{	if (value==null)
+				{	valueHuman="NULL";
+				}
+				else
+				{	valueHuman=value.toString();
+				}
+			}
+		}
+		catch (Exception e)
+		{	valueHuman=	value.toString();
+			e.printStackTrace();
+		}
+		return new String[] {valueHuman,valueHTML};
 	}
 	
 	public void onList(INKFRequestContext aContext) throws Exception	

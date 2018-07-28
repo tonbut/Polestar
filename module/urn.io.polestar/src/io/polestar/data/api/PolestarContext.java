@@ -18,6 +18,7 @@ import io.polestar.api.IPolestarAPI;
 import io.polestar.api.IPolestarContext;
 import io.polestar.api.IPolestarQuery;
 import io.polestar.api.QueryType;
+import io.polestar.view.sensors.SensorViewAccessor;
 
 public class PolestarContext implements InvocationHandler, IPolestarAPI
 {
@@ -59,12 +60,28 @@ public class PolestarContext implements InvocationHandler, IPolestarAPI
 	
 	private IHDSReader mSensorState;
 	private IHDSReader mScriptState;
+	private IHDSReader mSensorConfig;
 	
 	private IHDSReader getSensorState() throws NKFException
 	{	if (mSensorState==null)
 		{	mSensorState=mContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
 		}
 		return mSensorState;
+	}
+	
+	private IHDSReader getSensorDefinitions() throws NKFException
+	{	if (mSensorConfig==null)
+		{	mSensorConfig=mContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		}
+		return mSensorConfig;
+	}
+	
+	private IHDSReader getSensorDefinition(String aSensor) throws NKFException
+	{	IHDSReader sensor=getSensorDefinitions().getFirstNodeOrNull("key('byId','"+aSensor+"')");
+		if (sensor==null)
+		{	throw new NKFException("Unknown Sensor","sensor ["+aSensor+"] does not exist");
+		}
+		return sensor;
 	}
 	
 	public boolean sensorExists(String aSensorId) throws NKFException
@@ -86,6 +103,20 @@ public class PolestarContext implements InvocationHandler, IPolestarAPI
 	{	IHDSReader sensorState=getSensorState(aSensorId);
 		return sensorState.getFirstValue("value");
 	}
+	
+	@Override
+	public String formatSensorValue(String aSensorId) throws NKFException
+	{	Object value=getSensorValue(aSensorId);
+		IHDSReader sensorDef=getSensorDefinition(aSensorId);
+		String format=(String)sensorDef.getFirstValueOrNull("format");
+		String s=SensorViewAccessor.getHumanReadable(value, format)[0];
+		String units=(String)sensorDef.getFirstValueOrNull("units");
+		if (units!=null && units.length()>0)
+		{	s=s+" "+units;
+		}
+		return s;
+	}
+	
 
 	@Override
 	public String getSensorError(String aSensorId) throws NKFException

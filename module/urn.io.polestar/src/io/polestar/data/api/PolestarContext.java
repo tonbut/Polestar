@@ -143,6 +143,12 @@ public class PolestarContext implements InvocationHandler, IPolestarAPI
 		m.pushNode("sensor");
 		m.addNode("id",aSensorId);
 		m.addNode("value", aValue);
+		/*
+		String error=getSensorError(aSensorId);
+		if (error!=null)
+		{	m.addNode("error", error);
+		}
+		*/
 		m.popNode();
 		INKFRequest req=mContext.createRequest("active:polestarSensorUpdate");
 		req.addArgumentByValue("state",m.toDocument(false));

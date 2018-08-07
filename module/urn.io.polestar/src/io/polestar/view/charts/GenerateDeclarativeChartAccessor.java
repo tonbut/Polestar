@@ -18,6 +18,8 @@ import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 
+import io.polestar.data.util.MonitorUtils;
+
 
 public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 {
@@ -44,18 +46,6 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 	{
 		long period=Long.parseLong((String)aOp.getFirstValue("chartPeriod"));
 		long endTime;
-		/*
-		String endTimeString=(String)aOp.getFirstValueOrNull("endTime");
-		if (endTimeString==null)
-		{	endTime=System.currentTimeMillis();
-		}
-		else
-		{	endTime=Long.parseLong(endTimeString);
-			if (endTime<=0)
-			{	endTime+=System.currentTimeMillis();
-			}
-		}
-		*/
 		
 		String endSnap=(String)aOp.getFirstValueOrNull("endSnap");
 		if (endSnap==null) endSnap="now";
@@ -101,25 +91,13 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				break;
 				
 		}
-		/* "endSnap": {
-        	"type": "string",
-            "title": "Chart End",
-            "enum": [ "now", "hour", "day", "week", "month", "year" ],
-            "default": "now"
-        },
-        "endOffset": */
-		
-		
-		
+	
 		long samplesPeriod=Long.parseLong((String)aOp.getFirstValue("samplePeriod"));
 		long mergeCount=samplesPeriod/(1000L*60*5);
 		long elementCount=period/samplesPeriod;
-		//System.out.println(elementCount);
-		boolean normalizeYAxis="true".equals(aOp.getFirstValueOrNull("normalizeYAxis"));
+
 		String yAxisTop=(String)aOp.getFirstValueOrNull("yAxisTop");
-		if (yAxisTop==null) yAxisTop="null";
 		String yAxisBottom=(String)aOp.getFirstValueOrNull("yAxisBottom");
-		if (yAxisBottom==null) yAxisBottom="null";
 		
 		String timeFormat=(String)aOp.getFirstValue("timeFormat");
 		
@@ -132,7 +110,6 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		m.addNode("merge",(int)mergeCount);
 		m.addNode("samplePeriod",samplesPeriod);
 		if (timeFormat!=null) m.addNode("timeFormat",timeFormat);
-		m.addNode("json",true);
 		m.pushNode("sensors");
 		
 		for (IHDSReader sensorNode : aOp.getNodes("sensors/sensor"))
@@ -147,11 +124,16 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 			m.pushNode("sensor").addNode("id",sensorId).addNode("mergeAction",mergeAction).popNode();
 		}
 		
-		//INKFRequest req=aContext.createRequest("active:polestarHistoricalQuery");
 		INKFRequest req=aContext.createRequest("active:polestarSensorQuery");
 		req.addArgumentByValue("operator",m.toDocument(false));
 		req.setRepresentationClass(String.class);
-		String data=(String)aContext.issueRequest(req);
+		req.setRepresentationClass(IHDSDocument.class);
+		IHDSDocument d=(IHDSDocument)aContext.issueRequest(req);
+		String data=MonitorUtils.queryHDStoJSON(d);
+		double[] minMax=MonitorUtils.getQueryHDSMaxMin(d);
+		
+		if (yAxisTop==null) yAxisTop=Double.toString(minMax[1]);
+		if (yAxisBottom==null) yAxisBottom=Double.toString(minMax[0]);
 		
 		//chart layout
 		float width=640.0f;
@@ -191,32 +173,32 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 			if (valueMultiplyString==null) valueMultiplyString="1";
 			String valueOffsetString=(String)sensorNode.getFirstValueOrNull("valueOffset");
 			if (valueOffsetString==null) valueOffsetString="0";
-			//String function="return (d==null)?null:y(d*"+valueMultiplyString+"+"+valueOffsetString+")";
 			String function="return (d==null)?null:y((d+"+valueOffsetString+")*"+valueMultiplyString+")";
 			
-			String baseline="0";
+			String baseline=yAxisBottom;
 			String baselineString=(String)sensorNode.getFirstValueOrNull("baseline");
 			if (baselineString!=null)
 			{	baseline=baselineString;
 			}
-			//baseline=Float.toString((Float.parseFloat(baseline)-Float.parseFloat(valueOffsetString))/Float.parseFloat(valueMultiplyString));
 			
 			String js="";
+			
+			String lineWidth=(String)sensorNode.getFirstValueOrNull("lineWidth");
+			String strokeDasharray=(String)sensorNode.getFirstValueOrNull("strokeDasharray");
+			if (lineWidth==null)
+				lineWidth="2";
+			if (strokeDasharray==null)
+				strokeDasharray="null";
+			else
+				strokeDasharray="\""+strokeDasharray+"\"";
+			
 			if (type.equals("area"))
 			{
 				js="drawArea("+n+","+fill+", "+stroke+", "+shape+", function(d) { "+function+" },"+baseline+","+interpolate+",gd,vis);\n";
+				js+="drawLine("+n+","+stroke+", "+fill+", "+strokeDasharray+", "+lineWidth+", "+shape+", function(d) { "+function+" },"+interpolate+",gd,vis);\n";
 			}
 			else if (type.equals("line"))
 			{
-				String lineWidth=(String)sensorNode.getFirstValueOrNull("lineWidth");
-				String strokeDasharray=(String)sensorNode.getFirstValueOrNull("strokeDasharray");
-				if (lineWidth==null)
-					lineWidth="2";
-				if (strokeDasharray==null)
-					strokeDasharray="null";
-				else
-					strokeDasharray="\""+strokeDasharray+"\"";
-				
 				js="drawLine("+n+","+fill+", "+stroke+", "+strokeDasharray+", "+lineWidth+", "+shape+", function(d) { "+function+" },"+interpolate+",gd,vis);\n";
 			}
 			else if (type.equals("bar"))

@@ -29,7 +29,7 @@ public class PolestarQuery implements IPolestarQuery
 	private final QueryType mType;
 	private final INKFRequestContext mContext;
 	private final PolestarContext mPolestarContext;
-	private long mStart, mEnd;
+	private long mStart, mEnd, mPeriod;
 	private Object mParameter;
 	private IPolestarMatcher mMatcher;
 	
@@ -64,6 +64,31 @@ public class PolestarQuery implements IPolestarQuery
 		}
 		return this;
 	}
+	
+	@Override
+	public IPolestarQuery setResultSetPeriod(long aPeriod) throws NKFException
+	{	if (aPeriod>0)
+		{
+			switch (mType) {
+			case DIFF:
+			case SUM:
+			case AVERAGE:
+			case MAX:
+			case MIN:
+			case COUNT:
+				mPeriod=aPeriod;
+				break;
+			default:
+				throw new NKFException("uery result set period not wanted","For query type "+mType.toString());
+			}
+		}
+		else
+		{	throw new NKFException("Query result set period must be greater than 0");
+		}
+		return this;
+	}
+
+	
 
 	@Override
 	public IPolestarQuery setQueryParameter(Object aParameter) throws NKFException
@@ -125,7 +150,14 @@ public class PolestarQuery implements IPolestarQuery
 		m.pushNode("query");
 		m.addNode("start",mStart); 
 		m.addNode("end",mEnd);
-		m.addNode("samplePeriod", mEnd-mStart);
+		long period;
+		if (mPeriod>0)
+		{	period=mPeriod;
+		}
+		else
+		{	period=mEnd-mStart;
+		}
+		m.addNode("samplePeriod", period);
 		m.pushNode("sensors"); //list of sensors that we want to get data for
 		m.pushNode("sensor").addNode("id",mSensor);
 		return m;
@@ -136,7 +168,13 @@ public class PolestarQuery implements IPolestarQuery
 		req.addArgumentByValue("operator",aQuery);
 		req.setRepresentationClass(IHDSDocument.class);
 		IHDSDocument rep=(IHDSDocument)mContext.issueRequest(req);
-		return rep.getReader().getFirstValue("/rows/row[1]/sensor1");
+		
+		if (mPeriod>0)
+		{	return rep.getReader().getValues("/rows/row/sensor1");
+		}
+		else
+		{	return rep.getReader().getFirstValue("/rows/row[1]/sensor1");
+		}
 	}
 	
 	
@@ -322,24 +360,53 @@ public class PolestarQuery implements IPolestarQuery
 	}
 	
 	private Object onAverage() throws NKFException
-	{	IQueryIteratorController qic=QueryIteratorController.getAverageInstance();
-		iterateForward(qic);
-		return qic.getResult();
+	{	if (mPeriod>0)
+		{	IHDSMutator m=createHistoricalQueryBase();
+			m.addNode("mergeAction","average").popNode();
+			return executeHistoricalQuery(m.toDocument(false));
+		}
+		else
+		{	IQueryIteratorController qic=QueryIteratorController.getAverageInstance();
+			iterateForward(qic);
+			return qic.getResult();
+		}
 	}
 	private Object onMax() throws NKFException
-	{	IQueryIteratorController qic=QueryIteratorController.getMaxInstance();
-		iterateForward(qic);
-		return qic.getResult();
+	{	if (mPeriod>0)
+		{	IHDSMutator m=createHistoricalQueryBase();
+			m.addNode("mergeAction","max").popNode();
+			return executeHistoricalQuery(m.toDocument(false));
+		}
+		else
+		{
+			IQueryIteratorController qic=QueryIteratorController.getMaxInstance();
+			iterateForward(qic);
+			return qic.getResult();
+		}
 	}
 	private Object onMin() throws NKFException
-	{	IQueryIteratorController qic=QueryIteratorController.getMinInstance();
-		iterateForward(qic);
-		return qic.getResult();
+	{	if (mPeriod>0)
+		{	IHDSMutator m=createHistoricalQueryBase();
+			m.addNode("mergeAction","min").popNode();
+			return executeHistoricalQuery(m.toDocument(false));
+		}
+		else
+		{	IQueryIteratorController qic=QueryIteratorController.getMinInstance();
+			iterateForward(qic);
+			return qic.getResult();
+		}
 	}
 	private Object onCount() throws NKFException
-	{	IQueryIteratorController qic=QueryIteratorController.getCountInstance();
-		iterateForward(qic);
-		return qic.getResult();
+	{	if (mPeriod>0)
+		{	IHDSMutator m=createHistoricalQueryBase();
+			m.addNode("mergeAction","count").popNode();
+			return executeHistoricalQuery(m.toDocument(false));
+		}
+		else
+		{	IQueryIteratorController qic=QueryIteratorController.getCountInstance();
+			iterateForward(qic);
+			return qic.getResult();
+		}
 	}
 	
 	private Object onStandardDeviation() throws NKFException
@@ -470,6 +537,7 @@ public class PolestarQuery implements IPolestarQuery
 		return qic.getResult();
 	}
 
+	
 	
 	
 }

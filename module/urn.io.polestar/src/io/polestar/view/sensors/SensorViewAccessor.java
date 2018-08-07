@@ -16,6 +16,7 @@ package io.polestar.view.sensors;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IllegalFormatConversionException;
 import java.util.List;
@@ -28,6 +29,7 @@ import org.netkernel.layer0.nkf.INKFRequestReadOnly;
 import org.netkernel.layer0.nkf.INKFResponse;
 import org.netkernel.layer0.nkf.INKFResponseReadOnly;
 import org.netkernel.layer0.nkf.NKFException;
+import org.netkernel.layer0.representation.IHDSNode;
 import org.netkernel.layer0.util.Utils;
 import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
@@ -37,6 +39,9 @@ import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 
 import com.mongodb.BasicDBObject;
 
+import io.polestar.api.IPolestarContext;
+import io.polestar.api.QueryType;
+import io.polestar.data.api.PolestarContext;
 import io.polestar.data.util.MonitorUtils;
 import io.polestar.view.template.TemplateWrapper;
 
@@ -69,7 +74,199 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			else if (action.equals("info"))
 			{	onInfo(aContext);
 			}
+			else if (action.equals("detail") && id!=null)
+			{	onDetail(aContext,id);
+			}
+			else if (action.equals("detailChart") && id!=null)
+			{	onDetailChart(aContext,id);
+			}
 		}
+	}
+	
+	private static String getMergeActionForSensor(Object value, String format)
+	{
+		String mergeAction="sample";
+		if (value!=null && (value instanceof Float || value instanceof Double))
+		{	mergeAction="average";
+		}
+		if (value!=null && (value instanceof Map))
+		{	mergeAction="average_map";
+		}
+		
+		if ("count".equals(format))
+		{	mergeAction="positive_diff";
+		}
+		if (value!=null && value instanceof Boolean)
+		{	mergeAction="boolean_change";
+		}
+		return mergeAction;
+	}
+	
+	public void onDetailChart(INKFRequestContext aContext, String aId) throws Exception
+	{
+		//aContext.createResponseFrom("<div>chart</div>");
+		
+		IPolestarContext context=PolestarContext.createContext(aContext);
+		
+		int width=640;
+		long period=1000L*60*60*24;
+		String timeFormat="kk:mm";
+		try
+		{
+			IHDSNode params=aContext.source("httpRequest:/params",IHDSNode.class);
+			String chartJSON=params.getFirstNode("/*").getName();
+			INKFRequest req=aContext.createRequest("active:JSONToHDS");
+			req.addArgumentByValue("operand", chartJSON);
+			//req.addArgumentByValue("operator", "<config><addRootElement>chart</addRootElement><convertToString>true</convertToString></config>");
+			req.setRepresentationClass(IHDSDocument.class);
+			IHDSReader chartHDS=((IHDSDocument)aContext.issueRequest(req)).getReader();
+			//System.out.println(chartHDS);
+		
+			width=Integer.parseInt(chartHDS.getFirstValue("/width2").toString())-16;
+			
+			String periodString=(String)chartHDS.getFirstValue("/period");			
+			if (periodString.equals("hour"))
+			{	period=3600000L;
+			}
+			if (periodString.equals("day"))
+			{	period=86400000L;
+			}
+			if (periodString.equals("week"))
+			{	period=604800000L;
+				timeFormat="E";
+			}
+			if (periodString.equals("month"))
+			{	period=2678400000L;
+				timeFormat="d MMM";
+			}
+			if (periodString.equals("year"))
+			{	period=31536000000L;
+				timeFormat="d MMM";
+			}
+
+		} catch (Exception e)
+		{;}
+		
+		int height=width/4;
+		
+		IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
+		IHDSReader stateNode=state.getFirstNodeOrNull("key('byId','"+aId+"')");
+		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		IHDSReader configNode=config.getFirstNodeOrNull("key('byId','"+aId+"')");
+		
+		Object value=stateNode.getFirstValueOrNull("value");
+		String format=(String)configNode.getFirstValueOrNull("format");
+		String mergeAction=getMergeActionForSensor(value, format);
+		
+		int detail=128;
+		long samplePeriod=period/detail;
+		
+		boolean isNumeric=false;
+		boolean isBoolean=false;
+		boolean isMap=false;
+		if (value instanceof Number)
+		{	isNumeric=true;
+		}
+		else if (value instanceof Boolean)
+		{	isBoolean=true;
+		}
+		else if (value instanceof Map)
+		{	isMap=true;
+		}
+		
+		IHDSMutator m=HDSFactory.newDocument();
+		m.pushNode("chart")
+		.addNode("type", "TimeSeriesData")
+		.addNode("chartPeriod", Long.toString(period))
+		.addNode("samplePeriod", Long.toString(samplePeriod))
+		.addNode("timeFormat", timeFormat)
+		.addNode("width", Integer.toString(width))
+		.addNode("height", Integer.toString(height))
+		.pushNode("sensors");
+		
+		if (isNumeric || isBoolean)
+		{
+			m.pushNode("sensor")
+			.addNode("id", aId)
+			.addNode("mergeAction", mergeAction)
+			.addNode("fill","rgba(0,0,0,0.08)")
+			.addNode("lineWidth", "3")
+			.addNode("stroke","#448")
+			;
+		}
+		
+		if (isNumeric)
+		{	if (mergeAction.equals("positive_diff"))
+			{	m.addNode("interpolate","step-before");
+			}
+			else
+			{	m.addNode("interpolate","basis");
+			}
+			m.addNode("type","area");
+		}
+		if (isBoolean)
+		{	//m.addNode("type","boolean");
+			m.addNode("interpolate","step-before");
+			m.addNode("type","area");
+		}
+		if (isMap)
+		{
+			Set<String> keys=((Map)value).keySet();
+			int index=0;
+			for (String key : keys)
+			{
+				m.pushNode("sensor")
+					.addNode("id", aId)
+					.addNode("dname", key+"#"+key)
+					.addNode("interpolate","basis")
+					.addNode("mergeAction", "average")
+					.addNode("type","area")
+					.addNode("lineWidth", "2")
+					.addNode("stroke",MonitorUtils.getColourScheme(index))
+					.addNode("fill","rgba(0,0,0,0.05)")
+				.popNode();
+				index++;
+			}
+			m.popNode();
+			m.addNode("legend", "true");
+		}
+		
+		
+		INKFRequest req2=aContext.createRequest("active:polestarDeclarativeChart");
+		req2.addArgumentByValue("operator",m.toDocument(false));
+		INKFResponseReadOnly respIn=aContext.issueRequestForResponse(req2);
+
+		INKFResponse respOut=aContext.createResponseFrom(respIn);
+		
+	}
+	
+	
+	
+	
+	public void onDetail(INKFRequestContext aContext, String aId) throws Exception
+	{
+		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		IHDSReader configNode=config.getFirstNodeOrNull("key('byId','"+aId+"')");
+		IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
+		IHDSReader stateNode=state.getFirstNodeOrNull("key('byId','"+aId+"')");
+		IHDSReader info=aContext.source("active:polestarSensorInfo",IHDSDocument.class).getReader();
+		IHDSReader infoNode=info.getFirstNodeOrNull("key('byId','"+aId+"')");
+		//System.out.println(stateNode);
+		IHDSMutator m=stateNode.toDocument().getMutableClone();
+		IHDSMutator m2=m.getFirstNode("/sensor");
+		long now=System.currentTimeMillis();
+		addDerivedSensorNodes(m2,configNode,now,true);
+		m2.pushNode("info").appendChildren(infoNode).popNode();
+				
+		//System.out.println(m);
+		
+		INKFRequest req = aContext.createRequest("active:xslt");
+		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensorDetail.xsl");
+		req.addArgumentByValue("operand", m.toDocument(false));
+		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);
+		
+		INKFResponse resp=aContext.createResponseFrom(subresp);
+		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);
 	}
 	
 	public void onInfo(INKFRequestContext aContext) throws Exception
@@ -206,51 +403,100 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			{	sensorNode.delete();
 			}
 			else
-			{	sensorNode.pushNode("defn");
-				sensorNode.appendChildren(sensorDef);
-				sensorNode.popNode();
+			{	
+				addDerivedSensorNodes(sensorNode,sensorDef,now,false);
 				
-				String keywords=(String)sensorDef.getFirstValueOrNull("keywords");
-				if (keywords!=null)
-				{	String[] kws=Utils.splitString(keywords, ", ");
-					sensorNode.pushNode("keywordList");
-					for (String kw : kws)
-					{	sensorNode.addNode("keyword",kw);
-					}
-					sensorNode.popNode();
-				}
 				
-				String period;
-				long lastUpdated=(Long)sensorNode.getFirstValue("lastUpdated");
-				if (lastUpdated==0)
-				{	period="Never";
-				}
-				else
-				{	period=MonitorUtils.formatPeriod(now-lastUpdated)+" ago";
-				}
-				sensorNode.addNode("lastUpdatedHuman", period);
-				long lastModified=(Long)sensorNode.getFirstValue("lastModified");
-				if (lastModified==0)
-				{	period="Never";
-				}
-				else
-				{	period=MonitorUtils.formatPeriod(now-lastModified)+" ago";
-				}
-				sensorNode.addNode("lastModifiedHuman", period);
-				
-				String format=(String)sensorDef.getFirstValueOrNull("format");
-				Object value=sensorNode.getFirstValue("value");
-				
-				String[] vhh=getHumanReadable(value, format);
-				String valueHuman=vhh[0];
-				String valueHTML=vhh[1];
-				
-				sensorNode.addNode("valueHuman", valueHuman);
-				if (valueHTML!=null) sensorNode.addNode("valueHTML", valueHTML);
 			}
 		}
 		return state;
 	}
+	
+	private static void addDerivedSensorNodes(IHDSMutator sensorNode, IHDSReader sensorDef, long now, boolean aConstraints)
+	{
+		sensorNode.pushNode("defn");
+		sensorNode.appendChildren(sensorDef);
+		sensorNode.popNode();
+		
+		sensorNode.addNode("webId", getWebId((String)sensorDef.getFirstValue("id")));
+		
+		String keywords=(String)sensorDef.getFirstValueOrNull("keywords");
+		if (keywords!=null)
+		{	String[] kws=Utils.splitString(keywords, ", ");
+			sensorNode.pushNode("keywordList");
+			for (String kw : kws)
+			{	sensorNode.addNode("keyword",kw);
+			}
+			sensorNode.popNode();
+		}
+		
+		String period;
+		long lastUpdated=(Long)sensorNode.getFirstValue("lastUpdated");
+		if (lastUpdated==0)
+		{	period="Never";
+		}
+		else
+		{	period=MonitorUtils.formatPeriod(now-lastUpdated)+" ago";
+		}
+		sensorNode.addNode("lastUpdatedHuman", period);
+		long lastModified=(Long)sensorNode.getFirstValue("lastModified");
+		if (lastModified==0)
+		{	period="Never";
+		}
+		else
+		{	period=MonitorUtils.formatPeriod(now-lastModified)+" ago";
+		}
+		sensorNode.addNode("lastModifiedHuman", period);
+		
+		String format=(String)sensorDef.getFirstValueOrNull("format");
+		Object value=sensorNode.getFirstValue("value");
+		
+		String[] vhh=getHumanReadable(value, format);
+		String valueHuman=vhh[0];
+		String valueHTML=vhh[1];
+		
+		sensorNode.addNode("valueHuman", valueHuman);
+		if (valueHTML!=null) sensorNode.addNode("valueHTML", valueHTML);
+		
+		//constraints
+		if (aConstraints)
+		{
+			sensorNode.pushNode("constraints");
+			for (Map.Entry<String, Boolean> ce : sConstraints.entrySet())
+			{	
+				Object cp=sensorDef.getFirstValueOrNull(ce.getKey());
+				if (cp!=null)
+				{	String cps;
+					if (ce.getValue())
+					{	cps=MonitorUtils.formatPeriod(((Long)cp)*1000L);
+					}
+					else
+					{	cps=cp.toString();
+					}
+					sensorNode.pushNode("constraint").addNode("name", ce.getKey()).addNode("value", cps).popNode();
+				}
+			}
+			sensorNode.popNode();
+		}
+		
+		
+	}
+	
+	private static Map<String,Boolean> sConstraints=new HashMap();
+	static
+	{
+		sConstraints.put("errorIfNoReadingsFor",true);
+		sConstraints.put("errorIfNotModifiedFor",true);
+		sConstraints.put("errorOnlyAfter",true);
+		sConstraints.put("errorIfGreaterThan",false);
+		sConstraints.put("errorClearIfLessThan",false);
+		sConstraints.put("errorIfLessThan",false);
+		sConstraints.put("errorClearIfGreaterThan",false);
+		sConstraints.put("errorIfEquals",false);
+		sConstraints.put("errorIfNotEquals",false);
+	}
+	
+	
 	
 	public static String[] getHumanReadable(Object value, String format)
 	{
@@ -385,4 +631,9 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
 		INKFResponse resp=aContext.createResponseFrom(subresp);
 	}
+	
+	private static String getWebId(String aId)
+	{	return aId.replaceAll("\\:", "%3A");
+	}
+	
 }

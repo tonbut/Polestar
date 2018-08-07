@@ -9,6 +9,7 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .form-group label { margin-bottom: 0; }
 .list-group-item { padding: 6px 10px; }
 #sensor-list .list-group-item { padding: 2px 4px; }
+#sensor-list a:hover .list-group-item { background: #F0F0F0; }
 .list-group-item .title { font-weight: bold; font-size: 16px; }
 .list-group-item .changed { font-style: italic; font-size: 11px; }
 .list-group-item .value { font-weight: bold; font-size: 16px; color: #448; text-align: right; }
@@ -28,3 +29,8 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 
 .alpaca-form-buttons-container { text-align: left !important; }
 .polestarSensor .alpaca-container-item { background: #F0F0F0; }
+.sensorDetail { padding-top: 1em; }
+.sensorDetail label { text-align: right; font-weight: 700; }
+.sensorDetail h1 { margin: 0; margin-bottom: 4px; font-weight: 700; font-size: 20px; }
+.sensorDetail td { vertical-align: top; }
+.sensorDetail .label { margin: 4px; line-height: 2em;}

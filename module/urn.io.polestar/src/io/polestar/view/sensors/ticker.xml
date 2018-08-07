@@ -102,7 +102,7 @@ for (i=0; i<ids.length; i++)
                 .bottom(function(d) { return y(d?0.25:0.475); } )
                 .height(function(d) { return y(d?0.5:0.05) } )
                 .left(function() { return x(this.index+0.5);} )
-                .fillStyle( "#2020C0" ); 
+                .fillStyle( "#448" ); 
                 
            vis.root.render();           
         }

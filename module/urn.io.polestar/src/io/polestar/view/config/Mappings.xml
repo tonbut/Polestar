@@ -146,6 +146,18 @@
 			<varargs/>
 		</request>
 	</endpoint>
+	<!--
+	<endpoint>
+		<id>polestar:sensor</id>
+		<grammar>res:/polestar/sensor/
+			<group name="id"><regex type="anything"/></group>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.sensors.SensorDetailAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>-->
 	
 	<endpoint>
 		<id>polestar:sensorinfo</id>

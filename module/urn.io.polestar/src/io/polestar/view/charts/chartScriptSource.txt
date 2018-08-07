@@ -8,8 +8,8 @@ source="""
 	<textColor>#404040</textColor>
 	<axisColor>#E0E0E0</axisColor>
 	<timeFormat>kk:mm</timeFormat>
-	<yAxisTop>1.0</yAxisTop>
-	<yAxisBottom>0.0</yAxisBottom>
+	<yAxisTop></yAxisTop>
+	<yAxisBottom></yAxisBottom>
 	<chartPeriod>86400000</chartPeriod>
 	<samplePeriod>900000</samplePeriod>
 	<endOffset>0</endOffset>

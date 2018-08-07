@@ -243,51 +243,52 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 	{
 		IHDSMutator m=HDSFactory.newDocument();
 		m.pushNode("rows");
-		
-		int c=((PairList)aResultTuple.getValue2(0)).size();
-		for (int i=0; i<c; i++)
+		if (aResultTuple.size()>0)
 		{
-			m.pushNode("row");
-			for (int j=0; j<aResultTuple.size(); j++)
-			{	PairList r=(PairList)aResultTuple.getValue2(j);
-				if (j==0)
-				{
-					long time=(Long)r.getValue1(i);	
-					m.addNode("time", time)
-					.addNode("timeString", df.format(new Date(time)));
-				}
-				
-				MergeAction ma=(MergeAction)aResultTuple.getValue1(j);
-				Object v=r.getValue2(i);
-				
-				if (v instanceof BasicDBObject)
-				{	BasicDBObject bdo=(BasicDBObject)v;
-					m.pushNode(ma.getName());
-					for (Map.Entry<String, Object> entry : bdo.entrySet())
-					{	m.addNode(entry.getKey(), entry.getValue());
+			int c=((PairList)aResultTuple.getValue2(0)).size();
+			for (int i=0; i<c; i++)
+			{
+				m.pushNode("row");
+				for (int j=0; j<aResultTuple.size(); j++)
+				{	PairList r=(PairList)aResultTuple.getValue2(j);
+					if (j==0)
+					{
+						long time=(Long)r.getValue1(i);	
+						m.addNode("time", time)
+						.addNode("timeString", df.format(new Date(time)));
 					}
-					m.popNode();
-				}
-				else if (v instanceof Map)
-				{	Map<String,Object> bdo=(Map)v;
-					m.pushNode(ma.getName());
-					for (Map.Entry<String, Object> entry : bdo.entrySet())
-					{	m.addNode(entry.getKey(), entry.getValue());
+					
+					MergeAction ma=(MergeAction)aResultTuple.getValue1(j);
+					Object v=r.getValue2(i);
+					
+					if (v instanceof BasicDBObject)
+					{	BasicDBObject bdo=(BasicDBObject)v;
+						m.pushNode(ma.getName());
+						for (Map.Entry<String, Object> entry : bdo.entrySet())
+						{	m.addNode(entry.getKey(), entry.getValue());
+						}
+						m.popNode();
 					}
-					m.popNode();
+					else if (v instanceof Map)
+					{	Map<String,Object> bdo=(Map)v;
+						m.pushNode(ma.getName());
+						for (Map.Entry<String, Object> entry : bdo.entrySet())
+						{	m.addNode(entry.getKey(), entry.getValue());
+						}
+						m.popNode();
+					}
+					else
+					{	m.addNode(ma.getName(), v);
+					}
+					
+					
 				}
-				else
-				{	m.addNode(ma.getName(), v);
-				}
-				
-				
+				m.popNode();
 			}
-			
-			
-			m.popNode();
+
 		}
 		
-		
+		m.popNode();
 		
 		INKFResponse respOut=aContext.createResponseFrom(m.toDocument(false));
 		respOut.setExpiry(INKFResponse.EXPIRY_ALWAYS);

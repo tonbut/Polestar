@@ -183,6 +183,7 @@
     
     
     <xsl:template name="sensor">
+    		<a href="/polestar/sensors/detail/{webId}">
 		<li class="list-group-item" sensorId="{id}">
 			<xsl:choose>
 				<xsl:when test="error">
@@ -250,6 +251,7 @@
 			</div>
 				
 		</li>
+		</a>
     </xsl:template>
     
     

@@ -220,6 +220,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 				//System.out.println(collection+" "+count+" "+size+" "+size/count);
 			}
 		}
+		m.declareKey("byId", "/sensors/sensor", "id");
 		INKFResponse resp=aContext.createResponseFrom(m.toDocument(false));
 		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 	}

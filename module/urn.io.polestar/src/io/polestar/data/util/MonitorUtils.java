@@ -18,6 +18,7 @@ import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,13 +29,117 @@ import javax.servlet.http.Cookie;
 
 import org.netkernel.layer0.nkf.*;
 import org.netkernel.layer0.representation.IHDSNode;
+import org.netkernel.layer0.util.PairList;
 import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
+
+import io.polestar.data.sensors.MergeAction;
 import io.polestar.view.login.RememberMeCookie;
 
 public class MonitorUtils
 {
+	public static double[] getQueryHDSMaxMin(IHDSDocument aData)
+	{
+		double max=Double.NEGATIVE_INFINITY;
+		double min=Double.POSITIVE_INFINITY;
+		for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
+		{	int i=0;
+			for (IHDSReader valueNode : row.getNodes("*"))
+			{	if (i>=2)
+				{	Object v=valueNode.getFirstValue(".");
+					if (v instanceof Number)
+					{	double d=((Number)v).doubleValue();
+						if (d>max) max=d;
+						if (d<min) min=d;
+					}
+				}
+				i++;
+			}
+		}
+		if (max==Double.NEGATIVE_INFINITY && min==Double.POSITIVE_INFINITY)
+		{	max=1.0;
+			min=0.0;
+		}
+		else if (max==Double.NEGATIVE_INFINITY)
+		{	max=min+1.0;
+		}
+		else if (min==Double.POSITIVE_INFINITY)
+		{	min=max-1.0;
+		}
+		else if (min==max)
+		{	min-=0.5;
+			max+=0.5f;
+		}
+		return new double[] {min,max};
+	}
+	
+	
+	public static String queryHDStoJSON(IHDSDocument aData)
+	{
+		StringBuilder sb=new StringBuilder(4096);
+		sb.append("[ ");
+		
+		for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
+		{
+			sb.append("[ ");
+			Long time=(Long)row.getFirstValue("time");
+			sb.append(Long.toString(time));
+			sb.append(",'");
+			String timeString=(String)row.getFirstValue("timeString");
+			sb.append(timeString);
+			sb.append("'");
+			
+			int i=0;
+			for (IHDSReader valueNode : row.getNodes("*"))
+			{
+				if (i>=2)
+				{
+					sb.append(",");
+					Object v=valueNode.getFirstValue(".");
+					outputJSONValue(sb,v,"%.3f");
+				}
+				i++;
+			}
+			sb.append("],\n");
+		}
+		
+		sb.append("]");
+		return sb.toString();	
+	}
+	
+	private static void outputJSONValue(StringBuilder sb, Object v, String format)
+	{
+		boolean needsQuotes=(v instanceof String);
+		if (needsQuotes) sb.append("'");
+		if (format==null)
+		{	sb.append(v);
+		}
+		else if (v==null)
+		{	sb.append("null");
+		}
+		else
+		{	String sf;
+			try
+			{	sf=String.format(format, v);
+			} catch (Exception e)
+			{	sf=v.toString();
+			}
+			sb.append(sf);
+		}
+		
+		if (needsQuotes) sb.append("'");
+	}
+	
+	
+	
+	private static String[] sColourScheme = {
+			"#d52a2d", "#30a039", "#2177b1", "#fe802a", "#9367ba", "#8c564c", "#e278c0", "#7f7f7f", "#bcbd3b", "#1fbecd" };
+
+	
+	public static String getColourScheme(int aIndex)
+	{	return sColourScheme[aIndex%sColourScheme.length];
+	}
 	
 	public static String hexString(long aLong)
 	{	return String.format("%016X",aLong);

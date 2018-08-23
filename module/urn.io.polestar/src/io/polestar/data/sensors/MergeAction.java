@@ -291,6 +291,7 @@ public abstract class MergeAction
 				if (mMax==null || mMax<v)
 				{	mMax=v;
 				}
+				mLastGood=v;
 			}
 		}
 		
@@ -298,7 +299,7 @@ public abstract class MergeAction
 		{	Object result;
 			if (mMax!=null)
 			{	result=mMax;
-				mLastGood=mMax;
+				
 			}
 			else
 			{	result=mLastGood;
@@ -318,6 +319,7 @@ public abstract class MergeAction
 				if (mMin==null || mMin>v)
 				{	mMin=v;
 				}
+				mLastGood=v;
 			}
 		}
 		
@@ -325,7 +327,7 @@ public abstract class MergeAction
 		{	Object result;
 			if (mMin!=null)
 			{	result=mMin;
-				mLastGood=mMin;
+				
 			}
 			else
 			{	result=mLastGood;

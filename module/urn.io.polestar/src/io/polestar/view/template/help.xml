@@ -185,6 +185,7 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
   		<div class="micon"><img src="/polestar/pub/icon/random.png"/><div class="caption">random.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/atom.png"/><div class="caption">atom.png</div></div>
   		<div class="micon"><img src="/polestar/pub/icon/probe.png"/><div class="caption">probe.png</div></div>
+  		<div class="micon"><img src="/polestar/pub/icon/plant.png"/><div class="caption">plant.png</div></div>
   	</div>
 	
 	

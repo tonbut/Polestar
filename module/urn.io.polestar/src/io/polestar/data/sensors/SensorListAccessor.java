@@ -104,6 +104,20 @@ public class SensorListAccessor extends StandardAccessorImpl
 			}
 		}
 		
+		//index errors
+		try
+		{	col=MongoUtils.getCollection("errors");
+			List<DBObject> indexes=col.getIndexInfo();
+			//System.out.println(indexes.size()+" indices on errors");
+			if (indexes.size()<2)
+			{	col.createIndex(new BasicDBObject("t", 1));
+				col.createIndex(new BasicDBObject("i", 1));
+			}
+		}
+		catch (Exception e)
+		{	aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
+		}
+		
 		//run startup scripts
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("startup"), true, aContext);
 	}
@@ -236,6 +250,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			ss.poll(sensorDef, now,aContext);
 			if (ss.getErrorLastModified()==now)
 			{	mChanges.put(id, id);
+				recordError(id,now,aContext);
 				anyErrorChange=true;
 			}
 		}
@@ -245,6 +260,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 		}
 							
 	}
+	
 
 	public void onChanges(INKFRequestContext aContext) throws Exception
 	{
@@ -356,11 +372,39 @@ public class SensorListAccessor extends StandardAccessorImpl
 			if (ss.getErrorLastModified()==now)
 			{	//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onUpdate() "+(ss.getError()!=null)+" "+sensorDef.getFirstValue("name"));
 				mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
+				recordError(sensorId,now,aContext);
 			}
 		}
 			
 		
 	}
+	
+	private void recordError(String aSensorId, long aNow, INKFRequestContext aContext)
+	{	try
+		{	BasicDBObject sensor=new BasicDBObject();
+			sensor.append("t", aNow);
+			sensor.append("i", aSensorId);
+			SensorState ss=mSensorStates.get(aSensorId);
+			String error=ss.getError();
+			int level;
+			if (error==null || error.length()==0)
+			{	level=0;
+				error=null;
+			}
+			else
+			{	level=3;
+			}
+			sensor.append("l", level);
+			sensor.append("m", error);
+			DBCollection col=MongoUtils.getCollection("errors");
+			WriteResult wr=col.insert(sensor);
+		}
+		catch (Exception e)
+		{	aContext.logRaw(INKFLocale.LEVEL_SEVERE, Utils.throwableToString(e));
+		}
+	}
+
+	
 	
 	public static void storeSensorState(String aId, Object aValue, long aNow, DBCollection aCol, INKFRequestContext aContext) throws Exception
 	{

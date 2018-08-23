@@ -35,6 +35,8 @@ import io.polestar.data.sensors.MergeAction.Type;
 
 public class SensorQueryAccessor extends StandardAccessorImpl
 {
+	public static String ERROR_FRAGMENT="_ERROR";
+	
 	public SensorQueryAccessor()
 	{	this.declareThreadSafe();
 	}
@@ -130,7 +132,13 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 					mergeAction=MergeAction.getMergeAction(name,format,mergeActionType);
 				}
 				
-				PairList data=getSensorData(id,fragment,start,end,samplePeriod,mergeAction);
+				PairList data;
+				if (fragment!=null && fragment.equals(ERROR_FRAGMENT))
+				{	data=SensorErrorAccessor.errorQuery(id,fragment,start,end,samplePeriod,mergeAction);
+				}
+				else
+				{	data=getSensorData(id,fragment,start,end,samplePeriod,mergeAction);
+				}
 				resultTuple.put(mergeAction, data);
 			}
 			catch (Exception e)
@@ -295,7 +303,7 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 	}
 	
 	
-	private PairList getSensorData(String sensorId, String fragment, long start, long end, long samplePeriod, MergeAction merge) throws Exception
+	private static PairList getSensorData(String sensorId, String fragment, long start, long end, long samplePeriod, MergeAction merge) throws Exception
 	{
 		int size=(int)((end-start)/samplePeriod);
 		PairList result=new PairList(size);

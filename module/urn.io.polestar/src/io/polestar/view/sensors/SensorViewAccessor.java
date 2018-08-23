@@ -78,7 +78,10 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			{	onDetail(aContext,id);
 			}
 			else if (action.equals("detailChart") && id!=null)
-			{	onDetailChart(aContext,id);
+			{	onDetailChart(aContext,id,false);
+			}
+			else if (action.equals("errorChart") && id!=null)
+			{	onDetailChart(aContext,id,true);
 			}
 		}
 	}
@@ -102,7 +105,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		return mergeAction;
 	}
 	
-	public void onDetailChart(INKFRequestContext aContext, String aId) throws Exception
+	public void onDetailChart(INKFRequestContext aContext, String aId, boolean aError) throws Exception
 	{
 		//aContext.createResponseFrom("<div>chart</div>");
 		
@@ -111,6 +114,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		int width=640;
 		long period=1000L*60*60*24;
 		String timeFormat="kk:mm";
+		int offset=0;
 		try
 		{
 			IHDSNode params=aContext.source("httpRequest:/params",IHDSNode.class);
@@ -122,7 +126,8 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			IHDSReader chartHDS=((IHDSDocument)aContext.issueRequest(req)).getReader();
 			//System.out.println(chartHDS);
 		
-			width=Integer.parseInt(chartHDS.getFirstValue("/width2").toString())-16;
+			width=Integer.parseInt(chartHDS.getFirstValue("/width2").toString());
+			offset=Integer.parseInt(chartHDS.getFirstValue("/offset").toString());
 			
 			String periodString=(String)chartHDS.getFirstValue("/period");			
 			if (periodString.equals("hour"))
@@ -147,7 +152,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		} catch (Exception e)
 		{;}
 		
-		int height=width/4;
+		int height=aError?(width/16):(width/4);
 		
 		IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
 		IHDSReader stateNode=state.getFirstNodeOrNull("key('byId','"+aId+"')");
@@ -178,58 +183,77 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		m.pushNode("chart")
 		.addNode("type", "TimeSeriesData")
 		.addNode("chartPeriod", Long.toString(period))
+		.addNode("endOffset", Integer.toString(offset))
 		.addNode("samplePeriod", Long.toString(samplePeriod))
 		.addNode("timeFormat", timeFormat)
 		.addNode("width", Integer.toString(width))
 		.addNode("height", Integer.toString(height))
 		.pushNode("sensors");
 		
-		if (isNumeric || isBoolean)
+		if (aError)
 		{
 			m.pushNode("sensor")
 			.addNode("id", aId)
-			.addNode("mergeAction", mergeAction)
+			.addNode("dname", aId+"#_ERROR")
+			.addNode("type","area")
+			.addNode("interpolate","step-before")
+			.addNode("mergeAction", "max")
 			.addNode("fill","rgba(0,0,0,0.08)")
 			.addNode("lineWidth", "3")
-			.addNode("stroke","#448")
+			.addNode("stroke","rgb(217, 83, 79)")
 			;
 		}
-		
-		if (isNumeric)
-		{	if (mergeAction.equals("positive_diff"))
-			{	m.addNode("interpolate","step-before");
-			}
-			else
-			{	m.addNode("interpolate","basis");
-			}
-			m.addNode("type","area");
-		}
-		if (isBoolean)
-		{	//m.addNode("type","boolean");
-			m.addNode("interpolate","step-before");
-			m.addNode("type","area");
-		}
-		if (isMap)
+		else
 		{
-			Set<String> keys=((Map)value).keySet();
-			int index=0;
-			for (String key : keys)
+		
+			if (isNumeric || isBoolean)
 			{
 				m.pushNode("sensor")
-					.addNode("id", aId)
-					.addNode("dname", key+"#"+key)
-					.addNode("interpolate","basis")
-					.addNode("mergeAction", "average")
-					.addNode("type","area")
-					.addNode("lineWidth", "2")
-					.addNode("stroke",MonitorUtils.getColourScheme(index))
-					.addNode("fill","rgba(0,0,0,0.05)")
-				.popNode();
-				index++;
+				.addNode("id", aId)
+				.addNode("mergeAction", mergeAction)
+				.addNode("fill","rgba(0,0,0,0.08)")
+				.addNode("lineWidth", "3")
+				.addNode("stroke","#448")
+				;
 			}
-			m.popNode();
-			m.addNode("legend", "true");
+			
+			if (isNumeric)
+			{	if (mergeAction.equals("positive_diff"))
+				{	m.addNode("interpolate","step-before");
+				}
+				else
+				{	m.addNode("interpolate","basis");
+				}
+				m.addNode("type","area");
+			}
+			if (isBoolean)
+			{	//m.addNode("type","boolean");
+				m.addNode("interpolate","step-before");
+				m.addNode("type","area");
+			}
+			if (isMap)
+			{
+				Set<String> keys=((Map)value).keySet();
+				int index=0;
+				for (String key : keys)
+				{
+					m.pushNode("sensor")
+						.addNode("id", aId)
+						.addNode("dname", key+"#"+key)
+						.addNode("interpolate","basis")
+						.addNode("mergeAction", "average")
+						.addNode("type","area")
+						.addNode("lineWidth", "2")
+						.addNode("stroke",MonitorUtils.getColourScheme(index))
+						.addNode("fill","rgba(0,0,0,0.05)")
+					.popNode();
+					index++;
+				}
+				m.popNode();
+				m.addNode("legend", "true");
+			}
 		}
+		
 		
 		
 		INKFRequest req2=aContext.createRequest("active:polestarDeclarativeChart");
@@ -256,11 +280,30 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		IHDSMutator m2=m.getFirstNode("/sensor");
 		long now=System.currentTimeMillis();
 		addDerivedSensorNodes(m2,configNode,now,true);
-		m2.pushNode("info").appendChildren(infoNode).popNode();
+		if (infoNode!=null)
+		{
+			m2.pushNode("info").appendChildren(infoNode).popNode();
+		}
 				
+		INKFRequest req=aContext.createRequest("active:polestarSensorErrorInfo");
+		req.addArgument("id", aId);
+		String THREE_MONTHS=Long.toString(1000L*60*60*24*91);
+		req.addArgument("duration",THREE_MONTHS);
+		req.setRepresentationClass(IHDSDocument.class);
+		IHDSReader error=((IHDSDocument)aContext.issueRequest(req)).getReader();
+		m2.pushNode("errors").appendChildren(error.getFirstNode("/sensors/sensor")).popNode();
+		
+		//format percent as decimal just in case default toString() uses scientific notation which XSLT can't handle
+		IHDSMutator errorPercentNode=m2.getFirstNode("errors/errorPercent");
+		double errorPercent=(Double)errorPercentNode.getFirstValue(".");
+		String errorPercentString=String.format("%.6f",errorPercent);
+		errorPercentNode.setValue(errorPercentString);
+		//IHDSReader config=aContext.source("active:polestarSensorErrorInfo",IHDSDocument.class).getReader();
+		
 		//System.out.println(m);
 		
-		INKFRequest req = aContext.createRequest("active:xslt");
+		
+		req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensorDetail.xsl");
 		req.addArgumentByValue("operand", m.toDocument(false));
 		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);

@@ -150,6 +150,17 @@
 			</active></grammar>
 			<class>io.polestar.data.sensors.SensorListAccessor</class>
 		</endpoint>
+		
+		<endpoint>
+			<id>polestar:data:error</id>
+			<grammar><active>
+				<identifier>active:polestarSensorErrorInfo</identifier>
+				<identifier>active:polestarSensorErrorList</identifier>
+				<argument name="id" min="0"/>
+				<argument name="duration"/>
+			</active></grammar>
+			<class>io.polestar.data.sensors.SensorErrorAccessor</class>
+		</endpoint>
         
         <endpoint>
             <id>polestar:data:scriptTriggers</id>

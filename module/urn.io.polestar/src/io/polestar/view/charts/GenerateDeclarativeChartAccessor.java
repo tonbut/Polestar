@@ -297,7 +297,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 			titleJS+="vis.add(pv.Label).font(\"10px sans-serif\").left(x(0)).bottom(h+4).textAlign(\"left\").textStyle(textColor).text(\""+subTitle+"\");";
 		}
 		
-		
+		String chartCanvas="canvas"+Integer.toHexString(aContext.hashCode());
 		
 		String template=aContext.source("res:/io/polestar/view/charts/timeSeriesDataTemplate.txt",String.class);
 		
@@ -318,6 +318,8 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		tokens.put("BOTTOMMARGIN", bottomMargin);
 		tokens.put("LEGEND", legend);
 		tokens.put("TITLE", titleJS);
+		tokens.put("CHARTCANVAS", chartCanvas);
+		
 
 		// Create pattern of the format "%(cat|beverage)%"
 		String patternString = "%(.+?)%";

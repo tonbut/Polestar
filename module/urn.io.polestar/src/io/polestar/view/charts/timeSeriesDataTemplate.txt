@@ -1,8 +1,9 @@
 <html><body><div>
 
-<div id="chartCanvas" style="background: %BACKGROUND_COLOR%; width: %CWIDTH%px; height: %CHEIGHT%px;"/>
+<div id="%CHARTCANVAS%" style="background: %BACKGROUND_COLOR%; width: %CWIDTH%px; height: %CHEIGHT%px;"/>
 <script type="text/javascript" src="/polestar/pub/protovis-d3.2.js"></script>
 <script type="text/javascript"><!--
+(function() {
 
 gd = %DATA%;
 len=gd.length;
@@ -19,7 +20,7 @@ var w = %WIDTH%,
     y = pv.Scale.linear(ybottom,ytop).range(0, h);
 
 var vis = new pv.Panel()
-	.canvas("chartCanvas")
+	.canvas("%CHARTCANVAS%")
     .width(w)
     .height(h)
     .top(%TOPMARGIN%)
@@ -135,6 +136,7 @@ function drawBoolean(idx, fillStyle, strokeStyle, origin, height, data, vis)
 		area.strokeStyle(strokeStyle);
 }
 
+})();
 -->
 </script>
 

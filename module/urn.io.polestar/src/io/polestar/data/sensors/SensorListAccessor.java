@@ -354,25 +354,33 @@ public class SensorListAccessor extends StandardAccessorImpl
 		{	String sensorId=(String)sensorStateNode.getFirstValue("id");
 			String exception=(String)sensorStateNode.getFirstValueOrNull("error");
 			Object newValue=sensorStateNode.getFirstValueOrNull("value");
+			Long updateTime=(Long)sensorStateNode.getFirstValueOrNull("time");
 			
 			IHDSReader sensorDef=config.getFirstNodeOrNull(String.format("key('byId','"+sensorId+"')"));
 			if (sensorDef==null)
 			{	throw new NKFException("Sensor not found",sensorId);
 			}
 			
+			if (updateTime==null)
+			{	updateTime=now;
+			}
+			
 			SensorState ss=getSensorState(sensorId,true);
-			ss.setUserError(exception, now);
-			ss.setValue(newValue, now, sensorDef,aContext);
+			if (ss.getLastModified()<updateTime)
+			{		
+				ss.setUserError(exception, updateTime);
+				ss.setValue(newValue, updateTime, sensorDef,aContext);
+			}
 
-			if (ss.getLastModified()==now)
+			if (ss.getLastModified()==updateTime)
 			{	mChanges.put(sensorId, sensorId);
 				DBCollection col=MongoUtils.getCollectionForSensor(sensorId);
-				storeSensorState(sensorId,newValue,now,col,aContext);
+				storeSensorState(sensorId,newValue,updateTime,col,aContext);
 			}
-			if (ss.getErrorLastModified()==now)
+			if (ss.getErrorLastModified()==updateTime)
 			{	//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onUpdate() "+(ss.getError()!=null)+" "+sensorDef.getFirstValue("name"));
 				mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
-				recordError(sensorId,now,aContext);
+				recordError(sensorId,updateTime,aContext);
 			}
 		}
 			

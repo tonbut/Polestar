@@ -201,6 +201,7 @@ public abstract class MergeAction
 	private static class AverageMapAction extends MergeAction
 	{	Map<String,Double> mValue=new LinkedHashMap();
 		Map<String,Integer> mCount=new HashMap();
+		Map<String,Double> mLastValues=null;
 		public void update(Object aValue, long aTime)
 		{	
 			if (aValue!=null)
@@ -229,8 +230,18 @@ public abstract class MergeAction
 				Integer count=mCount.get(key);
 				mValue.put(key,existingValue/(double)count);
 			}
+			if (mLastValues!=null)
+			{	//fill out last value if no updates
+				for (Map.Entry<String,Double> entry : mLastValues.entrySet())
+				{	String key=entry.getKey();
+					if (!mValue.containsKey(key))
+					{	mValue.put(key, entry.getValue());
+					}
+				}
+			}
+			
 			Object result=mValue;
-
+			mLastValues=mValue;
 			mValue=new LinkedHashMap();
 			mCount.clear();
 			return result;

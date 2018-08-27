@@ -98,12 +98,14 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 			}
 			INKFResponseReadOnly resp=aContext.issueRequestForResponse(req);
 			aContext.createResponseFrom(resp);	
+			updateScriptExecutionData(id,null,aContext);
 		}
 		catch (NKFException e)
 		{	//System.out.println(e);
 			IHDSReader scriptData=aContext.source("res:/md/script/"+id,IHDSDocument.class).getReader();
 			String scriptName=(String)scriptData.getFirstValue("/script/name");
 			aContext.logRaw(INKFLocale.LEVEL_WARNING, "Script "+scriptName+" Failed: "+e.getDeepestId()+" "+e.getDeepestMessage());
+			updateScriptExecutionData(id,e,aContext);
 			throw e;
 			
 		}
@@ -127,16 +129,30 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 			req.addArgument("operator", "res:/md/script/"+id+"#script");
 			req.addArgument("state","res:/md/script/"+id+"#state");
 			INKFResponseReadOnly resp=aContext.issueRequestForResponse(req);
-			aContext.createResponseFrom(resp);	
+			aContext.createResponseFrom(resp);
+			updateScriptExecutionData(id,null,aContext);
 		}
 		catch (NKFException e)
 		{	//System.out.println(e);
 			IHDSReader scriptData=aContext.source("res:/md/script/"+id,IHDSDocument.class).getReader();
 			String scriptName=(String)scriptData.getFirstValue("/script/name");
 			aContext.logRaw(INKFLocale.LEVEL_WARNING, "Script "+scriptName+" Failed: "+e.getDeepestId()+" "+e.getDeepestMessage());
+			updateScriptExecutionData(id,e,aContext);
 			throw e;
 			
 		}
 	}	
+	
+	private void updateScriptExecutionData(String aId, NKFException aError, INKFRequestContext aContext) throws Exception
+	{	
+		INKFRequest req=aContext.createRequest("active:polestarScriptExecutionUpdate");
+		req.setHeader(INKFRequest.HEADER_EXCLUDE_DEPENDENCIES, true); //don't stop caching
+		req.addArgumentByValue("id", aId);
+		if (aError!=null)
+		{	String errorMsg=aError.getDeepestId()+": "+aError.getDeepestMessage();
+			req.addArgumentByValue("error", errorMsg);
+		}
+		aContext.issueRequest(req);
+	}
 }
 

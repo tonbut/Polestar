@@ -176,9 +176,8 @@ public class ScriptAccessor extends StandardAccessorImpl
 	public void onList(INKFRequestContext aContext) throws Exception
 	{
 		MonitorUtils.isLoggedIn(aContext);
-		
-		IHDSMutator list=aContext.source("active:polestarListScripts",IHDSDocument.class).getMutableClone();
-		
+
+		/*
 		boolean showScriptTriggersBool=true;
 		try
 		{	IHDSReader mconf=aContext.source("res:/md/execute/named/Configuration",IHDSDocument.class).getReader();
@@ -188,69 +187,15 @@ public class ScriptAccessor extends StandardAccessorImpl
 		catch (Exception e)
 		{ 
 		}
+		*/
 		
-		boolean isAdmin=MonitorUtils.isAdmin(aContext);
-		
-		//build list of keywords and triggers
-		Set<String> keywordSet=new HashSet<>();
-		Set<String> triggerSet=new HashSet<>();
-		for (IHDSMutator sensor : list.getNodes("/scripts/script"))
-		{	boolean found=true;
-			String keywords=(String)sensor.getFirstValueOrNull("keywords");
-			if (keywords!=null)
-			{	if (keywords.contains(ChartViewAccessor.KEYWORD_CHART))
-				{	found=false;
-				}
-				else
-				{	String[] kws=Utils.splitString(keywords, ", ");
-					for (String kw : kws)
-					{	keywordSet.add(kw);
-					}
-				}
-			}
-			if (showScriptTriggersBool)
-			{
-				String triggers=(String)sensor.getFirstValueOrNull("triggers");
-				if (triggers!=null)
-				{	String[] kws=Utils.splitString(triggers, ", ");
-					for (String kw : kws)
-					{	triggerSet.add(kw);
-					}
-				}
-			}
-			
-			boolean delete=false;
-			Object ip=sensor.getFirstValueOrNull("public");
-			if (!isAdmin && "secret".equals(ip))
-			{	delete=true;
-			}
-			
-			if (!found)
-			{	delete=true;
-			}
-			if (delete)
-			{	sensor.delete();
-			}
-		
-		}
-		List<String> keywordList=new ArrayList<>(keywordSet);
-		Collections.sort(keywordList);
-		List<String> triggerList=new ArrayList<>(triggerSet);
-		Collections.sort(triggerList);
-		IHDSMutator keywords=HDSFactory.newDocument();
-		keywords.pushNode("tags").pushNode("keywords");
-		for (String keyword: keywordList)
-		{	keywords.addNode("keyword", keyword);
-		}
-		keywords.popNode().pushNode("triggers");
-		for (String trigger: triggerList)
-		{	keywords.addNode("trigger", trigger);
-		}		
+		IHDSMutator list=getScriptList("", false, aContext);
+		IHDSDocument keywords=getKeywordSet(list.toDocument(false));
 		
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleScripts.xsl");
 		req.addArgumentByValue("operand", list.toDocument(false));
-		req.addArgumentByValue("tags", keywords.toDocument(false));
+		req.addArgumentByValue("tags", keywords);
 		req.addArgument("polling", "active:polestarPollingState");
 		String filter=aContext.source("httpRequest:/param/filter",String.class);
 		if (filter!=null)
@@ -261,31 +206,72 @@ public class ScriptAccessor extends StandardAccessorImpl
 		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);
 	}
 	
+	
+	
 	public void onFilteredList(INKFRequestContext aContext) throws Exception
 	{
 		String f=aContext.source("httpRequest:/param/f",String.class);
 		String flow=f.toLowerCase();
 		String tts=aContext.source("httpRequest:/param/tts",String.class).toLowerCase();
 
-		boolean isAdmin=MonitorUtils.isAdmin(aContext);
+		IHDSMutator list=getScriptList(flow, "true".equals(tts), aContext);
+		list.setCursor("/scripts").addNode("@filtered", "true");
 		
+		INKFRequest req = aContext.createRequest("active:xslt");
+		req.addArgument("operator", "res:/io/polestar/view/scripts/styleScripts.xsl");
+		req.addArgumentByValue("operand", list.toDocument(true));
+		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
+		INKFResponse resp=aContext.createResponseFrom(subresp);
+	}
+	
+	private IHDSDocument getKeywordSet(IHDSDocument aList)
+	{	Set<String> keywordSet=new HashSet<>();
+		for (IHDSReader scriptNode : aList.getReader().getNodes("/scripts/script"))
+		{	
+			for (Object keyword : scriptNode.getValues("keywords/keyword"))
+			{	keywordSet.add((String)keyword);
+			}
+		}
+		List<String> keywordList=new ArrayList<>(keywordSet);
+		Collections.sort(keywordList);
+		IHDSMutator keywords=HDSFactory.newDocument();
+		keywords.pushNode("tags").pushNode("keywords");
+		for (String keyword: keywordList)
+		{	keywords.addNode("keyword", keyword);
+		}
+		return keywords.toDocument(false);
+	}
+	
+	
+	
+	private IHDSMutator getScriptList(String aFilter, boolean aFullTextSearch, INKFRequestContext aContext) throws Exception
+	{
+		boolean isAdmin=MonitorUtils.isAdmin(aContext);		
+		long now=System.currentTimeMillis();
+		IHDSReader executionData=aContext.source("active:polestarScriptExecutionStatus",IHDSDocument.class).getReader();
 		IHDSMutator list=aContext.source("active:polestarListScripts",IHDSDocument.class).getMutableClone();
-		//if (f.length()>0)
 		for (IHDSMutator scriptNode : list.getNodes("/scripts/script"))
-		{	boolean found=f.length()==0;
+		{	boolean found=aFilter.length()==0;
+			String id=(String)scriptNode.getFirstValue("id");
 			String name=(String)scriptNode.getFirstValue("name");
-			if (name.toLowerCase().contains(flow)) found=true;
+			if (name.toLowerCase().contains(aFilter)) found=true;
 			String keywords=(String)scriptNode.getFirstValue("keywords");
-			if (keywords!=null && keywords.toLowerCase().contains(flow)) found=true;
-			String triggers=(String)scriptNode.getFirstValue("triggers");
-			if (triggers!=null && triggers.toLowerCase().contains(flow)) found=true;
 			
-			if ("true".equals(tts))
-			{
-				String id=(String)scriptNode.getFirstValue("id");
+			
+			
+			if (keywords!=null && keywords.toLowerCase().contains(aFilter)) found=true;
+			String triggers=(String)scriptNode.getFirstValue("triggers");
+			if (triggers!=null && triggers.toLowerCase().contains(aFilter)) found=true;
+			
+			if (aFullTextSearch)
+			{				
 				IHDSReader script=aContext.source("res:/md/script/"+id,IHDSDocument.class).getReader();
 				String scriptSrc=(String)script.getFirstValue("/script/script");
-				if (scriptSrc.contains(f)) found=true;
+				if (scriptSrc.contains(aFilter)) found=true;
+			}
+			
+			if (keywords!=null && keywords.contains(ChartViewAccessor.KEYWORD_CHART))
+			{	found=false;
 			}
 			
 			boolean delete=false;
@@ -300,16 +286,27 @@ public class ScriptAccessor extends StandardAccessorImpl
 			if (delete)
 			{	scriptNode.delete();
 			}
+			else
+			{	//append execution stats
+				IHDSReader ed=executionData.getFirstNodeOrNull("key('byId','"+id+"')");
+				if (ed!=null)
+				{	scriptNode.appendChildren(ed);
+				}
+				
+				Long lastExecuted=ed==null?null:(Long)ed.getFirstValueOrNull("lastExecTime");
+				String lastExecHuman=lastExecuted==null?"Never":MonitorUtils.formatPeriod(now-lastExecuted);
+				scriptNode.addNode("lastExecHuman", lastExecHuman);
+				
+				Long lastError=ed==null?null:(Long)ed.getFirstValueOrNull("lastErrorTime");
+				String lastErrorHuman=lastError==null?"Never":MonitorUtils.formatPeriod(now-lastExecuted);
+				scriptNode.addNode("lastErrorHuman", lastExecHuman);
+			}
 		}
-		list.setCursor("/scripts").addNode("@filtered", "true");
+		return list;
 		
-		
-		INKFRequest req = aContext.createRequest("active:xslt");
-		req.addArgument("operator", "res:/io/polestar/view/scripts/styleScripts.xsl");
-		req.addArgumentByValue("operand", list.toDocument(true));
-		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
-		INKFResponse resp=aContext.createResponseFrom(subresp);
 	}
+	
+	
 	
 	
 	public void onNewScript(INKFRequestContext aContext) throws Exception

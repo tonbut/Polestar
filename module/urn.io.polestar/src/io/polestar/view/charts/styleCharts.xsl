@@ -147,23 +147,35 @@
 				<xsl:otherwise>
 					<xsl:for-each select="script">
 						<a href="/polestar/charts/edit/{id}" class="list-group-item">
-							<div class="pull-right">
-                                <div class="btn btn-default handle">
-                                    <span class="glyphicon glyphicon-sort"></span>
-                                </div>
-                                <xsl:text> </xsl:text>
-								<button id="execute-{id}" class="btn btn-success execute"><span class="glyphicon glyphicon-play"></span></button>
-							</div>
-							<div>
-								<span class="title"><xsl:value-of select="name"/></span>
-                                <span class="hidden-xs">
-                                    <xsl:for-each select="keywords/keyword[text()!='__PolestarChart']">
-                                        <xsl:text> </xsl:text>
-                                        <span class="label label-info"><xsl:value-of select="."/></span>
-                                    </xsl:for-each>
-                                    
-                                </span>
-							</div>
+						
+							<table style="width:100%">
+								<tr>
+									<td style="width: 0%">
+										<div><img class="icon" src="/polestar/pub/icon/chart.png" width="24" height="24"/></div>
+									</td>
+									<td style="width: 100%">
+						
+						
+										<div class="pull-right">
+			                                <div class="btn btn-default handle">
+			                                    <span class="glyphicon glyphicon-sort"></span>
+			                                </div>
+			                                <xsl:text> </xsl:text>
+											<button id="execute-{id}" class="btn btn-success execute"><span class="glyphicon glyphicon-play"></span></button>
+										</div>
+										<div>
+											<span class="title"><xsl:value-of select="name"/></span>
+			                                <span class="hidden-xs">
+			                                    <xsl:for-each select="keywords/keyword[text()!='__PolestarChart']">
+			                                        <xsl:text> </xsl:text>
+			                                        <span class="label label-info"><xsl:value-of select="."/></span>
+			                                    </xsl:for-each>
+			                                    
+			                                </span>
+										</div>
+									</td>
+								</tr>
+							</table>
 						</a>
 					</xsl:for-each>
 				</xsl:otherwise>

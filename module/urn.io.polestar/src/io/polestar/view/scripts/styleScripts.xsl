@@ -186,26 +186,46 @@
 				<xsl:otherwise>
 					<xsl:for-each select="script">
 						<a href="/polestar/scripts/edit/{id}" class="list-group-item">
-							<div class="pull-right">
-                                <div class="btn btn-default handle">
-                                    <span class="glyphicon glyphicon-sort"></span>
-                                </div>
-                                <xsl:text> </xsl:text>
-								<button id="execute-{id}" class="btn btn-success execute"><span class="glyphicon glyphicon-play"></span></button>
-							</div>
-							<div>
-								<span class="title"><xsl:value-of select="name"/></span>
-                                <span class="hidden-xs">
-                                    <xsl:for-each select="keywords/keyword">
-                                        <xsl:text> </xsl:text>
-                                        <span class="label label-info"><xsl:value-of select="."/></span>
-                                    </xsl:for-each>
-                                    <xsl:for-each select="triggers/trigger">
-                                        <xsl:text> </xsl:text>
-                                        <span class="label label-success"><xsl:value-of select="."/></span>
-                                    </xsl:for-each>
-                                </span>
-							</div>
+						
+							<table style="width:100%">
+								<tr>
+									<td style="width: 0%">
+										<div class="hidden-xs"><img class="icon" src="/polestar/pub/icon/script.png" width="24" height="24"/></div>
+										<div class="visible-xs"><img class="icon" src="/polestar/pub/icon/script.png" width="24" height="24"/></div>
+									</td>
+									<td style="width: 100%">
+						
+						
+						
+										<div class="pull-right">
+			                                <div class="btn btn-default handle">
+			                                    <span class="glyphicon glyphicon-sort"></span>
+			                                </div>
+			                                <xsl:text> </xsl:text>
+											<button id="execute-{id}" class="btn btn-success execute"><span class="glyphicon glyphicon-play"></span></button>
+										</div>
+										<div>
+											<span class="title"><xsl:value-of select="name"/></span>
+			                                <span class="hidden-xs">
+			                                    <xsl:for-each select="keywords/keyword">
+			                                        <xsl:text> </xsl:text>
+			                                        <span class="label label-info"><xsl:value-of select="."/></span>
+			                                    </xsl:for-each>
+			                                    <xsl:for-each select="triggers/trigger">
+			                                        <xsl:text> </xsl:text>
+			                                        <span class="label label-success"><xsl:value-of select="."/></span>
+			                                    </xsl:for-each>
+			                                </span>
+										</div>
+										<div class="hidden-xs changed">
+											Last executed: <xsl:value-of select="lastExecHuman"/> ago
+											<xsl:if test="string-length(lastError)">
+												, Last error "<xsl:value-of select="lastError"/>" <xsl:value-of select="lastErrorHuman"/> ago
+											</xsl:if>
+										</div>
+									</td>
+								</tr>
+							</table>
 						</a>
 					</xsl:for-each>
 				</xsl:otherwise>

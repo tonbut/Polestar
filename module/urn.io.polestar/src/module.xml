@@ -139,6 +139,7 @@
 			<grammar><active>
 				<identifier>active:polestarScriptExecutionUpdate</identifier>
 				<identifier>active:polestarScriptExecutionStatus</identifier>
+				<identifier>active:polestarScriptExecutionReset</identifier>
 				<argument name="id" min="0"/>
 				<argument name="error" min="0"/>
 			</active></grammar>

@@ -37,7 +37,9 @@ import io.polestar.view.template.TemplateWrapper;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -95,8 +97,17 @@ public class ScriptAccessor extends StandardAccessorImpl
 			else if (action.equals("restore"))
 			{	onRestore(aContext);
 			}
+			else if (action.equals("resetStats"))
+			{	onResetStats(aContext);
+			}
 				
 		}
+	}
+	
+	public void onResetStats(INKFRequestContext aContext) throws Exception
+	{	MonitorUtils.assertAdmin(aContext);
+		aContext.source("active:polestarScriptExecutionReset");
+		aContext.createResponseFrom("done");
 	}
 	
 	public void onRestore(INKFRequestContext aContext) throws Exception
@@ -189,7 +200,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 		}
 		*/
 		
-		IHDSMutator list=getScriptList("", false, aContext);
+		IHDSMutator list=getScriptList("", false, "", aContext);
 		IHDSDocument keywords=getKeywordSet(list.toDocument(false));
 		
 		INKFRequest req = aContext.createRequest("active:xslt");
@@ -213,8 +224,9 @@ public class ScriptAccessor extends StandardAccessorImpl
 		String f=aContext.source("httpRequest:/param/f",String.class);
 		String flow=f.toLowerCase();
 		String tts=aContext.source("httpRequest:/param/tts",String.class).toLowerCase();
+		String sort=aContext.source("httpRequest:/param/sort",String.class);
 
-		IHDSMutator list=getScriptList(flow, "true".equals(tts), aContext);
+		IHDSMutator list=getScriptList(flow, "true".equals(tts), sort, aContext);
 		list.setCursor("/scripts").addNode("@filtered", "true");
 		
 		INKFRequest req = aContext.createRequest("active:xslt");
@@ -243,16 +255,125 @@ public class ScriptAccessor extends StandardAccessorImpl
 	}
 	
 	
+	private static abstract class ScriptComparator implements Comparator<String>
+	{
+		private IHDSReader mList;
+		
+		public void setList(IHDSReader aList)
+		{	mList=aList;
+		}
+		
+		public int compare(String o1, String o2)
+		{	IHDSReader script1=mList.getFirstNodeOrNull("key('byId','"+o1+"')");
+			IHDSReader script2=mList.getFirstNodeOrNull("key('byId','"+o2+"')");
+			return scriptCompare(script1,script2);
+		}
+		
+		public abstract int scriptCompare(IHDSReader s1, IHDSReader s2);
+	}
 	
-	private IHDSMutator getScriptList(String aFilter, boolean aFullTextSearch, INKFRequestContext aContext) throws Exception
+	
+	private IHDSMutator getScriptList(String aFilter, boolean aFullTextSearch, String aSort, INKFRequestContext aContext) throws Exception
 	{
 		boolean isAdmin=MonitorUtils.isAdmin(aContext);		
 		long now=System.currentTimeMillis();
 		IHDSReader executionData=aContext.source("active:polestarScriptExecutionStatus",IHDSDocument.class).getReader();
-		IHDSMutator list=aContext.source("active:polestarListScripts",IHDSDocument.class).getMutableClone();
-		for (IHDSMutator scriptNode : list.getNodes("/scripts/script"))
-		{	boolean found=aFilter.length()==0;
-			String id=(String)scriptNode.getFirstValue("id");
+		IHDSDocument dList=aContext.source("active:polestarListScripts",IHDSDocument.class);
+		IHDSReader rList=dList.getReader();
+		IHDSMutator list=HDSFactory.newDocument(); //dList.getMutableClone();
+		list.pushNode("scripts");
+		
+		List<String> ids=new ArrayList<>();
+		for (IHDSReader scriptNode : rList.getNodes("/scripts/script"))
+		{	String id=(String)scriptNode.getFirstValue("id");
+			ids.add(id);
+		}
+		
+		if (aSort.equals("alpha"))
+		{	ScriptComparator c=new ScriptComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	String n1=((String)s1.getFirstValue("name")).toLowerCase();
+					String n2=((String)s2.getFirstValue("name")).toLowerCase();
+					return n1.compareTo(n2);
+				}
+			};
+			c.setList(rList);
+			ids.sort(c);
+		}
+		else if (aSort.equals("lastExec"))
+		{	ScriptComparator c=new ScriptComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	Long n1=s1!=null?(Long)s1.getFirstValueOrNull("lastExecTime"):null;
+					Long n2=s2!=null?(Long)s2.getFirstValueOrNull("lastExecTime"):null;
+					if (n1==null) n1=Long.valueOf(0);
+					if (n2==null) n2=Long.valueOf(0);
+					return n2.compareTo(n1);
+				}
+			};
+			c.setList(executionData);
+			ids.sort(c);
+		}
+		else if (aSort.equals("lastErr"))
+		{	ScriptComparator c=new ScriptComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	Long n1=s1!=null?(Long)s1.getFirstValueOrNull("lastErrorTime"):null;
+					Long n2=s2!=null?(Long)s2.getFirstValueOrNull("lastErrorTime"):null;
+					if (n1==null) n1=Long.valueOf(0);
+					if (n2==null) n2=Long.valueOf(0);
+					return n2.compareTo(n1);
+				}
+			};
+			c.setList(executionData);
+			ids.sort(c);
+		}
+		else if (aSort.equals("countExec"))
+		{	ScriptComparator c=new ScriptComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	Integer n1=s1!=null?(Integer)s1.getFirstValueOrNull("count"):null;
+					Integer n2=s2!=null?(Integer)s2.getFirstValueOrNull("count"):null;
+					if (n1==null) n1=Integer.valueOf(0);
+					if (n2==null) n2=Integer.valueOf(0);
+					return n2.compareTo(n1);
+				}
+			};
+			c.setList(executionData);
+			ids.sort(c);
+		}
+		else if (aSort.equals("countErr"))
+		{	ScriptComparator c=new ScriptComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	Integer n1=s1!=null?(Integer)s1.getFirstValueOrNull("errors"):null;
+					Integer n2=s2!=null?(Integer)s2.getFirstValueOrNull("errors"):null;
+					if (n1==null) n1=Integer.valueOf(0);
+					if (n2==null) n2=Integer.valueOf(0);
+					return n2.compareTo(n1);
+				}
+			};
+			c.setList(executionData);
+			ids.sort(c);
+		}
+		
+		
+		
+		/*<li><a onclick="onSort('default')">Default</a></li>
+	    <li><a onclick="onSort('alpha')">Alphabetical</a></li>
+	    <li><a onclick="onSort('lastExec')">Last executed</a></li>
+	    <li><a onclick="onSort('lastErr')">Last error</a></li>
+	    <li><a onclick="onSort('countExec')">Execution count</a></li>
+	    <li><a onclick="onSort('countErr')">Error count</a></li>
+	    */
+		
+		
+		
+		//for (IHDSMutator scriptNode : list.getNodes("/scripts/script"))
+		for (String id : ids)
+		{	
+				
+			boolean found=aFilter.length()==0;
+			//String id=(String)scriptNode.getFirstValue("id");
+			IHDSReader rScriptNode=rList.getFirstNode("key('byId','"+id+"')");
+			IHDSMutator scriptNode=rScriptNode.toDocument().getMutableClone().getFirstNode("/*");
+			
 			String name=(String)scriptNode.getFirstValue("name");
 			if (name.toLowerCase().contains(aFilter)) found=true;
 			String keywords=(String)scriptNode.getFirstValue("keywords");
@@ -283,10 +404,11 @@ public class ScriptAccessor extends StandardAccessorImpl
 			if (!found)
 			{	delete=true;
 			}
-			if (delete)
-			{	scriptNode.delete();
-			}
-			else
+			//if (delete)
+			//{	scriptNode.delete();
+			//}
+			//else
+			if (!delete)
 			{	//append execution stats
 				IHDSReader ed=executionData.getFirstNodeOrNull("key('byId','"+id+"')");
 				if (ed!=null)
@@ -294,12 +416,15 @@ public class ScriptAccessor extends StandardAccessorImpl
 				}
 				
 				Long lastExecuted=ed==null?null:(Long)ed.getFirstValueOrNull("lastExecTime");
-				String lastExecHuman=lastExecuted==null?"Never":MonitorUtils.formatPeriod(now-lastExecuted);
+				String lastExecHuman=lastExecuted==null?"Never":(MonitorUtils.formatPeriod(now-lastExecuted)+" ago");
 				scriptNode.addNode("lastExecHuman", lastExecHuman);
 				
 				Long lastError=ed==null?null:(Long)ed.getFirstValueOrNull("lastErrorTime");
-				String lastErrorHuman=lastError==null?"Never":MonitorUtils.formatPeriod(now-lastExecuted);
-				scriptNode.addNode("lastErrorHuman", lastExecHuman);
+				String lastErrorHuman=lastError==null?"Never":(MonitorUtils.formatPeriod(now-lastError)+" ago");
+				scriptNode.addNode("lastErrorHuman", lastErrorHuman);
+			}
+			if (!delete)
+			{	list.append(scriptNode).popNode();
 			}
 		}
 		return list;

@@ -1,10 +1,12 @@
 package io.polestar.data.scripts;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.bson.BSONObject;
+import org.netkernel.layer0.nkf.INKFLocale;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFResponse;
 import org.netkernel.layer0.urii.ParsedIdentifierImpl;
@@ -56,8 +58,25 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 		else if (type.equals("polestarScriptExecutionStatus"))
 		{	onScriptExecutionStatus(aContext);
 		}
+		else if (type.equals("polestarScriptExecutionReset"))
+		{	onScriptExecutionReset(aContext);
+		}
 	}
 	
+	public void onScriptExecutionReset(INKFRequestContext aContext) throws Exception
+	{
+		DBCollection col=MongoUtils.getCollection(COLLECTION_SCRIPT_EXEC);
+		
+		BasicDBObject query=new BasicDBObject();
+		BasicDBObject state=new BasicDBObject();
+		BasicDBObject set=new BasicDBObject();
+		set.append("c", 0);
+		set.append("ec",0);
+		state.append("$set", set);
+		WriteResult wr=col.update(query,state,false,true);
+		aContext.logRaw(INKFLocale.LEVEL_INFO, "Script statistics reset");
+	}
+		
 	public void onScriptExecutionStatus(INKFRequestContext aContext) throws Exception
 	{
 		DBCollection col=MongoUtils.getCollection(COLLECTION_SCRIPT_EXEC);
@@ -122,7 +141,7 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 		}
 		
 		if (error==null || error.length()==0)
-		{	set.append("e",null);
+		{	//set.append("e",null);
 		}
 		else
 		{	set.append("e",error);

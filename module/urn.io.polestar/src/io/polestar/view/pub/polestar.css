@@ -6,6 +6,7 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .scriptcode { color: #444; margin: 4px; padding: 0.2em; font-size: 14px; font-family: monospace; -moz-tab-size:4; -o-tab-size:4; tab-size:4; }
 #script-list .btn { padding: 3px 8px; }
 .list-header.list-group-item { background: #F8F8F8; padding-bottom: 0.5em;}
+.list-header .dropdown-toggle { padding: 3px 12px; } 
 .form-group label { margin-bottom: 0; }
 .list-group-item { padding: 2px 10px; }
 #sensor-list .list-group-item { padding: 0px 4px; }
@@ -23,8 +24,8 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .ticker { text-align: right; }
 .micon { display: inline-block; width: 128px; border: solid 2px #EEE; margin: 2px; text-align: center;}
 .micon .caption {  }
-#script-keywords { line-height: 1.7; }
-#sensor-keywords { line-height: 1.7; }
+#script-keywords { margin-top: 4px; line-height: 1.7; }
+#sensor-keywords { margin-top: 4px; line-height: 1.7; }
 .sensor-id { font-style: normal; }
 
 .alpaca-form-buttons-container { text-align: left !important; }
@@ -34,4 +35,4 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .sensorDetail h1 { margin: 0; margin-bottom: 4px; font-weight: 700; font-size: 20px; }
 .sensorDetail td { vertical-align: top; }
 .sensorDetail .label { margin: 4px; line-height: 2em;}
-.list-group-item .label { padding: 1px 8px; }
+.list-group-item .label { padding: 2px 8px; }

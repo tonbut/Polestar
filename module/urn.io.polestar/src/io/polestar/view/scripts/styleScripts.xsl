@@ -39,6 +39,7 @@
     		<script><xsl:comment>
     			var updateTimeout;
     			var scriptTextSearch=false;
+    			sortOrder="default";
     			
 				$(function() {
 					initialiseExecButtons();					
@@ -99,7 +100,7 @@
 				
 				function doFilterUpdate()
 				{	var f=$("#filter").val();
-					$.get("/polestar/scripts/filtered?tts="+scriptTextSearch+"&amp;f="+f, function(d) {
+					$.get("/polestar/scripts/filtered?tts="+scriptTextSearch+"&amp;f="+f+"&amp;sort="+sortOrder, function(d) {
 						$("#script-list-container").empty();
 						$("#script-list-container").html(d);
 						initialiseExecButtons();
@@ -115,6 +116,19 @@
 					if (active) $("#tts").removeClass("active");
 					else $("#tts").addClass("active");
 					scriptTextSearch=!active;
+				}
+				
+				function resetStats()
+				{	console.log("here");
+					$.get("/polestar/scripts/resetStats", function(d) {
+						location.reload();
+					},'text');
+				}
+				
+				function onSort(order)
+				{	sortOrder=order;
+					doFilterUpdate();
+					
 				}
 				
 			</xsl:comment></script>
@@ -133,14 +147,32 @@
 				<xsl:variable name="count" select="count(/scripts/script)"/>
 				<table style="width: 100%"><tr>
 					<td >
-						<a class="btn btn-primary btn-sm" href="/polestar/scripts/new"><span class="glyphicon glyphicon-plus"></span><span>New</span></a>
 						<span class="hidden-xs">
+							<a class="btn btn-primary btn-sm" href="/polestar/scripts/new"><span class="glyphicon glyphicon-plus"></span><span>New</span></a>
 							<xsl:text> </xsl:text>
 							<a class="btn btn-default" href="/polestar/scripts/backup" title="backup"><span class="glyphicon glyphicon-cloud-download"></span></a>
 							<xsl:text> </xsl:text>
 							<button type="button" class="btn btn-default" onclick="showUpload()" title="restore"><span class="glyphicon glyphicon-cloud-upload"></span></button>
 							<xsl:text> </xsl:text>
+							<button type="button" class="btn btn-default" onclick="resetStats()" title="reset script statistics"><span class="glyphicon glyphicon-minus-sign"></span></button>
+							<xsl:text> </xsl:text>
 							<button class="btn btn-default" title="search script contents" onclick="toggleTextSearch()" id="tts"><span class="glyphicon glyphicon-paperclip"></span></button>
+							<xsl:text> </xsl:text>
+						</span>
+						<span>
+							<div class="btn-group">
+							  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							    Sort by <span class="caret"></span>
+							  </button>
+							  <ul class="dropdown-menu">
+							    <li><a onclick="onSort('default')">Default</a></li>
+							    <li><a onclick="onSort('alpha')">Alphabetical</a></li>
+							    <li><a onclick="onSort('lastExec')">Last executed</a></li>
+							    <li><a onclick="onSort('lastErr')">Last error</a></li>
+							    <li><a onclick="onSort('countExec')">Execution count</a></li>
+							    <li><a onclick="onSort('countErr')">Error count</a></li>
+							  </ul>
+							</div>
 						</span>
 						</td>
 					<td ><input id="filter" type="text" placeholder="Filter list of {$count} scripts" class="form-control" value="">
@@ -206,6 +238,16 @@
 										</div>
 										<div>
 											<span class="title"><xsl:value-of select="name"/></span>
+											<xsl:if test="count &gt; 0">
+												<xsl:text> </xsl:text>
+												<span class="label label-default">
+													<xsl:if test="errors &gt; 0">
+														<xsl:attribute name="class">label label-danger</xsl:attribute>
+														<xsl:value-of select="errors"/>/
+													</xsl:if>
+													<xsl:value-of select="count"/>
+												</span>
+											</xsl:if>
 			                                <span class="hidden-xs">
 			                                    <xsl:for-each select="keywords/keyword">
 			                                        <xsl:text> </xsl:text>
@@ -218,9 +260,9 @@
 			                                </span>
 										</div>
 										<div class="hidden-xs changed">
-											Last executed: <xsl:value-of select="lastExecHuman"/> ago
+											Last executed: <xsl:value-of select="lastExecHuman"/>
 											<xsl:if test="string-length(lastError)">
-												, Last error "<xsl:value-of select="lastError"/>" <xsl:value-of select="lastErrorHuman"/> ago
+												, Last error "<xsl:value-of select="lastError"/>" <xsl:value-of select="lastErrorHuman"/>
 											</xsl:if>
 										</div>
 									</td>

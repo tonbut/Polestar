@@ -163,6 +163,22 @@ public class PolestarContext implements InvocationHandler, IPolestarAPI
 		mContext.issueRequest(req);
 	}
 	
+	@Override
+	public boolean updateSensorValueAtTime(String aSensorId, Object aValue, long aTime, long aWindow) throws NKFException
+	{
+		IHDSMutator m=HDSFactory.newDocument();
+		m.pushNode("sensors");
+		m.pushNode("sensor");
+		m.addNode("id",aSensorId);
+		m.addNode("time",aTime);
+		m.addNode("value", aValue);
+		m.addNode("window", aWindow);
+		m.popNode();
+		INKFRequest req=mContext.createRequest("active:polestarSensorUpdate");
+		req.addArgumentByValue("state",m.toDocument(false));
+		req.setRepresentationClass(Boolean.class);
+		return (Boolean)mContext.issueRequest(req);
+	}
 
 	@Override
 	public void setSensorError(String aSensorId, String aError) throws NKFException

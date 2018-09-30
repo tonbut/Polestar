@@ -142,6 +142,7 @@
 				<identifier>active:polestarScriptExecutionReset</identifier>
 				<argument name="id" min="0"/>
 				<argument name="error" min="0"/>
+				<argument name="edit" min="0"/>
 			</active></grammar>
 			<class>io.polestar.data.scripts.ScriptExecutionDataAccessor</class>
 		</endpoint>

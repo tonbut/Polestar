@@ -57,6 +57,16 @@ public interface IPolestarAPI
 	 * @throws NKFException if sensor doesn't exist
 	 */
 	void setSensorValueAtTime(String aSensorId, Object aValue, long aTime) throws NKFException;
+
+	/** Set or update the value of a sensor at particular time - useful for when event occurs for data in past
+	 * @param aSensorId the sensor to set the value of
+	 * @param aValue the value to set the sensor to
+	 * @param aTime time in millseconds since 1970
+	 * @param aWindow millisecond time window to find an existing value to replace 
+	 * @return true if an existing value was updated, false if new value was inserted
+	 * @throws NKFException if sensor doesn't exist
+	 */
+	boolean updateSensorValueAtTime(String aSensorId, Object aValue, long aTime, long aWindow) throws NKFException;
 	
 	/** Set or clear an error on a sensor
 	 * @param aSensorId the sensor to set the value of

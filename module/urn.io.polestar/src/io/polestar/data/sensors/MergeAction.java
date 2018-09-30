@@ -270,7 +270,6 @@ public abstract class MergeAction
 			{	mLastValue=null;
 			}
 			mLastTime=aTime;
-	
 		}
 		
 		private void innerUpdate(long aTime)

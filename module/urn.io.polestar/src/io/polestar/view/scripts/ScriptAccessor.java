@@ -187,18 +187,6 @@ public class ScriptAccessor extends StandardAccessorImpl
 	public void onList(INKFRequestContext aContext) throws Exception
 	{
 		MonitorUtils.isLoggedIn(aContext);
-
-		/*
-		boolean showScriptTriggersBool=true;
-		try
-		{	IHDSReader mconf=aContext.source("res:/md/execute/named/Configuration",IHDSDocument.class).getReader();
-			Object showScriptTriggers=mconf.getFirstValueOrNull("show-script-triggers");
-			showScriptTriggersBool = showScriptTriggers==null || showScriptTriggers.equals(Boolean.TRUE);
-		}
-		catch (Exception e)
-		{ 
-		}
-		*/
 		
 		IHDSMutator list=getScriptList("", false, "", aContext);
 		IHDSDocument keywords=getKeywordSet(list.toDocument(false));
@@ -276,6 +264,19 @@ public class ScriptAccessor extends StandardAccessorImpl
 	private IHDSMutator getScriptList(String aFilter, boolean aFullTextSearch, String aSort, INKFRequestContext aContext) throws Exception
 	{
 		boolean isAdmin=MonitorUtils.isAdmin(aContext);		
+		
+		//store sort order in session
+		if (aSort.length()==0)
+		{	String sort=aContext.source("session:/scriptSort",String.class);
+			if (sort!=null)
+			{	aSort=sort;
+			}
+		}
+		else
+		{	aContext.sink("session:/scriptSort", aSort);
+		}
+		
+		
 		long now=System.currentTimeMillis();
 		IHDSReader executionData=aContext.source("active:polestarScriptExecutionStatus",IHDSDocument.class).getReader();
 		IHDSDocument dList=aContext.source("active:polestarListScripts",IHDSDocument.class);
@@ -346,6 +347,19 @@ public class ScriptAccessor extends StandardAccessorImpl
 					Integer n2=s2!=null?(Integer)s2.getFirstValueOrNull("errors"):null;
 					if (n1==null) n1=Integer.valueOf(0);
 					if (n2==null) n2=Integer.valueOf(0);
+					return n2.compareTo(n1);
+				}
+			};
+			c.setList(executionData);
+			ids.sort(c);
+		}
+		else if (aSort.equals("lastEdit"))
+		{	ScriptComparator c=new ScriptComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	Long n1=s1!=null?(Long)s1.getFirstValueOrNull("lastEdited"):null;
+					Long n2=s2!=null?(Long)s2.getFirstValueOrNull("lastEdited"):null;
+					if (n1==null) n1=Long.valueOf(0);
+					if (n2==null) n2=Long.valueOf(0);
 					return n2.compareTo(n1);
 				}
 			};
@@ -503,6 +517,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 			m.addNode("script",params.getFirstValue("script"));
 			m.addNode("public",params.getFirstValue("public"));
 			aContext.sink("res:/md/script/"+aId, m.toDocument(false));
+			updateScriptExecutionData(aId,aContext);
 			
 			if (params.getFirstNodeOrNull("execute")!=null)
 			{	aContext.sink("httpResponse:/redirect","/polestar/scripts/execute/"+aId);
@@ -531,8 +546,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
 		INKFResponse resp=aContext.createResponseFrom(subresp);
 		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);
-		
-		
+	
 	}
 	public void onReorder(INKFRequestContext aContext, String aScriptId, int aNewPosition) throws Exception
 	{	MonitorUtils.assertAdmin(aContext);
@@ -541,6 +555,15 @@ public class ScriptAccessor extends StandardAccessorImpl
 		req.addArgumentByValue("newPosition", aNewPosition);
 		aContext.issueRequest(req);
 		aContext.createResponseFrom("").setExpiry(INKFResponse.EXPIRY_ALWAYS);
+	}
+	
+	private void updateScriptExecutionData(String aId, INKFRequestContext aContext) throws Exception
+	{	
+		INKFRequest req=aContext.createRequest("active:polestarScriptExecutionUpdate");
+		req.setHeader(INKFRequest.HEADER_EXCLUDE_DEPENDENCIES, true); //don't stop caching
+		req.addArgumentByValue("id", aId);
+		req.addArgument("edit", "");
+		aContext.issueRequest(req);
 	}
 	
 	private class NoCloseZipOutputStream extends ZipOutputStream

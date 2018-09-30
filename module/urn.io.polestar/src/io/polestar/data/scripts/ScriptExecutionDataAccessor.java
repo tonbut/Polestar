@@ -90,12 +90,14 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 			String id=(String)dbo.get("id");
 			
 			Number c=(Number)dbo.get("c");
+			if (c==null) c=Integer.valueOf(0);
 			Number ec=(Number)dbo.get("ec");
 			if (ec==null) ec=Integer.valueOf(0);
 			float errorPercent=ec.floatValue()/c.floatValue();
 			Long lastExec=(Long)dbo.get("t");
 			Long lastError=(Long)dbo.get("et");
 			String error=(String)dbo.get("e");
+			Long lastEdited=(Long)dbo.get("ed");
 			
 			m.pushNode("script")
 			.addNode("id", id)
@@ -105,6 +107,7 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 			.addNode("lastExecTime", lastExec)
 			.addNode("lastErrorTime", lastError)
 			.addNode("lastError", error)
+			.addNode("lastEdited", lastEdited)
 			.popNode();
 			
 		}
@@ -115,6 +118,7 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 	public void onScriptExecutionUpdate(INKFRequestContext aContext) throws Exception
 	{
 		String id=aContext.source("arg:id",String.class);
+		boolean isEdit=aContext.getThisRequest().argumentExists("edit");
 		
 		long now=System.currentTimeMillis();
 		
@@ -132,25 +136,34 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 		
 		BasicDBObject set=new BasicDBObject();
 		BasicDBObject inc=new BasicDBObject();
-		set.append("t", now);
-		inc.append("c",1);
 		
-		String error=null;
-		if (aContext.getThisRequest().argumentExists("error"))
-		{	error=aContext.source("arg:error",String.class);
-		}
-		
-		if (error==null || error.length()==0)
-		{	//set.append("e",null);
+		if (isEdit)
+		{	set.append("ed",now);
+			state.append("$set", set);
 		}
 		else
-		{	set.append("e",error);
-			set.append("et",now);
-			inc.append("ec",1);
+		{	//execution
+			set.append("t", now);
+			inc.append("c",1);
+			
+			String error=null;
+			if (aContext.getThisRequest().argumentExists("error"))
+			{	error=aContext.source("arg:error",String.class);
+			}
+			
+			if (error==null || error.length()==0)
+			{	//set.append("e",null);
+			}
+			else
+			{	set.append("e",error);
+				set.append("et",now);
+				inc.append("ec",1);
+			}
+			state.append("$set", set);
+			state.append("$inc", inc);
 		}
 
-		state.append("$set", set);
-		state.append("$inc", inc);
+		
 		WriteResult wr=col.update(query,state,true,false);
 	}
 }

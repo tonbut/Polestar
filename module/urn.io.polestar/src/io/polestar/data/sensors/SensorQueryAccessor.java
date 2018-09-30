@@ -316,7 +316,12 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 		if (cursorP.hasNext())
 		{
 			DBObject previous=cursorP.next();
-			merge.update(previous.get("v"), start);
+			Object v=previous.get("v");
+			if (fragment!=null && v instanceof Map)
+			{	Map m=(Map)v;
+				v=m.get(fragment);
+			}
+			merge.update(v, start);
 		}
 		merge.getValue(start);
 		

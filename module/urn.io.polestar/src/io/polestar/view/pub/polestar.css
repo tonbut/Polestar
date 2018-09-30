@@ -36,3 +36,6 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .sensorDetail td { vertical-align: top; }
 .sensorDetail .label { margin: 4px; line-height: 2em;}
 .list-group-item .label { padding: 2px 8px; }
+
+//fix so scrollbar appears on safari
+.ace_scrollbar-inner { background-color: white; opacity: 0.01; }

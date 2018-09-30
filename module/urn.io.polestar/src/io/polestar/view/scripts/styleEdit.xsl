@@ -20,12 +20,17 @@
 
     <xsl:template match="/*">
     	<div id="fill" class="container top" style="height: 100%">
+    		<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.1/ace.js" type="text/javascript" charset="utf-8"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.1/ext-modelist.js" type="text/javascript" charset="utf-8"></script>
+			<!--
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.js" type="text/javascript" charset="utf-8"></script>
+    		-->
     		<script><xsl:comment>
 				
 				function resize()
 				{	height=$("#fill").height();
   					//console.log(height);
-  					$('textarea').css('height',height-310);
+  					$('#editor').css('height',height-310);
 				}
     		
     			$(window).resize(function()
@@ -35,38 +40,24 @@
 				$(function() {
 					
 					resize();
-  					
-					$("textarea").bind('keydown', function(e){
-					      pressedKey = e.charCode || e.keyCode || -1;
-					      if (pressedKey == 9) {
-					        if (window.event) {
-					          window.event.cancelBubble = true;
-					          window.event.returnValue = false;
-					        } else {
-					          e.preventDefault();
-					          e.stopPropagation();
-					        }
 					
-					        // save current scroll position for later restoration
-					        var oldScrollTop=this.scrollTop;
+					editor = ace.edit("editor", {
+						mode: "ace/mode/groovy",
+						theme: "ace/theme/chrome",
+						tabSize: 4,
+						useSoftTabs: false,
+						showPrintMargin: false,
+						
+					});
+    				//editor.setTheme("ace/theme/chrome");
+    				//editor.getSession().setMode("ace/mode/groovy");
+    				//editor.getSession().setTabSize(4);
+    				//editor.session.setUseSoftTabs(false)
 					
-					        if (this.createTextRange) {
-					          document.selection.createRange().text="\t";
-					          this.onblur = function() { this.focus(); this.onblur = null; };
-					        } else if (this.setSelectionRange) {
-					          start = this.selectionStart;
-					          end = this.selectionEnd;
-					          this.value = this.value.substring(0, start) + "\t" + this.value.substr(end);
-					          this.setSelectionRange(start + 1, start + 1);
-					          this.focus();
-					        }
-					
-					        this.scrollTop=oldScrollTop;
-					
-					        return false;
-					      }
-					    }
-					  );
+					var textarea = $('textarea[name="script"]');
+					editor.getSession().on('change', function(){
+						textarea.val(editor.getSession().getValue());
+					});
 				});
 				
 				function doDelete()
@@ -172,7 +163,10 @@
 					</div>
 				</div>
 				<div class="form-group">
-					<textarea class="scriptcode form-control" name="script" spellcheck="false">
+					<div id="editor" >
+						<xsl:value-of select="script"/>
+					</div>
+					<textarea name="script" style="display: none;">
 						<xsl:value-of select="script"/>
 					</textarea>
 				</div>

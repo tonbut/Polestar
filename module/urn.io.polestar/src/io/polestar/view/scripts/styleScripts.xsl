@@ -166,11 +166,13 @@
 							  </button>
 							  <ul class="dropdown-menu">
 							    <li><a onclick="onSort('default')">Default</a></li>
+							    <li><a onclick="onSort('lastEdit')">Last Edited</a></li>
 							    <li><a onclick="onSort('alpha')">Alphabetical</a></li>
 							    <li><a onclick="onSort('lastExec')">Last executed</a></li>
 							    <li><a onclick="onSort('lastErr')">Last error</a></li>
 							    <li><a onclick="onSort('countExec')">Execution count</a></li>
 							    <li><a onclick="onSort('countErr')">Error count</a></li>
+							    
 							  </ul>
 							</div>
 						</span>

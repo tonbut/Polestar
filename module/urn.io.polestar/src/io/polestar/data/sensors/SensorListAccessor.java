@@ -36,6 +36,7 @@ import org.netkernel.util.Utils;
 import io.polestar.data.db.MongoUtils;
 import io.polestar.data.util.MonitorUtils;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.CommandResult;
 import com.mongodb.DBCollection;
@@ -346,6 +347,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 	
 	public void onUpdate(IHDSReader aState,INKFRequestContext aContext) throws Exception
 	{
+		boolean result=false;
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
 		//IHDSReader currentState=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
 		long now=System.currentTimeMillis();
@@ -355,6 +357,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			String exception=(String)sensorStateNode.getFirstValueOrNull("error");
 			Object newValue=sensorStateNode.getFirstValueOrNull("value");
 			Long updateTime=(Long)sensorStateNode.getFirstValueOrNull("time");
+			Long updateWindow=(Long)sensorStateNode.getFirstValueOrNull("window");
 			
 			IHDSReader sensorDef=config.getFirstNodeOrNull(String.format("key('byId','"+sensorId+"')"));
 			if (sensorDef==null)
@@ -371,19 +374,41 @@ public class SensorListAccessor extends StandardAccessorImpl
 				ss.setUserError(exception, updateTime);
 				ss.setValue(newValue, updateTime, sensorDef,aContext);
 			}
+			
+			//if (updateWindow!=null)
+			//{	System.out.println("here"+(ss.getLastModified()==updateTime));	
+			//}
 
+			
+			
+			DBCollection col=MongoUtils.getCollectionForSensor(sensorId);
+			if (updateWindow!=null)
+			{
+				Long existingTime=findExistingSensorValueAtTime(updateTime,updateWindow,col);
+				//System.out.println("setting "+sensorId+" to "+newValue+" at "+new Date(updateTime).toString()+" existing="+existingTime);
+				if (existingTime==null)
+				{	storeSensorState(sensorId,newValue,updateTime,col,aContext);
+				}
+				else
+				{	replaceSensorState(sensorId,newValue,existingTime,col,aContext);
+					result=true;
+				}
+			}
+			else
+			{	storeSensorState(sensorId,newValue,updateTime,col,aContext);
+			}
+				
 			if (ss.getLastModified()==updateTime)
 			{	mChanges.put(sensorId, sensorId);
-				DBCollection col=MongoUtils.getCollectionForSensor(sensorId);
-				storeSensorState(sensorId,newValue,updateTime,col,aContext);
 			}
+				
 			if (ss.getErrorLastModified()==updateTime)
 			{	//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onUpdate() "+(ss.getError()!=null)+" "+sensorDef.getFirstValue("name"));
 				mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 				recordError(sensorId,updateTime,aContext);
 			}
 		}
-			
+		aContext.createResponseFrom(result).setExpiry(INKFResponse.EXPIRY_ALWAYS);
 		
 	}
 	
@@ -432,6 +457,56 @@ public class SensorListAccessor extends StandardAccessorImpl
 			}
 		}
 	}
+	
+	public static void replaceSensorState(String aId, Object aValue, long aTime, DBCollection aCol, INKFRequestContext aContext) throws Exception
+	{
+		if (aValue!=null)
+		{	Class c=aValue.getClass();
+			if (c==String.class||c==Boolean.class||c==Integer.class||c==Long.class||c==Float.class||c==Double.class||Map.class.isAssignableFrom(c))
+			{	
+				BasicDBObject sensor=new BasicDBObject();
+				sensor.append("t", aTime);
+				sensor.append("v", aValue);
+				
+				//$eq doesn't work on earlier versions
+				//BasicDBObject query=new BasicDBObject("t", new BasicDBObject("$eq",aTime));
+				
+				BasicDBList inO=new BasicDBList();
+				inO.add(aTime);
+				BasicDBObject query=new BasicDBObject("t", new BasicDBObject("$in",inO));
+				
+				//DBCollection col=MongoUtils.getCollectionForSensor(aId);
+				WriteResult wr=aCol.update(query, sensor);
+			}
+			else
+			{	String msg=String.format("Unsupported datatype for %s of %s",aId,c.getName());
+				aContext.logRaw(INKFLocale.LEVEL_WARNING, msg);
+			}
+		}
+	}
+	
+	public static Long findExistingSensorValueAtTime(Long aTime, Long aWindow, DBCollection aCol) throws Exception
+	{
+		long start=aTime-aWindow;
+		long end=aTime+aWindow;
+		BasicDBObject startO=new BasicDBObject("t", new BasicDBObject("$gte",start));
+		BasicDBObject endO=new BasicDBObject("t", new BasicDBObject("$lt",end));
+		BasicDBList listO=new BasicDBList();
+		listO.add(startO);
+		listO.add(endO);
+		BasicDBObject queryO=new BasicDBObject("$and", listO);
+		DBCursor cursor = aCol.find(queryO);
+		Long existingTime=null;
+		if (cursor.hasNext())
+		{	DBObject capture=cursor.next();
+			if (cursor.hasNext())
+			{	throw new NKFException("Multiple sensor values within window");
+			}
+			existingTime=(Long)capture.get("t");		
+		}	
+		return existingTime;
+	}
+	
 	
 	void updateSensorState(String aId, Object aValue, long aNow, String aException, INKFRequestContext aContext)
 	{

@@ -33,7 +33,7 @@ time = extractArray(gd,1,"");
 
 //X-Axis
 vis.add(pv.Rule)
-    .data(x.ticks(8))
+    .data(x.ticks(%XTICKS%))
     .strokeStyle(gridColor)
     .left(x)
   .anchor("bottom").add(pv.Label).textAngle(Math.PI / 6)
@@ -42,7 +42,7 @@ vis.add(pv.Rule)
 
 //Y-Axis
 vis.add(pv.Rule)
-    .data(y.ticks() )
+    .data(y.ticks(%YTICKS%) )
     .strokeStyle(gridColor)
     .bottom(y)
   .anchor("right").add(pv.Label)
@@ -74,8 +74,8 @@ function drawArea(idx, fillStyle, strokeStyle, shape, heightFunction, baseline, 
 	var area=vis.add(pv.Area);
 	area.data(d)
 		.interpolate(interpolate)
-		.bottom(y(baseline))
-		.height(function(d) { return d==null?0:(heightFunction(d)-y(baseline)) } )
+		.bottom(function(d) { return d==null?null:y(baseline) } )
+		.height(function(d) { return d==null?null:(heightFunction(d)-y(baseline)) } )
 		.left(function() { return x(this.index);} )
 		.fillStyle( fillStyle );
 	/*

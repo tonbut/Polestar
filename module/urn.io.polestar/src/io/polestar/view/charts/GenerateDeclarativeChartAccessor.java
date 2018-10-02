@@ -46,6 +46,8 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 	{
 		long period=Long.parseLong((String)aOp.getFirstValue("chartPeriod"));
 		long endTime;
+		String xTicks="";
+		String yTicks="";
 		
 		String endSnap=(String)aOp.getFirstValueOrNull("endSnap");
 		if (endSnap==null) endSnap="now";
@@ -98,8 +100,9 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 
 		String yAxisTop=(String)aOp.getFirstValueOrNull("yAxisTop");
 		String yAxisBottom=(String)aOp.getFirstValueOrNull("yAxisBottom");
-		
 		String timeFormat=(String)aOp.getFirstValue("timeFormat");
+		String yAxisTicks=(String)aOp.getFirstValueOrNull("yAxisTicks");
+		String xAxisTicks=(String)aOp.getFirstValueOrNull("xAxisTicks");
 		
 		
 		//Request historical data
@@ -134,6 +137,18 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		
 		if (yAxisTop==null) yAxisTop=Double.toString(minMax[1]);
 		if (yAxisBottom==null) yAxisBottom=Double.toString(minMax[0]);
+		if (yAxisTicks!=null)
+		{	yTicks=Integer.toString((int)Math.round(Math.abs(minMax[1]-minMax[0])/Double.parseDouble(yAxisTicks)));
+		}
+		if (xAxisTicks!=null)
+		{	xTicks=Long.toString(period/Long.parseLong(xAxisTicks));
+		}
+		else
+		{	long tp=period/samplesPeriod;
+			while (tp>30) tp=tp/2;
+			xTicks=Long.toString(tp);
+		}
+		
 		
 		//chart layout
 		float width=640.0f;
@@ -175,10 +190,15 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 			if (valueOffsetString==null) valueOffsetString="0";
 			String function="return (d==null)?null:y((d+"+valueOffsetString+")*"+valueMultiplyString+")";
 			
-			String baseline=yAxisBottom;
+			String baseline;
 			String baselineString=(String)sensorNode.getFirstValueOrNull("baseline");
 			if (baselineString!=null)
 			{	baseline=baselineString;
+			}
+			else
+			{	//protovis bug rendering area that stops at baseline
+				double yRange=Math.abs(minMax[1]-minMax[0]);
+				baseline=Double.toString( Double.parseDouble(yAxisBottom)-yRange*0.01 );
 			}
 			
 			String js="";
@@ -319,6 +339,8 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		tokens.put("LEGEND", legend);
 		tokens.put("TITLE", titleJS);
 		tokens.put("CHARTCANVAS", chartCanvas);
+		tokens.put("XTICKS", xTicks);
+		tokens.put("YTICKS", yTicks);
 		
 
 		// Create pattern of the format "%(cat|beverage)%"

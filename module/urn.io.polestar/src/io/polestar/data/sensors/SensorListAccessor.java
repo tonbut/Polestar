@@ -206,17 +206,23 @@ public class SensorListAccessor extends StandardAccessorImpl
 				long last=-1;
 				DBCursor cursor;
 				
-				cursor = col.find().sort(new BasicDBObject("t",1)).limit(1);
-				if (cursor.hasNext())
-				{	DBObject entry=cursor.next();
-					first=(Long)entry.get("t");
+				try
+				{
+					cursor = col.find().sort(new BasicDBObject("t",1)).limit(1);
+					if (cursor.hasNext())
+					{	DBObject entry=cursor.next();
+						first=(Long)entry.get("t");
+					}
+					cursor = col.find().sort(new BasicDBObject("t",-1)).limit(1);
+					if (cursor.hasNext())
+					{	DBObject entry=cursor.next();
+						last=(Long)entry.get("t");
+					}
 				}
-				cursor = col.find().sort(new BasicDBObject("t",-1)).limit(1);
-				if (cursor.hasNext())
-				{	DBObject entry=cursor.next();
-					last=(Long)entry.get("t");
+				catch (Exception e)
+				{
 				}
-				
+					
 				String id=collection.substring(7);
 				
 				DateFormat df=DateFormat.getDateInstance(DateFormat.SHORT);

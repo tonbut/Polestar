@@ -113,7 +113,9 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		
 		int width=640;
 		long period=1000L*60*60*24;
+		long samplePeriod=1000L*60*60;
 		String timeFormat="kk:mm";
+		long xAxisTicks=samplePeriod;
 		int offset=0;
 		try
 		{
@@ -129,23 +131,34 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			width=Integer.parseInt(chartHDS.getFirstValue("/width2").toString());
 			offset=Integer.parseInt(chartHDS.getFirstValue("/offset").toString());
 			
-			String periodString=(String)chartHDS.getFirstValue("/period");			
+			String periodString=(String)chartHDS.getFirstValue("/period");		
+			
 			if (periodString.equals("hour"))
 			{	period=3600000L;
+				samplePeriod=period/60;
+				xAxisTicks=samplePeriod*4;
 			}
 			if (periodString.equals("day"))
 			{	period=86400000L;
+				samplePeriod=period/48;
+				xAxisTicks=period/12;
 			}
 			if (periodString.equals("week"))
 			{	period=604800000L;
+				samplePeriod=period/(12*7);
+				xAxisTicks=period/7;
 				timeFormat="E";
 			}
 			if (periodString.equals("month"))
-			{	period=2678400000L;
+			{	period=2592000000L;
+				samplePeriod=period/30;
+				xAxisTicks=samplePeriod*3;
 				timeFormat="d MMM";
 			}
 			if (periodString.equals("year"))
-			{	period=31536000000L;
+			{	period=31104000000L;
+				samplePeriod=period/120;
+				xAxisTicks=period/12;
 				timeFormat="d MMM";
 			}
 
@@ -164,7 +177,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		String mergeAction=getMergeActionForSensor(value, format);
 		
 		int detail=128;
-		long samplePeriod=period/detail;
+		//samplePeriod=period/detail;
 		
 		boolean isNumeric=false;
 		boolean isBoolean=false;
@@ -188,7 +201,13 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		.addNode("timeFormat", timeFormat)
 		.addNode("width", Integer.toString(width))
 		.addNode("height", Integer.toString(height))
-		.pushNode("sensors");
+		.addNode("xAxisTicks", Long.toString(xAxisTicks));
+	
+		if (aError)
+		{	m.addNode("yAxisTicks", "1");
+		}
+		
+		m.pushNode("sensors");
 		
 		if (aError)
 		{

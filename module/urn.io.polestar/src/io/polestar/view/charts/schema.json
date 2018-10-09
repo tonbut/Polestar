@@ -125,6 +125,11 @@
         				"enum": [ "bar","area", "line", "boolean" ],
         				"default": "line"
         			},
+        			"stacked": {
+        				"type": "boolean",
+        				"title":"Stacked",
+        				"default": false
+        			},
         			"interpolate": {
         				"type": "string",
         				"title":"Interpolate",
@@ -164,7 +169,8 @@
         			"interpolate": ["type"],
         			"lineWidth": ["type"],
         			"strokeDasharray": ["type"],
-        			"shape": ["type"]
+        			"shape": ["type"],
+        			"stacked": ["type"]
         		}
         	}
         }

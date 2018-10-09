@@ -104,6 +104,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		String yAxisTicks=(String)aOp.getFirstValueOrNull("yAxisTicks");
 		String xAxisTicks=(String)aOp.getFirstValueOrNull("xAxisTicks");
 		
+		String stackElements="";
 		
 		//Request historical data
 		IHDSMutator m=HDSFactory.newDocument();
@@ -161,79 +162,95 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		//generate chart elements
 		StringBuilder sb2=new StringBuilder();
 		int n=2;
+		boolean hasStack=false;
 		for (IHDSReader sensorNode : aOp.getNodes("sensors/sensor"))
 		{
 			String sensorId=(String)sensorNode.getFirstValue("id");
 			String type=(String)sensorNode.getFirstValue("type");
-			
-			String fill=(String)sensorNode.getFirstValueOrNull("fill");
-			String stroke=(String)sensorNode.getFirstValueOrNull("stroke");
-			String shape=(String)sensorNode.getFirstValueOrNull("shape");
-			if (fill==null)
-				fill="null";
-			else
-				fill="\""+fill+"\"";
-			if (stroke==null)
-				stroke="null";
-			else
-				stroke="\""+stroke+"\"";
-			if (shape==null)
-				shape="null";
-			else
-				shape="\""+shape+"\"";
-			String interpolate=(String)sensorNode.getFirstValueOrNull("interpolate");
-			if (interpolate!=null) interpolate="\""+interpolate+"\"";
-			
-			String valueMultiplyString=(String)sensorNode.getFirstValueOrNull("valueMultiply");
-			if (valueMultiplyString==null) valueMultiplyString="1";
-			String valueOffsetString=(String)sensorNode.getFirstValueOrNull("valueOffset");
-			if (valueOffsetString==null) valueOffsetString="0";
-			String function="return (d==null)?null:y((d+"+valueOffsetString+")*"+valueMultiplyString+")";
-			
-			String baseline;
-			String baselineString=(String)sensorNode.getFirstValueOrNull("baseline");
-			if (baselineString!=null)
-			{	baseline=baselineString;
-			}
-			else
-			{	//protovis bug rendering area that stops at baseline
-				double yRange=Math.abs(minMax[1]-minMax[0]);
-				baseline=Double.toString( Double.parseDouble(yAxisBottom)-yRange*0.01 );
-			}
-			
-			String js="";
-			
-			String lineWidth=(String)sensorNode.getFirstValueOrNull("lineWidth");
-			String strokeDasharray=(String)sensorNode.getFirstValueOrNull("strokeDasharray");
-			if (lineWidth==null)
-				lineWidth="2";
-			if (strokeDasharray==null)
-				strokeDasharray="null";
-			else
-				strokeDasharray="\""+strokeDasharray+"\"";
-			
-			if (type.equals("area"))
+			String stackedString=(String)sensorNode.getFirstValueOrNull("stacked");
+			boolean stacked="true".equals(stackedString);
+			if (!stacked)
 			{
-				js="drawArea("+n+","+fill+", "+stroke+", "+shape+", function(d) { "+function+" },"+baseline+","+interpolate+",gd,vis);\n";
-				js+="drawLine("+n+","+stroke+", "+fill+", "+strokeDasharray+", "+lineWidth+", "+shape+", function(d) { "+function+" },"+interpolate+",gd,vis);\n";
-			}
-			else if (type.equals("line"))
-			{
-				js="drawLine("+n+","+fill+", "+stroke+", "+strokeDasharray+", "+lineWidth+", "+shape+", function(d) { "+function+" },"+interpolate+",gd,vis);\n";
-			}
-			else if (type.equals("bar"))
-			{	float barWidth=width/(elementCount*2);
-				js="drawBar("+n+","+fill+", "+stroke+",function(d) { "+function+" },"+baseline+","+barWidth+",gd,vis);\n";
-			}
-			else if (type.equals("boolean"))
-			{	js="drawBoolean("+n+","+fill+", "+stroke+", "+valueOffsetString+", "+valueMultiplyString+",gd,vis);\n";
+				String fill=(String)sensorNode.getFirstValueOrNull("fill");
+				String stroke=(String)sensorNode.getFirstValueOrNull("stroke");
+				String shape=(String)sensorNode.getFirstValueOrNull("shape");
+				if (fill==null)
+					fill="null";
+				else
+					fill="\""+fill+"\"";
+				if (stroke==null)
+					stroke="null";
+				else
+					stroke="\""+stroke+"\"";
+				if (shape==null)
+					shape="null";
+				else
+					shape="\""+shape+"\"";
+				String interpolate=(String)sensorNode.getFirstValueOrNull("interpolate");
+				if (interpolate!=null) interpolate="\""+interpolate+"\"";
 				
+				String valueMultiplyString=(String)sensorNode.getFirstValueOrNull("valueMultiply");
+				if (valueMultiplyString==null) valueMultiplyString="1";
+				String valueOffsetString=(String)sensorNode.getFirstValueOrNull("valueOffset");
+				if (valueOffsetString==null) valueOffsetString="0";
+				String function="return (d==null)?null:y((d+"+valueOffsetString+")*"+valueMultiplyString+")";
+				
+				String baseline;
+				String baselineString=(String)sensorNode.getFirstValueOrNull("baseline");
+				if (baselineString!=null)
+				{	baseline=baselineString;
+				}
+				else
+				{	//protovis bug rendering area that stops at baseline
+					double yRange=Math.abs(minMax[1]-minMax[0]);
+					baseline=Double.toString( Double.parseDouble(yAxisBottom)-yRange*0.01 );
+				}
+				
+				String js="";
+				
+				String lineWidth=(String)sensorNode.getFirstValueOrNull("lineWidth");
+				String strokeDasharray=(String)sensorNode.getFirstValueOrNull("strokeDasharray");
+				if (lineWidth==null)
+					lineWidth="2";
+				if (strokeDasharray==null)
+					strokeDasharray="null";
+				else
+					strokeDasharray="\""+strokeDasharray+"\"";
+				
+				if (type.equals("area"))
+				{
+					js="drawArea("+n+","+fill+", "+stroke+", "+shape+", function(d) { "+function+" },"+baseline+","+interpolate+",gd,vis);\n";
+					js+="drawLine("+n+","+stroke+", "+fill+", "+strokeDasharray+", "+lineWidth+", "+shape+", function(d) { "+function+" },"+interpolate+",gd,vis);\n";
+				}
+				else if (type.equals("line"))
+				{
+					js="drawLine("+n+","+fill+", "+stroke+", "+strokeDasharray+", "+lineWidth+", "+shape+", function(d) { "+function+" },"+interpolate+",gd,vis);\n";
+				}
+				else if (type.equals("bar"))
+				{	float barWidth=width/(elementCount*2);
+					js="drawBar("+n+","+fill+", "+stroke+",function(d) { "+function+" },"+baseline+","+barWidth+",gd,vis);\n";
+				}
+				else if (type.equals("boolean"))
+				{	js="drawBoolean("+n+","+fill+", "+stroke+", "+valueOffsetString+", "+valueMultiplyString+",gd,vis);\n";
+					
+				}
+				
+				sb2.append(js);
+				n++;
 			}
-			
-			sb2.append(js);
-			n++;
+			else
+			{	//stacked
+				hasStack=true;
+			}
 		}
 		String chartElements=sb2.toString();
+		
+		if (hasStack)
+		{
+			stackElements=generateStackElement(aOp,width,(int)elementCount);
+		}
+		
+		
 		
 		//Colours
 		String backgroundColor=(String)aOp.getFirstValueOrNull("backgroundColor");
@@ -325,6 +342,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		Map<String,String> tokens = new HashMap<String,String>();
 		tokens.put("DATA", data);
 		tokens.put("ELEMENTS", chartElements);
+		tokens.put("STACK_ELEMENTS", stackElements);
 		tokens.put("WIDTH", Float.toString(width));
 		tokens.put("HEIGHT", Float.toString(height));
 		tokens.put("CWIDTH", Float.toString(width+40));
@@ -360,5 +378,89 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		respOut.setMimeType("text/html");
 		respOut.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 		
+	}
+	
+	private String generateStackElement(IHDSReader aOp, float aWidth, int aElementCount)
+	{
+		int n=2;
+		String stackData="[";
+		String fillData="[";
+		String strokeData="[";
+		String functionData="[";
+		String chartType=null;
+		for (IHDSReader sensorNode : aOp.getNodes("sensors/sensor"))
+		{
+			String stackedString=(String)sensorNode.getFirstValueOrNull("stacked");
+			boolean stacked="true".equals(stackedString);
+			if (stacked)
+			{	
+				String sensorId=(String)sensorNode.getFirstValue("id");
+				String type=(String)sensorNode.getFirstValue("type");
+				
+				
+				if (stackData.length()>1) stackData+=",";
+				stackData+=Integer.toString(n);
+				
+				String fill=(String)sensorNode.getFirstValueOrNull("fill");
+				if (fillData.length()>1) fillData+=",";
+				fillData+="\""+fill+"\"";
+				
+				String stroke=(String)sensorNode.getFirstValueOrNull("stroke");
+				if (strokeData.length()>1) strokeData+=",";
+				strokeData+="\""+stroke+"\"";
+				
+				String valueMultiplyString=(String)sensorNode.getFirstValueOrNull("valueMultiply");
+				if (valueMultiplyString==null) valueMultiplyString="1";
+				String valueOffsetString=(String)sensorNode.getFirstValueOrNull("valueOffset");
+				if (valueOffsetString==null) valueOffsetString="0";
+				String function="function(d) { return (d==null)?null:y((d+"+valueOffsetString+")*"+valueMultiplyString+");}";
+				if (functionData.length()>1) functionData+=",";
+				functionData+=function;
+				
+			
+				if (chartType==null)
+				{	
+					if (type.equals("bar"))
+					{	float barWidth=3*aWidth/(aElementCount*4);
+					
+						chartType=".layer.add(pv.Bar)\n";
+						chartType+="    .width( function() { return (this.index==0 || this.index=="+(aElementCount-1)+")?"+barWidth/2+":"+barWidth+"; } )\n";
+						chartType+="    .left(function() { return x(this.index)-((this.index==0)?0:("+barWidth*0.5+")); } )\n";
+						
+					}
+					else if (type.equals("area"))
+					{
+						String interpolate=(String)sensorNode.getFirstValueOrNull("interpolate");
+						
+						chartType=".layer.add(pv.Area)\n";
+						chartType+="    .interpolate(\""+interpolate+"\")\n";
+					}
+					
+				}
+				
+			}
+			n++;
+		}
+		stackData+="]";
+		fillData+="]";
+		strokeData+="]";
+		functionData+="]";
+		
+		StringBuilder sb=new StringBuilder();
+		sb.append("sd=extractStackArray(gd,"+stackData+");\n");
+		sb.append("stackFill="+fillData+";\n");
+		sb.append("stackStroke="+strokeData+";\n");
+		sb.append("stackFunctions="+functionData+";\n");
+		//sb.append("console.log(stackFunctions[0])\n");
+		sb.append("vis.add(pv.Layout.Stack)\n");
+		sb.append("    .layers(sd)\n");
+		sb.append("    .x(function() { return x(this.index);} )\n");
+		sb.append("    .y(function(d) { return stackFunctions[this.parent.index](d); })\n");
+		sb.append(chartType);
+		sb.append("    .fillStyle(function(d) { return stackFill[this.parent.index];})\n");
+		sb.append("    .strokeStyle(function(d) { return stackStroke[this.parent.index];})\n");
+		
+		//System.out.println(sb.toString());
+		return sb.toString();
 	}
 }

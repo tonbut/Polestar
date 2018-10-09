@@ -49,6 +49,8 @@ vis.add(pv.Rule)
   	.textStyle(textColor)
     .text(y.tickFormat);
 
+%STACK_ELEMENTS%
+
 %ELEMENTS%
 
 %LEGEND%
@@ -58,7 +60,7 @@ vis.add(pv.Rule)
 vis.render();
 
 function extractArray(a, idx, defval)
-{   result = [];
+{   var result = [];
     for (i=0; i<a.length; i++)
     { b=a[i];
       v=b[idx];
@@ -68,9 +70,21 @@ function extractArray(a, idx, defval)
     return result;
 }
 
+function extractStackArray(a, idxs)
+{   var result2 = [];
+	for (j=0; j<idxs.length; j++)
+	{	idx=idxs[j];
+		row=extractArray(a,idx,null);
+		result2.push(row);
+	}
+    return result2;
+}
+
+
 function drawArea(idx, fillStyle, strokeStyle, shape, heightFunction, baseline, interpolate, data, vis)
 {	
 	var d = extractArray(data,idx,null);
+	var d2 = extractArray(data,idx,null);
 	var area=vis.add(pv.Area);
 	area.data(d)
 		.interpolate(interpolate)

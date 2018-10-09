@@ -58,6 +58,11 @@
 							"sort":false,
 							"hideNone":true
 						},
+						"stacked": {
+	            			"dependencies": {
+	            				"type": ["bar","area"]
+	            			}
+	            		},
 	            		"baseline": {
 	            			"dependencies": {
 	            				"type": ["bar","area"]

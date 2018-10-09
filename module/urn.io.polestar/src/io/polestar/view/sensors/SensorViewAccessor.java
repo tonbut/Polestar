@@ -86,25 +86,6 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		}
 	}
 	
-	private static String getMergeActionForSensor(Object value, String format)
-	{
-		String mergeAction="sample";
-		if (value!=null && (value instanceof Float || value instanceof Double))
-		{	mergeAction="average";
-		}
-		if (value!=null && (value instanceof Map))
-		{	mergeAction="average_map";
-		}
-		
-		if ("count".equals(format))
-		{	mergeAction="positive_diff";
-		}
-		if (value!=null && value instanceof Boolean)
-		{	mergeAction="boolean_change";
-		}
-		return mergeAction;
-	}
-	
 	public void onDetailChart(INKFRequestContext aContext, String aId, boolean aError) throws Exception
 	{
 		//aContext.createResponseFrom("<div>chart</div>");
@@ -174,7 +155,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		
 		Object value=stateNode.getFirstValueOrNull("value");
 		String format=(String)configNode.getFirstValueOrNull("format");
-		String mergeAction=getMergeActionForSensor(value, format);
+		//String mergeAction=getMergeActionForSensor(value, format);
 		
 		int detail=128;
 		//samplePeriod=period/detail;
@@ -229,26 +210,27 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			{
 				m.pushNode("sensor")
 				.addNode("id", aId)
-				.addNode("mergeAction", mergeAction)
 				.addNode("fill","rgba(0,0,0,0.08)")
 				.addNode("lineWidth", "3")
 				.addNode("stroke","#448")
+				.addNode("type","area")
 				;
 			}
 			
 			if (isNumeric)
-			{	if (mergeAction.equals("positive_diff"))
+			{	if ("count".equals(format))
 				{	m.addNode("interpolate","step-before");
+					m.addNode("mergeAction", "positive_diff");
 				}
 				else
 				{	m.addNode("interpolate","basis");
+					m.addNode("mergeAction", "average");
 				}
 				m.addNode("type","area");
 			}
 			if (isBoolean)
-			{	//m.addNode("type","boolean");
-				m.addNode("interpolate","step-before");
-				m.addNode("type","area");
+			{	m.addNode("interpolate","step-before");
+				m.addNode("mergeAction", "boolean_change");
 			}
 			if (isMap)
 			{

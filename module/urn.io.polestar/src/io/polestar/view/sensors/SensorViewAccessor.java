@@ -155,6 +155,8 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		
 		Object value=stateNode.getFirstValueOrNull("value");
 		String format=(String)configNode.getFirstValueOrNull("format");
+		String chartType=(String)configNode.getFirstValueOrNull("chart-type");
+		if (chartType==null) chartType="";
 		//String mergeAction=getMergeActionForSensor(value, format);
 		
 		int detail=128;
@@ -218,9 +220,13 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			}
 			
 			if (isNumeric)
-			{	if ("count".equals(format))
+			{	if ("count".equals(chartType))
 				{	m.addNode("interpolate","step-before");
 					m.addNode("mergeAction", "positive_diff");
+				}
+				else if ("discrete".equals(chartType))
+				{	m.addNode("interpolate","step-before");
+					m.addNode("mergeAction", "average");
 				}
 				else
 				{	m.addNode("interpolate","basis");
@@ -236,21 +242,63 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			{
 				Set<String> keys=((Map)value).keySet();
 				int index=0;
-				for (String key : keys)
+				
+				if ("discrete".equals(chartType))
 				{
-					m.pushNode("sensor")
-						.addNode("id", aId)
-						.addNode("dname", key+"#"+key)
-						.addNode("interpolate","basis")
-						.addNode("mergeAction", "average")
-						.addNode("type","area")
-						.addNode("lineWidth", "2")
-						.addNode("stroke",MonitorUtils.getColourScheme(index))
-						.addNode("fill","rgba(0,0,0,0.05)")
-					.popNode();
-					index++;
+					for (String key : keys)
+					{
+						m.pushNode("sensor")
+							.addNode("id", aId)
+							.addNode("dname", key+"#"+key)
+							.addNode("interpolate","step-before")
+							.addNode("mergeAction", "average")
+							.addNode("type","area")
+							.addNode("lineWidth", "2")
+							.addNode("stroke",MonitorUtils.getColourScheme(index))
+							.addNode("fill","rgba(0,0,0,0.05)")
+						.popNode();
+						index++;
+					}
+					m.popNode();
 				}
-				m.popNode();
+				else if ("stacked".equals(chartType))
+				{
+					for (String key : keys)
+					{
+						m.pushNode("sensor")
+							.addNode("id", aId)
+							.addNode("dname", key+"#"+key)
+							.addNode("interpolate","step-before")
+							.addNode("stacked", "true")
+							.addNode("mergeAction", "average")
+							.addNode("type","bar")
+							.addNode("lineWidth", "2")
+							.addNode("fill",MonitorUtils.getColourScheme(index))
+						.popNode();
+						index++;
+					}
+					m.popNode();
+				}
+				else
+				{
+					
+					for (String key : keys)
+					{
+						m.pushNode("sensor")
+							.addNode("id", aId)
+							.addNode("dname", key+"#"+key)
+							.addNode("interpolate","basis")
+							.addNode("mergeAction", "average")
+							.addNode("type","area")
+							.addNode("lineWidth", "2")
+							.addNode("stroke",MonitorUtils.getColourScheme(index))
+							.addNode("fill","rgba(0,0,0,0.05)")
+						.popNode();
+						index++;
+					}
+					m.popNode();
+				}
+				
 				m.addNode("legend", "true");
 			}
 		}
@@ -301,7 +349,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		errorPercentNode.setValue(errorPercentString);
 		//IHDSReader config=aContext.source("active:polestarSensorErrorInfo",IHDSDocument.class).getReader();
 		
-		//System.out.println(m);
+		System.out.println(m);
 		
 		
 		req = aContext.createRequest("active:xslt");
@@ -381,7 +429,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			{	mergeAction="average_map";
 			}
 			
-			String format=(String)sensor.getFirstValueOrNull("format");
+			String format=(String)sensor.getFirstValueOrNull("chart-type");
 			if ("count".equals(format))
 			{	mergeAction="positive_diff";
 			}

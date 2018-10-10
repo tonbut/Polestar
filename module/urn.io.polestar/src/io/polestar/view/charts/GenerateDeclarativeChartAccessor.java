@@ -4,7 +4,9 @@ import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -133,9 +135,10 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		req.setRepresentationClass(String.class);
 		req.setRepresentationClass(IHDSDocument.class);
 		IHDSDocument d=(IHDSDocument)aContext.issueRequest(req);
-		String data=MonitorUtils.queryHDStoJSON(d);
-		double[] minMax=MonitorUtils.getQueryHDSMaxMin(d);
+		String data=MonitorUtils.queryHDStoJSON(d);	
+		double[] minMax=getQueryHDSMaxMin(d,aOp);
 		
+		//axis
 		if (yAxisTop==null) yAxisTop=Double.toString(minMax[1]);
 		if (yAxisBottom==null) yAxisBottom=Double.toString(minMax[0]);
 		if (yAxisTicks!=null)
@@ -319,6 +322,10 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 			bottomMargin=Integer.toString(20*(1+row));
 		}
 		
+		
+		
+		
+
 		//title
 		String titleJS="";
 		String titleText=(String)aOp.getFirstValueOrNull("title");
@@ -397,6 +404,11 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				String sensorId=(String)sensorNode.getFirstValue("id");
 				String type=(String)sensorNode.getFirstValue("type");
 				
+				String baselineString=(String)sensorNode.getFirstValueOrNull("baseline");
+				//if (baselineString!=null)
+				//{	baseline=FlbaselineString;
+				//}
+				
 				
 				if (stackData.length()>1) stackData+=",";
 				stackData+=Integer.toString(n);
@@ -453,9 +465,11 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		sb.append("stackFunctions="+functionData+";\n");
 		//sb.append("console.log(stackFunctions[0])\n");
 		sb.append("vis.add(pv.Layout.Stack)\n");
+		// TODO can baseline be set to anything other than 0?
 		sb.append("    .layers(sd)\n");
 		sb.append("    .x(function() { return x(this.index);} )\n");
 		sb.append("    .y(function(d) { return stackFunctions[this.parent.index](d); })\n");
+		
 		sb.append(chartType);
 		sb.append("    .fillStyle(function(d) { return stackFill[this.parent.index];})\n");
 		sb.append("    .strokeStyle(function(d) { return stackStroke[this.parent.index];})\n");
@@ -463,4 +477,89 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		//System.out.println(sb.toString());
 		return sb.toString();
 	}
+	
+	
+	private double[] getQueryHDSMaxMin(IHDSDocument aData, IHDSReader aOp)
+	{
+		double max=Double.NEGATIVE_INFINITY;
+		double min=Double.POSITIVE_INFINITY;
+		
+		
+		
+		int j=2;
+		Set<Integer> stackedElements=new HashSet();
+		for (IHDSReader sensorNode : aOp.getNodes("sensors/sensor"))
+		{
+			String stackedString=(String)sensorNode.getFirstValueOrNull("stacked");
+			boolean stacked="true".equals(stackedString);
+			if (stacked)
+			{	stackedElements.add(j);
+			}
+			j++;
+		}
+		
+		//System.out.println(stackedElements);
+		
+		// non stacked elements
+		for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
+		{	int i=0;
+			for (IHDSReader valueNode : row.getNodes("*"))
+			{	if (i>=2 && !stackedElements.contains(i))
+				{	Object v=valueNode.getFirstValue(".");
+					if (v instanceof Number)
+					{	double d=((Number)v).doubleValue();
+						if (d>max) max=d;
+						if (d<min) min=d;
+					}
+				}
+				i++;
+			}
+		}
+		
+		//sum stacked elements
+		if (stackedElements.size()>0)
+		{
+			for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
+			{	int i=0;
+				double t=0; 
+				// TODO baseline for stack
+				for (IHDSReader valueNode : row.getNodes("*"))
+				{	if (stackedElements.contains(i))
+					{	Object v=valueNode.getFirstValue(".");
+						if (v instanceof Number)
+						{	double d=((Number)v).doubleValue();
+							t+=d;
+						}
+					}
+					i++;
+				}
+				if (t>max) max=t;
+				if (t<min) min=t;
+			}
+		
+			//need proper baseline
+			if (min>0.0) min=0.0;
+		}		
+		
+		if (max==Double.NEGATIVE_INFINITY && min==Double.POSITIVE_INFINITY)
+		{	max=1.0;
+			min=0.0;
+		}
+		else if (max==Double.NEGATIVE_INFINITY)
+		{	max=min+1.0;
+		}
+		else if (min==Double.POSITIVE_INFINITY)
+		{	min=max-1.0;
+		}
+		else if (min==max)
+		{	min-=0.5;
+			max+=0.5f;
+		}
+		
+		//System.out.println(min+" "+max);
+		
+		return new double[] {min,max};
+	}
+	
+	
 }

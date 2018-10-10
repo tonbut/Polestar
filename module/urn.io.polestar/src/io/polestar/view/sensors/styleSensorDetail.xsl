@@ -135,10 +135,20 @@
 		<script type="text/javascript" src="/polestar/pub/protovis-d3.2.js"></script>
     		<script><xsl:comment>
     		
+    		<xsl:choose>
+    			<xsl:when test="defn/chart-period">
+    		var period="<xsl:value-of select="defn/chart-period"/>";
+    			</xsl:when>
+    			<xsl:otherwise>
     		var period="day";
+    			</xsl:otherwise>
+    		</xsl:choose>
     		var offset=0;
     		
     		$(document).ready(function() {
+    		
+    			
+    		
     			setupButtons();
     			updateButtons();
     			renderChart();

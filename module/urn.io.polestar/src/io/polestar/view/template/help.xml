@@ -113,10 +113,16 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 		<li><b>name</b> <span class="label label-info">mandatory</span> This is the human readable display name of the sensor.</li>
 		<li><b>units</b> <span class="label label-info">optional</span> This specifies the display units of the sensors values.</li>
 		<li><b>format</b> <span class="label label-info">optional</span> Format is used to format the raw sensor values for display.
-		Boolean values can use "on" for on/off or "open" for open/close. Integer values can use "count", this effects how tickers are rendered.
+		Boolean values can use "on" for on/off or "open" for open/close. 
 		Formats containing the percent character are formatted according to the specifications on this <a href="https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html">page</a>.</li>
 		<li><b>icon</b> <span class="label label-info">optional</span> Specifies a custom icon URL. There is a library of icons within
 		Polestar. (See below.)</li>
+		
+		<li><b>chart-period</b> <span class="label label-info">optional</span> Specifies default displayed period of chart in sensor detail view. Can be hour|day|week|month|year.</li>
+		<li><b>chart-type</b> <span class="label label-info">optional</span> Specifies type of rendering of chart in sensor detail view. Can be analog|discrete|stacked|count.
+		 Count causes value to be rendered as incremental change. Discrete causes both numeric and maps to be rendered as bar chart. Stacked causes
+		 map values to rendered in bar stack.</li>
+		
 		<li><b>keywords</b> <span class="label label-info">optional</span> Comma separated list of keywords that are display in sensor list and can be used to filter sensors.</li>
 		<li><b>errorIfNoReadingsFor</b> <span class="label label-info">optional</span> An integer number of seconds after which an error will be reported in a sensor if it's
 		value is not updated (regardless of if it's value changed) by a script.</li>

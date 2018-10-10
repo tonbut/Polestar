@@ -39,40 +39,7 @@ import io.polestar.view.login.RememberMeCookie;
 
 public class MonitorUtils
 {
-	public static double[] getQueryHDSMaxMin(IHDSDocument aData)
-	{
-		double max=Double.NEGATIVE_INFINITY;
-		double min=Double.POSITIVE_INFINITY;
-		for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
-		{	int i=0;
-			for (IHDSReader valueNode : row.getNodes("*"))
-			{	if (i>=2)
-				{	Object v=valueNode.getFirstValue(".");
-					if (v instanceof Number)
-					{	double d=((Number)v).doubleValue();
-						if (d>max) max=d;
-						if (d<min) min=d;
-					}
-				}
-				i++;
-			}
-		}
-		if (max==Double.NEGATIVE_INFINITY && min==Double.POSITIVE_INFINITY)
-		{	max=1.0;
-			min=0.0;
-		}
-		else if (max==Double.NEGATIVE_INFINITY)
-		{	max=min+1.0;
-		}
-		else if (min==Double.POSITIVE_INFINITY)
-		{	min=max-1.0;
-		}
-		else if (min==max)
-		{	min-=0.5;
-			max+=0.5f;
-		}
-		return new double[] {min,max};
-	}
+	
 	
 	
 	public static String queryHDStoJSON(IHDSDocument aData)

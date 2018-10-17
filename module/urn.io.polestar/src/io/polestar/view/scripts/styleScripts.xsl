@@ -58,7 +58,11 @@
 					
 					if ($("#filter").val()!="")
                     {	doFilterUpdate();
-                    }					
+                    }		
+                    
+                    $("#clear-filter").bind("click",function() {
+                        doClearFilter();
+                    });			
 					
 				});
 				
@@ -96,6 +100,12 @@
 						},
 					});
 					$( "#element-list" ).disableSelection();
+				}
+				
+				function doClearFilter()
+				{
+					$("#filter").val("");
+					doFilterUpdate();
 				}
 				
 				function doFilterUpdate()
@@ -156,8 +166,6 @@
 							<xsl:text> </xsl:text>
 							<button type="button" class="btn btn-default" onclick="resetStats()" title="reset script statistics"><span class="glyphicon glyphicon-minus-sign"></span></button>
 							<xsl:text> </xsl:text>
-							<button class="btn btn-default" title="search script contents" onclick="toggleTextSearch()" id="tts"><span class="glyphicon glyphicon-paperclip"></span></button>
-							<xsl:text> </xsl:text>
 						</span>
 						<span>
 							<div class="btn-group">
@@ -177,11 +185,23 @@
 							</div>
 						</span>
 						</td>
-					<td ><input id="filter" type="text" placeholder="Filter list of {$count} scripts" class="form-control" value="">
-							<xsl:attribute name="value"><xsl:value-of select="$filter"/></xsl:attribute>
-						</input>
+					<td>
+						<div class="input-group">
+							<input id="filter" type="text" placeholder="Filter list of {$count} scripts" class="form-control" value="">
+								<xsl:attribute name="value"><xsl:value-of select="$filter"/></xsl:attribute>
+							</input>
+							<span class="input-group-btn">
+                            	<button id="clear-filter" class="btn btn-default"><span class="glyphicon glyphicon-remove"></span>&#160;</button>
+                        	</span>
+                        </div>
 						<input id="tts-field" type="hidden"/>
 					</td>
+					<td>
+						<span class="hidden-xs">
+						<button style="margin-left: 0.5em;" class="btn btn-default" title="search script contents" onclick="toggleTextSearch()" id="tts"><span class="glyphicon glyphicon-paperclip"></span>&#160;</button>
+						</span>
+					</td>
+					
 				</tr>
 				<tr id="upload" style="display: none"><td colspan="2" style="padding-top: 4px;">
 					<div class="alert alert-info">Restore will not overwrite existing scripts</div>

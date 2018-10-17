@@ -16,6 +16,7 @@ package io.polestar.view.sensors;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IllegalFormatConversionException;
@@ -37,10 +38,8 @@ import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 
-import com.mongodb.BasicDBObject;
 
 import io.polestar.api.IPolestarContext;
-import io.polestar.api.QueryType;
 import io.polestar.data.api.PolestarContext;
 import io.polestar.data.util.MonitorUtils;
 import io.polestar.view.template.TemplateWrapper;
@@ -466,16 +465,29 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	}
 	
 	
-	private IHDSMutator getFilteredList(String aFilter, INKFRequestContext aContext) throws Exception
+	private IHDSMutator getFilteredList(String aFilter, String aSort, INKFRequestContext aContext) throws Exception
 	{	long now=System.currentTimeMillis();
-		IHDSMutator state=aContext.source("active:polestarSensorState",IHDSDocument.class).getMutableClone();
+
+		//store sort order in session
+		if (aSort.length()==0)
+		{	String sort=aContext.source("session:/sensorSort",String.class);
+			if (sort!=null)
+			{	aSort=sort;
+			}
+		}
+		else
+		{	aContext.sink("session:/sensorSort", aSort);
+		}
+	
+		//get filtered list of sensors
+		IHDSReader ss=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		List<String> ids=new ArrayList<>();
 		boolean isError=aFilter.indexOf("error")>=0;
-		for (IHDSMutator sensorNode : state.getNodes("/sensors/sensor"))
+		for (IHDSReader sensorNode : ss.getNodes("/sensors/sensor"))
 		{	
 			String id=(String)sensorNode.getFirstValue("id");
 			IHDSReader sensorDef=config.getFirstNodeOrNull(String.format("key('byId','"+id+"')"));
-			
 			boolean include;
 			if (aFilter.length()>0)
 			{	include=false;
@@ -495,17 +507,76 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			{	include=true;
 			}
 			
-			if (!include)
-			{	sensorNode.delete();
-			}
-			else
-			{	
-				addDerivedSensorNodes(sensorNode,sensorDef,now,false);
-				
-				
-			}
+			if (include) ids.add(id);
 		}
-		return state;
+		
+		//now sort
+		if (aSort.equals("alpha"))
+		{	SensorComparator c=new SensorComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	String n1=((String)s1.getFirstValue("name")).toLowerCase();
+					String n2=((String)s2.getFirstValue("name")).toLowerCase();
+					return n1.compareTo(n2);
+				}
+			};
+			c.setList(config);
+			ids.sort(c);
+		}
+		if (aSort.equals("lastUpd"))
+		{	SensorComparator c=new SensorComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	Long n1=((Long)s1.getFirstValue("lastUpdated"));
+					Long n2=((Long)s2.getFirstValue("lastUpdated"));
+					if (n1==null) n1=Long.valueOf(0);
+					if (n2==null) n2=Long.valueOf(0);
+					return n2.compareTo(n1);
+				}
+			};
+			c.setList(ss);
+			ids.sort(c);
+		}
+		if (aSort.equals("lastMod"))
+		{	SensorComparator c=new SensorComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	Long n1=((Long)s1.getFirstValue("lastModified"));
+					Long n2=((Long)s2.getFirstValue("lastModified"));
+					if (n1==null) n1=Long.valueOf(0);
+					if (n2==null) n2=Long.valueOf(0);
+					return n2.compareTo(n1);
+				}
+			};
+			c.setList(ss);
+			ids.sort(c);
+		}
+		if (aSort.equals("lastErr"))
+		{	SensorComparator c=new SensorComparator()
+			{	public int scriptCompare(IHDSReader s1, IHDSReader s2)
+				{	Long n1=((Long)s1.getFirstValue("errorLastModified"));
+					Long n2=((Long)s2.getFirstValue("errorLastModified"));
+					if (n1==null) n1=Long.valueOf(0);
+					if (n2==null) n2=Long.valueOf(0);
+					return n2.compareTo(n1);
+				}
+			};
+			c.setList(ss);
+			ids.sort(c);
+		}
+		
+		
+		
+		//now generate list
+		IHDSMutator result=HDSFactory.newDocument();
+		result.pushNode("sensors");
+		for (String id : ids)
+		{	IHDSReader sensorNode=ss.getFirstNode("key('byId','"+id+"')");
+			result.append(sensorNode);
+			IHDSReader sensorDef=config.getFirstNodeOrNull(String.format("key('byId','"+id+"')"));
+			IHDSMutator cursor=result.getFirstNode(result.getCursorXPath());
+			addDerivedSensorNodes(cursor,sensorDef,now,false);
+			result.popNode();
+		}
+		
+		return result;
 	}
 	
 	private static void addDerivedSensorNodes(IHDSMutator sensorNode, IHDSReader sensorDef, long now, boolean aConstraints)
@@ -666,7 +737,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	{	
 		IHDSDocument sensorList;
 		try
-		{	IHDSMutator list=getFilteredList("", aContext);
+		{	IHDSMutator list=getFilteredList("", "", aContext);
 			sensorList=list.toDocument(false);
 		}
 		catch (NKFException e)
@@ -719,7 +790,8 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	public void onFilteredList(INKFRequestContext aContext) throws Exception
 	{
 		String f=aContext.source("httpRequest:/param/f",String.class).toLowerCase();
-		IHDSMutator list=getFilteredList(f, aContext);
+		String sort=aContext.source("httpRequest:/param/sort",String.class);
+		IHDSMutator list=getFilteredList(f, sort, aContext);
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensors.xsl");
 		req.addArgumentByValue("operand", list.toDocument(false));
@@ -730,6 +802,24 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	
 	private static String getWebId(String aId)
 	{	return aId.replaceAll("\\:", "%3A");
+	}
+	
+	
+	private static abstract class SensorComparator implements Comparator<String>
+	{
+		private IHDSReader mList;
+		
+		public void setList(IHDSReader aList)
+		{	mList=aList;
+		}
+		
+		public int compare(String o1, String o2)
+		{	IHDSReader sensor1=mList.getFirstNodeOrNull("key('byId','"+o1+"')");
+			IHDSReader sensor2=mList.getFirstNodeOrNull("key('byId','"+o2+"')");
+			return scriptCompare(sensor1,sensor2);
+		}
+		
+		public abstract int scriptCompare(IHDSReader s1, IHDSReader s2);
 	}
 	
 }

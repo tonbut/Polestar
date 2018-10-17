@@ -57,6 +57,8 @@
     		<script><xsl:comment>
     			var updateTimeout;
                 var showTickerFlag;
+                sortOrder="default";
+                
 				$(function() {
 					$("#filter").keyup( function(evt) {
 						clearTimeout(updateTimeout);
@@ -71,6 +73,9 @@
 
                     $("#refresh").bind("click",function() {
                         doFilterUpdate();
+                    });
+                    $("#clear-filter").bind("click",function() {
+                        doClearFilter();
                     });
                     
                     showTickerFlag=window.innerWidth&gt;768;
@@ -128,22 +133,53 @@
                 
                 }
 				
+				function doClearFilter()
+				{
+					$("#filter").val("");
+					doFilterUpdate();
+				}
                 
 				function doFilterUpdate()
 				{	var f=$("#filter").val();
-					$.get("/polestar/sensors/filtered?f="+f, function(d) {
+					$.get("/polestar/sensors/filtered?f="+f+"&amp;sort="+sortOrder, function(d) {
 						$("#sensor-list-container").empty();
 						$("#sensor-list-container").html(d);
                         
                         showTicker();
                         
 					},"html");
+				}
+				
+				function onSort(order)
+				{	sortOrder=order;
+					doFilterUpdate();
 					
-				}			
+				}
+					
 			</xsl:comment></script>
     	
     		<div class="list-group-item list-header">
                 <table width="100%"><tr>
+                
+                	<td width="1%">
+                	
+                		<span>
+							<div class="btn-group">
+							  <button style="margin-right: 0.5em;" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							    Sort by <span class="caret"></span>
+							  </button>
+							  <ul class="dropdown-menu">
+							    <li><a onclick="onSort('default')">Default</a></li>
+							    <li><a onclick="onSort('alpha')">Alphabetical</a></li>
+							    <li><a onclick="onSort('lastUpd')">Last updated</a></li>
+							    <li><a onclick="onSort('lastMod')">Last modified</a></li>
+							    <li><a onclick="onSort('lastErr')">Last error</a></li>
+							  </ul>
+							</div>
+						</span>
+                	
+                	</td>
+                
                     <td width="99%">
                     <div class="input-group">
                     	<xsl:variable name="count" select="count(/sensors/sensor)"/>
@@ -151,16 +187,20 @@
     				    	<xsl:attribute name="value"><xsl:value-of select="$filter"/></xsl:attribute>
     				    </input>
                         <span class="input-group-btn">
-                            <button id="refresh" class="btn btn-default"><span class="glyphicon glyphicon-refresh"></span>&#160;</button>
+                            <button id="clear-filter" class="btn btn-default"><span class="glyphicon glyphicon-remove"></span>&#160;</button>
                         </span>
                     </div>
                     </td>
+                    <td width="1%">
+                    	<button style="margin-left: 0.5em;" id="refresh" class="btn btn-default"><span class="glyphicon glyphicon-refresh"></span>&#160;</button>
+                    </td>        
                     <td width="1%">
                         <button style="margin-left: 0.5em;" id="toggle-stats" class="btn btn-default"><span class="glyphicon glyphicon-stats"></span>&#160;</button>
                     </td>
                     <td width="1%">
                         <button style="margin-left: 0.5em;" id="sensor-info" class="btn btn-default"><span class="glyphicon glyphicon-info-sign"></span>&#160;</button>
                     </td>
+                    
                 </tr></table>
                 <div  id="sensor-keywords"> <!--class="hidden-xs"-->
                 	<xsl:for-each select="$keywords/keywords/keyword">

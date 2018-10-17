@@ -142,15 +142,33 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		if (yAxisTop==null) yAxisTop=Double.toString(minMax[1]);
 		if (yAxisBottom==null) yAxisBottom=Double.toString(minMax[0]);
 		if (yAxisTicks!=null)
-		{	yTicks=Integer.toString((int)Math.round(Math.abs(minMax[1]-minMax[0])/Double.parseDouble(yAxisTicks)));
+		{	yTicks="y.ticks("+Integer.toString((int)Math.round(Math.abs(minMax[1]-minMax[0])/Double.parseDouble(yAxisTicks)))+")";
+		}
+		else
+		{	yTicks="y.ticks()";
 		}
 		if (xAxisTicks!=null)
-		{	xTicks=Long.toString(period/Long.parseLong(xAxisTicks));
+		{	
+			long c=period/Long.parseLong(xAxisTicks);
+			//System.out.println("ticks="+c+" "+elementCount);
+			long inc=elementCount/c;
+			StringBuilder sb=new StringBuilder();
+			sb.append("[");
+			for (long tt=0; tt<elementCount; tt+=inc)
+			{
+				if (tt>0) sb.append(",");
+				sb.append(Long.toString(tt));
+			}
+			sb.append("]");
+			
+			//System.out.println(sb.toString());
+			xTicks=sb.toString();
+			//xTicks="x.ticks("+Long.toString(c)+")";
 		}
 		else
 		{	long tp=period/samplesPeriod;
 			while (tp>30) tp=tp/2;
-			xTicks=Long.toString(tp);
+			xTicks="x.ticks("+Long.toString(tp)+")";
 		}
 		
 		

@@ -18,6 +18,7 @@ var w = %WIDTH%,
     h = %HEIGHT%,
     x = pv.Scale.linear(0, len-1).range(0, w),
     y = pv.Scale.linear(ybottom,ytop).range(0, h);
+    //y.nice();
 
 var vis = new pv.Panel()
 	.canvas("%CHARTCANVAS%")
@@ -33,7 +34,7 @@ time = extractArray(gd,1,"");
 
 //X-Axis
 vis.add(pv.Rule)
-    .data(x.ticks(%XTICKS%))
+    .data(%XTICKS%)
     .strokeStyle(gridColor)
     .left(x)
   .anchor("bottom").add(pv.Label).textAngle(Math.PI / 6)
@@ -42,7 +43,7 @@ vis.add(pv.Rule)
 
 //Y-Axis
 vis.add(pv.Rule)
-    .data(y.ticks(%YTICKS%) )
+    .data(%YTICKS%)
     .strokeStyle(gridColor)
     .bottom(y)
   .anchor("right").add(pv.Label)

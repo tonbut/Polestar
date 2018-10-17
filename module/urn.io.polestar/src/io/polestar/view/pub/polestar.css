@@ -37,5 +37,5 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .sensorDetail .label { margin: 4px; line-height: 2em;}
 .list-group-item .label { padding: 2px 8px; }
 
-//fix so scrollbar appears on safari
-.ace_scrollbar-inner { background-color: white; opacity: 0.01; }
+.ace_scrollbar-inner { background-color: red; opacity: 0.01; }
+#editor { border: solid 1px rgb(204, 204, 204); border-radius: 4px; }

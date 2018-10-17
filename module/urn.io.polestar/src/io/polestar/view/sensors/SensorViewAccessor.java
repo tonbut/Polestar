@@ -98,6 +98,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		String timeFormat="kk:mm";
 		long xAxisTicks=samplePeriod;
 		int offset=0;
+		String endSnap=null;
 		try
 		{
 			IHDSNode params=aContext.source("httpRequest:/params",IHDSNode.class);
@@ -117,7 +118,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			if (periodString.equals("hour"))
 			{	period=3600000L;
 				samplePeriod=period/60;
-				xAxisTicks=samplePeriod*4;
+				xAxisTicks=period/12;
 			}
 			if (periodString.equals("day"))
 			{	period=86400000L;
@@ -129,18 +130,21 @@ public class SensorViewAccessor extends StandardAccessorImpl
 				samplePeriod=period/(12*7);
 				xAxisTicks=period/7;
 				timeFormat="E";
+				endSnap="day";
 			}
 			if (periodString.equals("month"))
 			{	period=2592000000L;
 				samplePeriod=period/30;
 				xAxisTicks=samplePeriod*3;
 				timeFormat="d MMM";
+				endSnap="day";
 			}
 			if (periodString.equals("year"))
 			{	period=31104000000L;
 				samplePeriod=period/120;
 				xAxisTicks=period/12;
 				timeFormat="d MMM";
+				endSnap="day";
 			}
 
 		} catch (Exception e)
@@ -185,6 +189,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		.addNode("width", Integer.toString(width))
 		.addNode("height", Integer.toString(height))
 		.addNode("xAxisTicks", Long.toString(xAxisTicks));
+		if (endSnap!=null) m.addNode("endSnap", endSnap);
 	
 		if (aError)
 		{	m.addNode("yAxisTicks", "1");
@@ -281,7 +286,6 @@ public class SensorViewAccessor extends StandardAccessorImpl
 				}
 				else
 				{
-					
 					for (String key : keys)
 					{
 						m.pushNode("sensor")
@@ -349,7 +353,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		errorPercentNode.setValue(errorPercentString);
 		//IHDSReader config=aContext.source("active:polestarSensorErrorInfo",IHDSDocument.class).getReader();
 		
-		System.out.println(m);
+		//System.out.println(m);
 		
 		
 		req = aContext.createRequest("active:xslt");

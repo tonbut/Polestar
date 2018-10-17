@@ -28,9 +28,11 @@
     		<script><xsl:comment>
 				
 				function resize()
-				{	height=$("#fill").height();
+				{	var height=$("#fill").height();
   					//console.log(height);
-  					$('#editor').css('height',height-310);
+  					height=height-310;
+  					if (height&lt;400) height=400;
+  					$('#editor').css('height',height);
 				}
     		
     			$(window).resize(function()

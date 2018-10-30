@@ -219,6 +219,7 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 		<li><b>Target</b> a sensor to update with response. See <a href="#ondemand">on-demand sensors</a> below.</li>
 		<li><b>Access</b> by default a script is private and can only be executed internally, either triggered or from another script, or manually by admin.
 		Change to guest to allow guest user to execute too. Change to public to make this script executable without authentication.
+		(For this to work you need to change the "execute" in the path to "webhook".)
 		This is useful for providing "webhooks" for updating of sensors by external systems. If a script is marked as secret then the guest
 		user can neither execute or view the script.</li>
 		<li><b>Code</b> the code field contains the source code for the script written in the Groovy programming language.</li>

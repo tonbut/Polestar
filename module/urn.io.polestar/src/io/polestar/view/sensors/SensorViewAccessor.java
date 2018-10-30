@@ -614,6 +614,14 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		{	period=MonitorUtils.formatPeriod(now-lastModified)+" ago";
 		}
 		sensorNode.addNode("lastModifiedHuman", period);
+		long lastError=(Long)sensorNode.getFirstValue("errorLastModified");
+		if (lastError==0)
+		{	period="Never";
+		}
+		else
+		{	period=MonitorUtils.formatPeriod(now-lastError)+" ago";
+		}
+		sensorNode.addNode("lastErrorModifiedHuman", period);
 		
 		String format=(String)sensorDef.getFirstValueOrNull("format");
 		Object value=sensorNode.getFirstValue("value");

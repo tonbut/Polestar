@@ -57,6 +57,9 @@
     				//editor.session.setUseSoftTabs(false)
 					
 					var textarea = $('textarea[name="script"]');
+					var initialValue=textarea.val();
+					editor.getSession().setValue(initialValue);
+					
 					editor.getSession().on('change', function(){
 						textarea.val(editor.getSession().getValue());
 					});
@@ -166,7 +169,7 @@
 				</div>
 				<div class="form-group">
 					<div id="editor" >
-						<xsl:value-of select="script"/>
+						<!--<xsl:value-of select="script"/>-->
 					</div>
 					<textarea name="script" style="display: none;">
 						<xsl:value-of select="script"/>

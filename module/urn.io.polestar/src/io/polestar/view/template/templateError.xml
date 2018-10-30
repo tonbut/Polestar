@@ -63,14 +63,19 @@
 								<td>
 									<div class="title" >
 										<span xrl:eval="text">arg:title</span>
-										<a href="/polestar/sensors?filter=error">
+										
+									</div>
+									<div style="margin-left: 0.5em;">
+									<a href="/polestar/sensors?filter=error" >
 											<span class="label label-danger">Errors</span>
 										</a>
 									</div>
 									<div class="tag" xrl:eval="text">arg:subtitle</div>
+									
 								</td>
 							</tr>
 						</table>
+						
 					</a>
 					</div>
 				</div>				

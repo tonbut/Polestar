@@ -77,11 +77,11 @@
         },
         "yAxisTop": {
             "type": "number",
-            "title": "X-axis upper"            
+            "title": "Y-axis upper"            
         },
         "yAxisBottom": {
             "type": "number",
-            "title": "X-axis lower"            
+            "title": "Y-axis lower"            
         },
         "sensors": {
         	"type": "array",

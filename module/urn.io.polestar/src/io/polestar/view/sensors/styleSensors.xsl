@@ -17,6 +17,7 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:nk="http://1060.org">
     <xsl:output method="xml"/>
     <xsl:param name="keywords"/>
+    <xsl:param name="sort" nk:class="java.lang.String"></xsl:param>
     <xsl:param name="filtered" nk:class="java.lang.String"/>
 	<xsl:param name="filter" nk:class="java.lang.String"></xsl:param>
     <xsl:template match="/">
@@ -216,7 +217,7 @@
 		<li class="list-group-item sensor-item" sensorId="{id}">
 			<xsl:choose>
 				<xsl:when test="error">
-					<xsl:attribute name="class">list-group-item list-group-item-danger</xsl:attribute>
+					<xsl:attribute name="class">list-group-item sensor-item list-group-item-danger</xsl:attribute>
 				</xsl:when>
 			</xsl:choose>
 			<div class="row">
@@ -239,10 +240,17 @@
                             </div>
 							<div class="changed">
 								<span class="label label-default hidden-xs sensor-id"><xsl:value-of select="defn/id"/></span>
-								Changed <xsl:value-of select="lastModifiedHuman"/>
-								<span class="hidden-xs">, last reading <xsl:value-of select="lastUpdatedHuman"/></span>.
+								<xsl:choose>
+									<xsl:when test="$sort='lastErr'">
+										Last Error <xsl:value-of select="lastErrorModifiedHuman"/>.
+									</xsl:when>
+									<xsl:otherwise>
+										Changed <xsl:value-of select="lastModifiedHuman"/>
+										<span class="hidden-xs">, last reading <xsl:value-of select="lastUpdatedHuman"/></span>.
+									</xsl:otherwise>
+								</xsl:choose>
 								
-								</div>
+							</div>
 						</td>
 					</tr>
 				</table>

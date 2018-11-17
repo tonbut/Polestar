@@ -465,11 +465,10 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	}
 	
 	
-	private IHDSMutator getFilteredList(String aFilter, String aSort, INKFRequestContext aContext) throws Exception
-	{	long now=System.currentTimeMillis();
 
-		//store sort order in session
-		if (aSort.length()==0)
+	//store and retrieve sort order from session
+	private static String processSort(String aSort, INKFRequestContext aContext) throws Exception
+	{	if (aSort.length()==0)
 		{	String sort=aContext.source("session:/sensorSort",String.class);
 			if (sort!=null)
 			{	aSort=sort;
@@ -478,7 +477,12 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		else
 		{	aContext.sink("session:/sensorSort", aSort);
 		}
+		return aSort;
+	}
 	
+	private IHDSMutator getFilteredList(String aFilter, String aSort, INKFRequestContext aContext) throws Exception
+	{	long now=System.currentTimeMillis();
+
 		//get filtered list of sensors
 		IHDSReader ss=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
@@ -744,8 +748,9 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	public void onList(INKFRequestContext aContext) throws Exception	
 	{	
 		IHDSDocument sensorList;
+		String sort=processSort("",aContext);
 		try
-		{	IHDSMutator list=getFilteredList("", "", aContext);
+		{	IHDSMutator list=getFilteredList("", sort, aContext);
 			sensorList=list.toDocument(false);
 		}
 		catch (NKFException e)
@@ -785,6 +790,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensors.xsl");
 		req.addArgumentByValue("operand", sensorList);
+		req.addArgumentByValue("sort", sort);
 		req.addArgumentByValue("keywords", keywords.toDocument(false));
 		String filter=aContext.source("httpRequest:/param/filter",String.class);
 		if (filter!=null)
@@ -799,10 +805,13 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	{
 		String f=aContext.source("httpRequest:/param/f",String.class).toLowerCase();
 		String sort=aContext.source("httpRequest:/param/sort",String.class);
+		sort=processSort(sort,aContext);
 		IHDSMutator list=getFilteredList(f, sort, aContext);
+		System.out.println(list);
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensors.xsl");
 		req.addArgumentByValue("operand", list.toDocument(false));
+		req.addArgumentByValue("sort", sort);
 		req.addArgumentByValue("filtered", Boolean.TRUE);
 		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
 		INKFResponse resp=aContext.createResponseFrom(subresp);

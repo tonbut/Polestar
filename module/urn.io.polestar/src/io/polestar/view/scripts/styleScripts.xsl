@@ -19,6 +19,7 @@
 
 	<xsl:param name="tags"/>
 	<xsl:param name="filter" nk:class="java.lang.String"></xsl:param>
+	<xsl:param name="sort" nk:class="java.lang.String"></xsl:param>
 	<xsl:param name="polling"/>
 
     <xsl:template match="/*">

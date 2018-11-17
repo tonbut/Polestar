@@ -79,7 +79,7 @@ public class PolestarQuery implements IPolestarQuery
 				mPeriod=aPeriod;
 				break;
 			default:
-				throw new NKFException("uery result set period not wanted","For query type "+mType.toString());
+				throw new NKFException("Query result set period not wanted","For query type "+mType.toString());
 			}
 		}
 		else

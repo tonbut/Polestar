@@ -184,17 +184,33 @@ public class ScriptAccessor extends StandardAccessorImpl
 		return new String(ca);
 	}
 	
+	//store and retrieve sort order from session
+	private static String processSort(String aSort, INKFRequestContext aContext) throws Exception
+	{	if (aSort.length()==0)
+		{	String sort=aContext.source("session:/scriptSort",String.class);
+			if (sort!=null)
+			{	aSort=sort;
+			}
+		}
+		else
+		{	aContext.sink("session:/scriptSort", aSort);
+		}
+		return aSort;
+	}
+	
+	
 	public void onList(INKFRequestContext aContext) throws Exception
 	{
 		MonitorUtils.isLoggedIn(aContext);
-		
-		IHDSMutator list=getScriptList("", false, "", aContext);
+		String sort=processSort("",aContext);
+		IHDSMutator list=getScriptList("", false, sort, aContext);
 		IHDSDocument keywords=getKeywordSet(list.toDocument(false));
 		
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleScripts.xsl");
 		req.addArgumentByValue("operand", list.toDocument(false));
 		req.addArgumentByValue("tags", keywords);
+		req.addArgumentByValue("sort", sort);
 		req.addArgument("polling", "active:polestarPollingState");
 		String filter=aContext.source("httpRequest:/param/filter",String.class);
 		if (filter!=null)
@@ -214,11 +230,13 @@ public class ScriptAccessor extends StandardAccessorImpl
 		String tts=aContext.source("httpRequest:/param/tts",String.class).toLowerCase();
 		String sort=aContext.source("httpRequest:/param/sort",String.class);
 
+		sort=processSort(sort,aContext);		
 		IHDSMutator list=getScriptList(flow, "true".equals(tts), sort, aContext);
 		list.setCursor("/scripts").addNode("@filtered", "true");
 		
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleScripts.xsl");
+		req.addArgumentByValue("sort", sort);
 		req.addArgumentByValue("operand", list.toDocument(true));
 		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
 		INKFResponse resp=aContext.createResponseFrom(subresp);
@@ -265,16 +283,6 @@ public class ScriptAccessor extends StandardAccessorImpl
 	{
 		boolean isAdmin=MonitorUtils.isAdmin(aContext);		
 		
-		//store sort order in session
-		if (aSort.length()==0)
-		{	String sort=aContext.source("session:/scriptSort",String.class);
-			if (sort!=null)
-			{	aSort=sort;
-			}
-		}
-		else
-		{	aContext.sink("session:/scriptSort", aSort);
-		}
 		
 		
 		long now=System.currentTimeMillis();

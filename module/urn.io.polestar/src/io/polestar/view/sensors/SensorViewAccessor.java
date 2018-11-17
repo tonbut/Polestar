@@ -807,7 +807,6 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		String sort=aContext.source("httpRequest:/param/sort",String.class);
 		sort=processSort(sort,aContext);
 		IHDSMutator list=getFilteredList(f, sort, aContext);
-		System.out.println(list);
 		INKFRequest req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensors.xsl");
 		req.addArgumentByValue("operand", list.toDocument(false));

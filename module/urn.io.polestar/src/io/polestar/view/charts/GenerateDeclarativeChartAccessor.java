@@ -56,7 +56,6 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		String endOffsetString=(String)aOp.getFirstValueOrNull("endOffset");
 		if (endOffsetString==null) endOffsetString="0";
 		int endOffset=Integer.parseInt(endOffsetString);
-		System.out.println("endOffset="+endOffset+" "+endSnap);
 		Calendar cal = Calendar.getInstance();
 		switch(endSnap)
 		{
@@ -69,7 +68,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				cal.clear(Calendar.SECOND);
 				cal.clear(Calendar.MILLISECOND);
 				endTime=cal.getTimeInMillis();
-				endTime+=period*endOffset;
+				endTime+=period*endOffset+1000L*60*60;
 				break;
 			case "day":
 				cal.set(Calendar.HOUR_OF_DAY, 0); // ! clear would not reset the hour of day !
@@ -77,7 +76,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				cal.clear(Calendar.SECOND);
 				cal.clear(Calendar.MILLISECOND);
 				endTime=cal.getTimeInMillis();
-				endTime+=period*(endOffset+1);
+				endTime+=period*(endOffset)+1000L*60*60*24;
 				break;
 			case "week":
 				cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -86,7 +85,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				cal.clear(Calendar.SECOND);
 				cal.clear(Calendar.MILLISECOND);
 				endTime=cal.getTimeInMillis();
-				endTime+=period*(endOffset+1);
+				endTime+=period*(endOffset)+1000L*60*60*24;
 				break;
 			case "month":
 				cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -96,7 +95,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				cal.clear(Calendar.MILLISECOND);
 				cal.add(Calendar.MONTH, endOffset+1);
 				endTime=cal.getTimeInMillis();
-				endTime+=period*(endOffset+1);
+				endTime+=period*(endOffset)+1000L*60*60*24;
 				break;	
 		}		
 	

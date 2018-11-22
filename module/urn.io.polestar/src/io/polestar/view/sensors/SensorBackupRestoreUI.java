@@ -2,12 +2,14 @@ package io.polestar.view.sensors;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.net.URI;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.netkernel.layer0.nkf.INKFLocale;
 import org.netkernel.layer0.nkf.INKFRequest;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFRequestReadOnly;
@@ -96,6 +98,7 @@ public class SensorBackupRestoreUI extends StandardAccessorImpl
 		.addNode("oldestRaw",oldest)
 		.addNode("newestRaw",newest);
 		
+		
 		req = aContext.createRequest("active:xslt");
 		req.addArgument("operator", "res:/io/polestar/view/sensors/styleSensorRestoreInfo.xsl");
 		req.addArgumentByValue("operand", restoreInfo);
@@ -112,9 +115,7 @@ public class SensorBackupRestoreUI extends StandardAccessorImpl
 		req.addArgumentByValue("operator", aParams.toDocument());
 		aContext.issueRequest(req);
 		
-		INKFResponseReadOnly resp=aContext.sourceForResponse("res:/io/polestar/view/sensors/sensorRestoreComplete.xml");
-		INKFResponse respOut=aContext.createResponseFrom(resp);
-		respOut.setHeader(TemplateWrapper.HEADER_WRAP, true);
+		aContext.createResponseFrom("done").setExpiry(INKFResponse.EXPIRY_ALWAYS);
 	}
 	
 	
@@ -132,10 +133,22 @@ public class SensorBackupRestoreUI extends StandardAccessorImpl
 		else if ("confirm".equals(params.getFirstValueOrNull("/action")))
 		{	onBackupExec(aContext,params);
 		}
-		
+		else if ("status".equals(params.getFirstValueOrNull("/action")))
+		{	onBackupStatus(aContext);
+		}
+		else if ("download".equals(params.getFirstValueOrNull("/action")))
+		{	onBackupDownload(aContext);
+		}
+		else if ("delete2".equals(params.getFirstValueOrNull("/action")))
+		{	onBackupDelete(aContext);
+		}
 		else
 		{	onBackupForm(aContext);
 		}
+		
+		//<identifier>active:polestarSensorBRStatus</identifier>
+		//<identifier>active:polestarSensorBackupDownload</identifier>
+		
 	}
 	
 	public void onBackupForm(INKFRequestContext aContext) throws Exception
@@ -214,15 +227,45 @@ public class SensorBackupRestoreUI extends StandardAccessorImpl
 		IHDSDocument backupSpecification=aContext.transrept(backupSpecificationString, IHDSDocument.class);
 		INKFRequest req=aContext.createRequest("active:polestarSensorBackup");
 		req.addArgumentByValue("operator", backupSpecification);
+		aContext.issueRequest(req);
+		aContext.createResponseFrom("done").setExpiry(INKFResponse.EXPIRY_ALWAYS);
+	}
+		
+	public void onBackupDownload(INKFRequestContext aContext) throws Exception
+	{	
+		INKFRequest req=aContext.createRequest("active:polestarSensorBackupDownload");
 		req.setRepresentationClass(String.class);
 		String backupFileURI = (String)aContext.issueRequest(req);
 		
 		IBinaryStreamRepresentation rep=aContext.source(backupFileURI,IBinaryStreamRepresentation.class);
 		INKFResponse response=aContext.createResponseFrom(rep);
 		response.setMimeType("application/octet-stream");
-		response.setHeader("httpResponse:/header/Content-Disposition", "attachment; filename=polestar_sensors.bin");
+		response.setHeader("httpResponse:/header/Content-Disposition", "attachment; filename=polestar_sensors.zip");
+	}
+	
+	public void onBackupDelete(INKFRequestContext aContext) throws Exception
+	{	
 		
+		INKFRequest req=aContext.createRequest("active:polestarSensorBackupDownload");
+		req.setRepresentationClass(String.class);
+		String backupFileURI = (String)aContext.issueRequest(req);
+		File f=new File(URI.create(backupFileURI));
+		boolean deleted=f.delete();
+		String msg="backup file delete "+backupFileURI+" "+deleted;
+		aContext.logRaw(INKFLocale.LEVEL_INFO, msg);
 		
+		aContext.createResponseFrom("done").setExpiry(INKFResponse.EXPIRY_ALWAYS);
+	}
+	
+	public void onBackupStatus(INKFRequestContext aContext) throws Exception
+	{
+		IHDSDocument backupStatus=aContext.source("active:polestarSensorBRStatus",IHDSDocument.class);
+		
+		INKFRequest req=aContext.createRequest("active:JSONFromHDS");
+		req.addArgumentByValue("operand", backupStatus);
+		req.addArgumentByValue("operator", "<config><removeRootElement>true</removeRootElement></config>");
+		INKFResponseReadOnly respIn=aContext.issueRequestForResponse(req);
+		INKFResponse respOut=aContext.createResponseFrom(respIn);
 	}
 	
 	

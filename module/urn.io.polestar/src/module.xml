@@ -193,6 +193,8 @@
 				<identifier>active:polestarSensorBackup</identifier>
 				<identifier>active:polestarSensorRestoreInfo</identifier>
 				<identifier>active:polestarSensorRestore</identifier>
+				<identifier>active:polestarSensorBRStatus</identifier>
+				<identifier>active:polestarSensorBackupDownload</identifier>
 				<argument name="operator" min="0"/>
 			</active></grammar>
 			<class>io.polestar.data.sensors.SensorBackupAccessor</class>

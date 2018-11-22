@@ -1,10 +1,10 @@
 package io.polestar.data.sensors;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -16,12 +16,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipOutputStream;
 
 import org.netkernel.layer0.nkf.INKFRequest;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFResponse;
-import org.netkernel.layer0.nkf.INKFResponseReadOnly;
 import org.netkernel.layer0.nkf.NKFException;
 import org.netkernel.layer0.urii.ParsedIdentifierImpl;
 import org.netkernel.mod.hds.HDSFactory;
@@ -39,11 +37,16 @@ import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
 
 import io.polestar.data.db.MongoUtils;
-import io.polestar.data.util.MonitorUtils;
 
 public class SensorBackupAccessor extends StandardAccessorImpl
 {
 	public static final String BACKUP_ERROR_KEY="_ERRORS_";
+	private enum State { READY, BACKUP_INPROGRESS, BACKUP_COMPLETE, BACKUP_FAILED, RESTORE_INPROGRESS, RESTORE_COMPLETE, RESTORE_FAILED };
+	private State mState = State.READY;
+	private String mStatusMessage="";
+	private long mProgressTotal;
+	private long mProgressNow;
+	private File mBackupFile;
 	
 	public SensorBackupAccessor()
 	{	this.declareThreadSafe();
@@ -63,6 +66,12 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 		}
 		else if (type.equals("polestarSensorRestoreInfo"))
 		{	onSensorRestoreInfo(aContext);
+		}
+		else if (type.equals("polestarSensorBRStatus"))
+		{	onStatus(aContext);
+		}
+		else if (type.equals("polestarSensorBackupDownload"))
+		{	onSensorBackupDownload(aContext);
 		}
 	}
 	
@@ -89,73 +98,120 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 		WriteResult result=MongoUtils.getCollection("errors").remove(query);
 	}
 	
+	public void onSensorBackupDownload(INKFRequestContext aContext) throws Exception
+	{	
+		if (mBackupFile!=null)
+		{	INKFResponse resp=aContext.createResponseFrom(mBackupFile.toURI().toString());
+			resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
+		}
+		else
+		{	throw new NKFException("No backup available to download");
+		}
+	}
+		
+	
+	public void onStatus(INKFRequestContext aContext) throws Exception
+	{
+		IHDSMutator m=HDSFactory.newDocument();
+		m.addNode("state", mState.toString())
+			.addNode("msg", mStatusMessage)
+			.addNode("progress", mProgressNow)
+			.addNode("progressTotal", mProgressTotal);
+		INKFResponse resp=aContext.createResponseFrom(m.toDocument(false));
+		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
+	}
+	
 	
 	public void onSensorRestore(INKFRequestContext aContext) throws Exception
 	{
-		IHDSReader operator=aContext.source("arg:operator",IHDSDocument.class).getReader();
-		String fileURI=(String)operator.getFirstValue("fileURI");
-		File f=new File(URI.create(fileURI));
-		String mode=(String)operator.getFirstValue("mode");
-		//Replace Selective Add
-		if (!mode.equals("Replace"))
-		{	throw new NKFException("mode not supported yet");
-		}
-		long first=Long.parseLong((String)operator.getFirstValue("first"));
-		long last=Long.parseLong((String)operator.getFirstValue("last"));
-		//System.out.println(mode+" "+first+" "+last);
-		
-		FileInputStream fis=new FileInputStream(f);
-		GZIPInputStream zis=new GZIPInputStream(fis,1024);
-		Reader r=new InputStreamReader(zis, "UTF-8");
-		BufferedReader br=new BufferedReader(r);
-		
-		String line;
-		String sensorId=null;
-		DBCollection collection=null;
-		boolean processErrors=false;
-		List<String> sensorList=new ArrayList<>();
-		while ((line=br.readLine())!=null)
+		File f=null;
+		try
 		{
-			if (line.startsWith("#"))
-			{	sensorId=line.substring(1);
-				if (sensorId.equals(BACKUP_ERROR_KEY))
-				{
-					deleteErrorDatainTimeRange(sensorList,first,last);
-					collection=MongoUtils.getCollection("errors");
-					processErrors=true;
-				}
-				else
-				{	sensorList.add(sensorId);
-					deleteSensorDatainTimeRange(sensorId,first,last);
-					collection=MongoUtils.getCollectionForSensor(sensorId);
-					processErrors=false;
-				}
-				
+			if (mState==State.BACKUP_INPROGRESS || mState==State.RESTORE_INPROGRESS)
+			{	throw new IllegalStateException("Cannot restore whilst another backup or restore in progress");
 			}
-			else if (!processErrors)
-			{	DBObject capture=(DBObject)JSON.parse(line);
-				BasicDBObject sensor=new BasicDBObject();
-				sensor.append("t", capture.get("t"));
-				sensor.append("v", capture.get("v"));
-				WriteResult wr=collection.insert(sensor);
-				//System.out.println("WRITE: "+sensorId+" "+capture+" "+wr.getN());
-			}
-			else if (processErrors)
-			{
-				DBObject error=(DBObject)JSON.parse(line);
-				WriteResult wr=collection.insert(error);
-			}
-		}
+			mState=State.RESTORE_INPROGRESS;
+			mProgressNow=0;
+			mStatusMessage="";
 		
-		//refresh sensors to show current state
-		INKFRequest req=aContext.createRequest("active:polestarSensorStateRefresh");
-		IHDSMutator m=HDSFactory.newDocument();
-		m.pushNode("sensors");
-		for (String id : sensorList)
-		{	m.addNode("sensor", id);
+			IHDSReader operator=aContext.source("arg:operator",IHDSDocument.class).getReader();
+			String fileURI=(String)operator.getFirstValue("fileURI");
+			f=new File(URI.create(fileURI));
+			String mode=(String)operator.getFirstValue("mode");
+			//Replace Selective Add
+			if (!mode.equals("Replace"))
+			{	throw new NKFException("mode not supported yet");
+			}
+			long first=Long.parseLong((String)operator.getFirstValue("first"));
+			long last=Long.parseLong((String)operator.getFirstValue("last"));
+			//System.out.println(mode+" "+first+" "+last);
+			
+			FileInputStream fis=new FileInputStream(f);
+			GZIPInputStream zis=new GZIPInputStream(fis,1024);
+			Reader r=new InputStreamReader(zis, "UTF-8");
+			BufferedReader br=new BufferedReader(r);
+			
+			String line;
+			String sensorId=null;
+			DBCollection collection=null;
+			boolean processErrors=false;
+			List<String> sensorList=new ArrayList<>();
+			while ((line=br.readLine())!=null)
+			{
+				if (line.startsWith("#"))
+				{	sensorId=line.substring(1);
+					if (sensorId.equals(BACKUP_ERROR_KEY))
+					{
+						deleteErrorDatainTimeRange(sensorList,first,last);
+						collection=MongoUtils.getCollection("errors");
+						processErrors=true;
+					}
+					else
+					{	sensorList.add(sensorId);
+						deleteSensorDatainTimeRange(sensorId,first,last);
+						collection=MongoUtils.getCollectionForSensor(sensorId);
+						processErrors=false;
+					}
+					
+				}
+				else if (!processErrors)
+				{	DBObject capture=(DBObject)JSON.parse(line);
+					BasicDBObject sensor=new BasicDBObject();
+					sensor.append("t", capture.get("t"));
+					sensor.append("v", capture.get("v"));
+					WriteResult wr=collection.insert(sensor);
+					//System.out.println("WRITE: "+sensorId+" "+capture+" "+wr.getN());
+					mProgressNow++;
+				}
+				else if (processErrors)
+				{
+					DBObject error=(DBObject)JSON.parse(line);
+					WriteResult wr=collection.insert(error);
+					mProgressNow++;
+				}
+			}
+			
+			//refresh sensors to show current state
+			INKFRequest req=aContext.createRequest("active:polestarSensorStateRefresh");
+			IHDSMutator m=HDSFactory.newDocument();
+			m.pushNode("sensors");
+			for (String id : sensorList)
+			{	m.addNode("sensor", id);
+			}
+			req.addArgumentByValue("state", m.toDocument(false));
+			aContext.issueRequest(req);		
+			
+			mStatusMessage="Restore successful";
+			mState=State.RESTORE_COMPLETE;
+			mProgressNow=mProgressTotal;
 		}
-		req.addArgumentByValue("state", m.toDocument(false));
-		aContext.issueRequest(req);		
+		catch (Exception e)
+		{
+			mState=State.RESTORE_FAILED;
+			mStatusMessage=e.getClass().getName()+": "+e.getMessage();
+			mProgressNow=mProgressTotal;			
+		}
+		if (f!=null) f.delete();
 		
 		
 	}
@@ -222,7 +278,7 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 			
 		}
 		
-		
+		mProgressTotal=total;
 		fis.close();
 		aContext.createResponseFrom(m.toDocument(false));
 		
@@ -240,73 +296,89 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 	
 	public void onSensorBackup(INKFRequestContext aContext) throws Exception
 	{
-		IHDSReader operator=aContext.source("arg:operator",IHDSDocument.class).getReader();
-		long start=(Long)operator.getFirstValue("/*/start");
-		long end=(Long)operator.getFirstValue("/*/end");
 		
-		File f=File.createTempFile("polestar_export", ".bin");
-		FileOutputStream fos=new FileOutputStream(f);
-		//BufferedOutputStream bos=new BufferedOutputStream(fos);
-		GZIPOutputStream zos=new GZIPOutputStream(fos,1024);
-		Writer w=new OutputStreamWriter(zos, "UTF-8");
 		
-		List<Object> ids=operator.getValues("/*/sensors/sensor");
-		List<String> idss =new ArrayList(ids);
-		
-		Pattern p=Pattern.compile("\"_id.*} ,");
-		Matcher m=p.matcher("");
-		
-		for (String sensorId : idss)
+		FileOutputStream fos=null;
+		File f=null;
+		try
 		{
-			DBObject query=getQueryFor(start,end);
-			DBCursor cursor=MongoUtils.getCollectionForSensor(sensorId).find(query);
-
+			if (mState==State.BACKUP_INPROGRESS || mState==State.RESTORE_INPROGRESS)
+			{	throw new IllegalStateException("Cannot backup whilst another backup or restore in progress");
+			}
+			mState=State.BACKUP_INPROGRESS;
+			mProgressNow=0;
+			mStatusMessage="";
 			
 			
-			w.write("#");
-			w.write(sensorId);
-			w.write("\n");
+			IHDSReader operator=aContext.source("arg:operator",IHDSDocument.class).getReader();
+			long start=(Long)operator.getFirstValue("/*/start");
+			long end=(Long)operator.getFirstValue("/*/end");
+			List<Object> ids=operator.getValues("/*/sensors/sensor");
+			
+			f=File.createTempFile("polestar_export", ".bin");
+			fos=new FileOutputStream(f);
+			GZIPOutputStream zos=new GZIPOutputStream(fos,1024);
+			Writer w=new OutputStreamWriter(zos, "UTF-8");
+			List<String> idss =new ArrayList(ids);
+			Pattern p=Pattern.compile("\"_id.*} ,");
+			Matcher m=p.matcher("");
+			
+			for (String sensorId : idss)
+			{
+				DBObject query=getQueryFor(start,end);
+				DBCursor cursor=MongoUtils.getCollectionForSensor(sensorId).find(query);
+	
+				w.write("#");
+				w.write(sensorId);
+				w.write("\n");
+				while (cursor.hasNext())
+				{	DBObject capture=cursor.next();
+					Long time=(Long)capture.get("t");
+					Object v=capture.get("v");
+					String json=JSON.serialize(capture);
+					m.reset(json);
+					json=m.replaceFirst("");
+					w.write(json);
+					w.write("\n");	
+					mProgressNow++;
+				}
+			}
+			
+			//backup errors
+			DBObject errorQuery=SensorErrorAccessor.getQuery(idss, start, end);
+			DBCursor cursor=MongoUtils.getCollection("errors").find(errorQuery);
+			w.write("#"+BACKUP_ERROR_KEY+"\n");
 			while (cursor.hasNext())
-			{	DBObject capture=cursor.next();
-				Long time=(Long)capture.get("t");
-				Object v=capture.get("v");
+			{	
+				DBObject capture=cursor.next();
 				String json=JSON.serialize(capture);
 				m.reset(json);
 				json=m.replaceFirst("");
 				w.write(json);
-				w.write("\n");				
+				w.write("\n");
+				mProgressNow++;
 			}
+	
+			w.flush();
+			zos.finish();
+			fos.flush();
+			fos.close();
+			
+			mStatusMessage="Backup successful";
+			mState=State.BACKUP_COMPLETE;
+			mProgressNow=mProgressTotal;
+			mBackupFile=f;
 		}
-		
-		//backup errors
-		DBObject errorQuery=SensorErrorAccessor.getQuery(idss, start, end);
-		DBCursor cursor=MongoUtils.getCollection("errors").find(errorQuery);
-		w.write("#"+BACKUP_ERROR_KEY+"\n");
-		while (cursor.hasNext())
-		{	
-			DBObject capture=cursor.next();
-			//Integer level=(Integer)capture.get("l");
-			//String msg=(String)capture.get("m");
-			//Long time=(Long)capture.get("t");
-			//String id=(String)capture.get("i");
-			String json=JSON.serialize(capture);
-			m.reset(json);
-			json=m.replaceFirst("");
-			w.write(json);
-			w.write("\n");
-		}
-		
-
-		
-		
-		w.flush();
-		zos.finish();
-		fos.flush();
-		fos.close();
-		
-		INKFResponse resp=aContext.createResponseFrom(f.toURI().toString());
-		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
-		
+		catch (Exception e)
+		{
+			mState=State.BACKUP_FAILED;
+			mStatusMessage=e.getClass().getName()+": "+e.getMessage();
+			mProgressNow=mProgressTotal;
+			try
+			{	if (fos!=null) fos.close();
+			} catch (IOException e2) {;}
+			if (f!=null) f.delete();
+		}		
 	}
 	
 	
@@ -348,10 +420,13 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 		DBObject errorQuery=SensorErrorAccessor.getQuery(idss, start, end);
 		DBCursor cursor=MongoUtils.getCollection("errors").find(errorQuery);
 		long errorCount=cursor.count();
+		totalCount+=errorCount;
+		long size=errorCount*256; //guess
+		totalSize+=size;
 		m.pushNode("sensor")
 		.addNode("id", BACKUP_ERROR_KEY)
 		.addNode("count", errorCount)
-		.addNode("size",errorCount*256) //guess
+		.addNode("size",size) 
 		.popNode();
 		
 		m.pushNode("totals")
@@ -359,6 +434,7 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 			.addNode("size",totalSize)
 			.popNode();
 		
+		mProgressTotal=totalCount;
 		INKFResponse resp=aContext.createResponseFrom(m.toDocument(false));
 		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 		

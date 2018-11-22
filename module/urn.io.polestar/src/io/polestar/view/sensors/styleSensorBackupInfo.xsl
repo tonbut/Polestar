@@ -10,6 +10,62 @@
 			<script>
 				<xsl:comment>
 					$(function() {
+						var intervalTimer;
+						$("#downloadButton").click( function() {
+							var data=$("#form").serialize();
+							$("#downloadButton").attr("disabled", "disabled");
+							$("#statusDiv").css("display","block");
+							$.post("/polestar/sensors/backup",data);
+							intervalTimer=setInterval(timer, 500);
+							var lastTime=new Date().getTime();
+							var lastProgress=0;
+							var lastRate=-1;
+							function timer() {
+								$.get("/polestar/sensors/backup?action=status", function(d) {
+									//console.log(d);
+									var t=new Date().getTime();
+									var rate=1000*(d.progress-lastProgress)/(t-lastTime);
+									if (lastRate>0)
+									{	lastRate=lastRate*0.98+rate*0.02;
+									}
+									else
+									{	lastRate=rate;
+									}
+									var timeRemaining=(d.progressTotal-d.progress)/lastRate;
+									var mins=Math.floor(timeRemaining/60);
+									var secs=Math.round(timeRemaining-mins*60);
+									lastProgress=d.progress;
+									lastTime=t;
+									var percent=100*d.progress/d.progressTotal;
+									$("#statusProgress").css("width",percent+"%");
+									if (d.msg.length>0)
+									{	$("#statusMessage").html(d.msg);
+									}
+									else
+									{	var msg="Backing up "+d.progress+" of "+d.progressTotal+" ("+Math.round(percent)+"%) Time remaining "+mins+"min, "+secs+"sec";
+										$("#statusMessage").html(msg);
+									}
+									if (d.state!="BACKUP_INPROGRESS")
+									{	clearInterval(intervalTimer);
+										if (d.state=="BACKUP_COMPLETE")
+										{	
+											$("#additionalActions").css("display","block");
+											
+											window.location.href="/polestar/sensors/backup?action=download";
+										}
+									}
+									
+									
+								},"json");
+							}
+						});
+						$("#downloadAgain").click(function(){
+							window.location.href="/polestar/sensors/backup?action=download";
+						});
+						$("#delete").click(function(){
+							console.log("click delete");
+							$.get("/polestar/sensors/backup?action=delete2");
+						});
 					});
 				</xsl:comment>
 			</script>
@@ -51,16 +107,26 @@
 						</table>
 					</div>
 				
+					<div class="col-xs-3">
+						<button id="downloadButton" class="btn btn-primary">Backup</button>
+					</div>
+					<div class="col-xs-9" id="statusDiv" style="display:none;">
+						<div class="progress" style="margin-bottom: 0">
+							<div class="progress-bar" role="progressbar" style="width: 0%;" id="statusProgress"/>
+						</div>
+						<div id="statusMessage"/>
+						<div id="additionalActions" style="display:none;">
+							<button id="downloadAgain" class="btn btn-default">Download again</button>
+							<xsl:text> </xsl:text>
+							<button id="delete" class="btn btn-default">Cleanup download from server</button>
+						</div>
+					</div>
 				
-					<form method="POST">
-
-						<div class="form-group">
-							<input type="hidden" name="backupSpecification" value="{$config}"/>
-							<input type="hidden" name="action" value="confirm"/>
-							<button type="submit" class="btn btn-primary">Download backup</button>
-						</div>						
-						
-						
+				
+				
+					<form id="form">
+						<input type="hidden" name="backupSpecification" value="{$config}"/>
+						<input type="hidden" name="action" value="confirm"/>
 					</form>
 
 

@@ -10,6 +10,33 @@
 			<script>
 				<xsl:comment>
 					$(function() {
+						var intervalTimer;
+						$("#restoreButton").click( function() {
+							var data=$("#form").serialize();
+							console.log(data);
+							$("#restoreButton").attr("disabled", "disabled");
+							$("#statusDiv").css("display","block");
+							$.post("/polestar/sensors/restore",data);
+							intervalTimer=setInterval(timer, 500);
+							
+							function timer() {
+								$.get("/polestar/sensors/backup?action=status", function(d) {
+									//console.log(d);
+									var percent=100*d.progress/d.progressTotal;
+									$("#statusProgress").css("width",percent+"%");
+									if (d.msg.length>0)
+									{	$("#statusMessage").html(d.msg);
+									}
+									else
+									{	var msg="Restoring "+d.progress+" of "+d.progressTotal+" ("+Math.round(percent)+"%)";
+										$("#statusMessage").html(msg);
+									}
+									if (d.state!="RESTORE_INPROGRESS")
+									{	clearInterval(intervalTimer);
+									}	
+								},"json");
+							}
+						});
 					});
 				</xsl:comment>
 			</script>
@@ -26,6 +53,9 @@
 						<p>Select a restore mode. Currently only <i>Replace</i> is supported. Replace will delete existing sensor data between
 						time range and replace it with data from backup.</p>
 					</div>
+				</div>
+				
+				<div class="row">
 				
 					<div class="col-xs-12">
 						<table class="table table-condensed table-striped">
@@ -76,10 +106,7 @@
 						<input class="form-control" type="text" value="{$config/*/newest}" disabled=""/> 
 					</div>
 					
-					
-				
-				
-					<form method="POST">
+					<form id="form">
 					
 						<div class="col-xs-3">
 							<label>Mode</label>
@@ -92,20 +119,28 @@
 							</select>
 						</div>
 						
-
 						<div class="form-group">
 							<input type="hidden" name="fileURI" value="{$config/*/fileURI}"/>
 							<input type="hidden" name="first" value="{$config/*/oldestRaw}"/>
 							<input type="hidden" name="last" value="{$config/*/newestRaw}"/>
 							<input type="hidden" name="action" value="confirm"/>
-							<button type="submit" class="btn btn-primary">Restore</button>
+							
 						</div>						
-						
-						
 					</form>
-
-
-
+					
+				</div>
+				
+				<div class="row" style="margin-top: 1em;">
+					
+					<div class="col-xs-3">
+						<button id="restoreButton" class="btn btn-primary">Restore</button>
+					</div>
+					<div class="col-xs-9" id="statusDiv" style="display:none;">
+						<div class="progress" style="margin-bottom: 0">
+							<div class="progress-bar" role="progressbar" style="width: 0%;" id="statusProgress"/>
+						</div>
+						<div id="statusMessage"/>
+					</div>
 				</div>
 			</div>
 

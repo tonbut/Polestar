@@ -40,6 +40,7 @@ import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 
 
 import io.polestar.api.IPolestarContext;
+import io.polestar.api.QueryType;
 import io.polestar.data.api.PolestarContext;
 import io.polestar.data.util.MonitorUtils;
 import io.polestar.view.template.TemplateWrapper;
@@ -152,11 +153,14 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		int height=aError?(width/16):(width/4);
 		
 		IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
-		IHDSReader stateNode=state.getFirstNodeOrNull("key('byId','"+aId+"')");
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
 		IHDSReader configNode=config.getFirstNodeOrNull("key('byId','"+aId+"')");
 		
-		Object value=stateNode.getFirstValueOrNull("value");
+		//IHDSReader stateNode=state.getFirstNodeOrNull("key('byId','"+aId+"')");
+		//Object value=stateNode.getFirstValueOrNull("value");
+		IPolestarContext pctx=PolestarContext.createContext(aContext);
+		Object value=pctx.createQuery(aId, QueryType.LAST_VALUE).setStart(-1000L*60*60*24*365).execute();
+		
 		String format=(String)configNode.getFirstValueOrNull("format");
 		String chartType=(String)configNode.getFirstValueOrNull("chart-type");
 		if (chartType==null) chartType="";

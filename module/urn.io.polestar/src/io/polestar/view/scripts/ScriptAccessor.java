@@ -31,6 +31,8 @@ import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
+
+import io.polestar.data.scripts.ListScriptsAccessor;
 import io.polestar.data.util.MonitorUtils;
 import io.polestar.view.charts.ChartViewAccessor;
 import io.polestar.view.template.TemplateWrapper;
@@ -143,6 +145,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 		}
 		zf.close();
 		tmp.delete();
+		MonitorUtils.cutGoldenThread(aContext, ListScriptsAccessor.GT_SCRIPT_LIST);
 		INKFResponse resp=aContext.createResponseFrom("done");
 		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 		aContext.sink("httpResponse:/redirect","/polestar/scripts");
@@ -171,7 +174,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 		ByteArrayRepresentation rep = new ByteArrayRepresentation(os);
 		INKFResponse response=aContext.createResponseFrom(rep);
 		response.setMimeType("application/zip");
-		response.setHeader("httpResponse:/header/Content-Disposition", "attachment; filename=polestar.zip");
+		response.setHeader("httpResponse:/header/Content-Disposition", "attachment; filename=polestar-scripts.zip");
 	}
 	
 	private String safeName(String aName)

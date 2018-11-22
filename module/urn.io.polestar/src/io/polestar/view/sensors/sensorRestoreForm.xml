@@ -1,0 +1,17 @@
+<div class="container">
+	<div class="row">
+		<div class="col-sm-12">
+		
+			<div class="alert alert-info">
+				<h2 style="margin-top: 0;"><span class="glyphicon glyphicon-cloud-upload"></span> Sensor Data Restore</h2>
+				Select a file from a previous sensor data backup.
+			</div>
+			<form method="post" enctype="multipart/form-data" style="margin-bottom: 0;">
+				<input style="display: inline-block;" type="file" name="uploaded"/>
+				<button class="btn btn-primary" type="submit">Restore</button>
+			</form>
+		
+		
+		</div>
+	</div>
+</div>

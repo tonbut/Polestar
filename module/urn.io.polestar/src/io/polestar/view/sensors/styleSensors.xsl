@@ -189,6 +189,13 @@
                    		<button style="margin-left: 0.5em;" id="refresh" class="btn btn-default"><span class="glyphicon glyphicon-refresh"></span>&#160;</button>
                         <button style="margin-left: 0.5em;" id="sensor-info" class="btn btn-default"><span class="glyphicon glyphicon-info-sign"></span>&#160;</button>
                       	<button style="margin-left: 0.5em;" id="toggle-stats" class="btn btn-default"><span class="glyphicon glyphicon-stats"></span>&#160;</button>
+                      	
+                      	<span class="hidden-sm">
+							<a class="btn btn-default" style="margin-left: 0.5em;" href="/polestar/sensors/backup" title="backup"><span class="glyphicon glyphicon-cloud-download"></span></a>
+							<a class="btn btn-default" style="margin-left: 0.5em;" href="/polestar/sensors/restore" title="restore"><span class="glyphicon glyphicon-cloud-upload"></span></a>
+						</span>
+                      	
+                      	
      				</div>
     			</div>
     	

@@ -111,9 +111,9 @@ public abstract class MergeAction
 			if (mDataPoint)
 			{	result=mValue;
 			}
-		else
-		{	result=mLast;
-		}
+			else
+			{	result=mLast;
+			}
 			mDataPoint=false;
 			return result;
 		}

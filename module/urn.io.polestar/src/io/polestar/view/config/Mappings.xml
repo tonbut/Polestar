@@ -133,6 +133,17 @@
 	</endpoint>
 	
 	<!-- sensors -->
+		<endpoint>
+		<id>polestar:sensorbackup</id>
+		<grammar>res:/polestar/sensors/
+			<group name="action"><regex>backup|restore</regex></group>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.sensors.SensorBackupRestoreUI</argument>
+			<varargs/>
+		</request>
+	</endpoint>
 	<endpoint>
 		<id>polestar:sensors</id>
 		<grammar>res:/polestar/sensors
@@ -146,6 +157,7 @@
 			<varargs/>
 		</request>
 	</endpoint>
+
 	<!--
 	<endpoint>
 		<id>polestar:sensor</id>

@@ -1,5 +1,6 @@
 package io.polestar.data.sensors;
 
+import java.util.List;
 import java.util.Map;
 
 import org.netkernel.layer0.nkf.INKFRequestContext;
@@ -69,6 +70,26 @@ public class SensorErrorAccessor extends StandardAccessorImpl
 		}
 		return queryO;
 	}
+	
+	/* used by backup */
+	static BasicDBObject getQuery(List<String> ids, long start, long end)
+	{
+		//mongodb 2.4 doesn't support $eq
+		BasicDBList inO=new BasicDBList();
+		for (String id : ids)
+		{	inO.add(id);
+		}
+		BasicDBObject idEqualsO=new BasicDBObject("i", new BasicDBObject("$in",inO));
+		BasicDBObject startO=new BasicDBObject("t", new BasicDBObject("$gte",start));
+		BasicDBObject endO=new BasicDBObject("t", new BasicDBObject("$lt",end));
+		BasicDBList listO=new BasicDBList();
+		listO.add(idEqualsO);
+		listO.add(startO);
+		listO.add(endO);
+		BasicDBObject queryO=new BasicDBObject("$and", listO);
+		return queryO;
+	}
+	
 	
 	
 	public void onInfo(String id, long start, long now, INKFRequestContext aContext) throws Exception

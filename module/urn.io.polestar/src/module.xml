@@ -159,6 +159,7 @@
 				<identifier>active:polestarSensorStatePersist</identifier>
 				<identifier>active:polestarSensorInfo</identifier>
 				<identifier>active:polestarSensorInfoDelete</identifier>
+				<identifier>active:polestarSensorStateRefresh</identifier>
 				<argument name="state" min="0"/>
 			</active></grammar>
 			<class>io.polestar.data.sensors.SensorListAccessor</class>
@@ -184,6 +185,18 @@
             </grammar>
             <class>io.polestar.data.scripts.ScriptTriggersAccessor</class>
         </endpoint>
+        
+        <endpoint>
+			<id>polestar:data:sensor:backup</id>
+			<grammar><active>
+				<identifier>active:polestarSensorBackupInfo</identifier>
+				<identifier>active:polestarSensorBackup</identifier>
+				<identifier>active:polestarSensorRestoreInfo</identifier>
+				<identifier>active:polestarSensorRestore</identifier>
+				<argument name="operator" min="0"/>
+			</active></grammar>
+			<class>io.polestar.data.sensors.SensorBackupAccessor</class>
+		</endpoint>	
         
         <!-- authentication stuff -->
         <endpoint>

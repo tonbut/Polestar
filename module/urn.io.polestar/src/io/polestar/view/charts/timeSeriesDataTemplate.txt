@@ -111,11 +111,12 @@ function drawLine(idx, strokeStyle, fillStyle, dashArray, lineWidth, shape, heig
 {	var d = extractArray(data,idx,null);
 	var line=vis.add(pv.Line);
 	line.data(d).interpolate(interpolate)
-		.bottom(heightFunction)
+		.bottom(function(d) { return heightFunction(d);  })
 		.left(function() {return x(this.index)})
-		.lineWidth(lineWidth)
+		.lineWidth(function(d){ return d==null?0:lineWidth; } )
 		.strokeDasharray(dashArray)
-		.strokeStyle( strokeStyle );
+		//.segmented(true)
+		.strokeStyle( function(d){ return strokeStyle; } );
 	if (shape!=null)
 	{	line.add(pv.Dot)
 			.shape(shape)

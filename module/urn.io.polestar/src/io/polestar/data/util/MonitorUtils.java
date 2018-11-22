@@ -44,6 +44,8 @@ public class MonitorUtils
 	
 	public static String queryHDStoJSON(IHDSDocument aData)
 	{
+		
+		//long now=System.currentTimeMillis();
 		StringBuilder sb=new StringBuilder(4096);
 		sb.append("[ ");
 		
@@ -56,18 +58,20 @@ public class MonitorUtils
 			String timeString=(String)row.getFirstValue("timeString");
 			sb.append(timeString);
 			sb.append("'");
-			
-			int i=0;
-			for (IHDSReader valueNode : row.getNodes("*"))
-			{
-				if (i>=2)
+			//if (time<=now)
+			//{
+				int i=0;
+				for (IHDSReader valueNode : row.getNodes("*"))
 				{
-					sb.append(",");
-					Object v=valueNode.getFirstValue(".");
-					outputJSONValue(sb,v,"%.3f");
+					if (i>=2)
+					{
+						sb.append(",");
+						Object v=valueNode.getFirstValue(".");
+						outputJSONValue(sb,v,"%.3f");
+					}
+					i++;
 				}
-				i++;
-			}
+			//}
 			sb.append("],\n");
 		}
 		

@@ -138,8 +138,9 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		req.setRepresentationClass(String.class);
 		req.setRepresentationClass(IHDSDocument.class);
 		IHDSDocument d=(IHDSDocument)aContext.issueRequest(req);
-		String data=MonitorUtils.queryHDStoJSON(d);	
 		double[] minMax=getQueryHDSMaxMin(d,aOp);
+		
+		String data=MonitorUtils.queryHDStoJSON(d);	
 		
 		//axis
 		if (yAxisTop==null) yAxisTop=Double.toString(minMax[1]);

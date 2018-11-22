@@ -1,0 +1,11 @@
+<div class="container">
+	<div class="row">
+		<div class="col-sm-12">
+		
+			<div class="alert alert-success">
+				<h2 style="margin-top: 0;"><span class="glyphicon glyphicon-cloud-upload"></span> Sensor Data Restore</h2>
+				Restore completed successfully!
+			</div>
+		</div>
+	</div>
+</div>

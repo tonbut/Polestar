@@ -33,6 +33,9 @@ import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 import org.netkernel.util.Utils;
 
+import io.polestar.api.IPolestarContext;
+import io.polestar.api.QueryType;
+import io.polestar.data.api.PolestarContext;
 import io.polestar.data.db.MongoUtils;
 import io.polestar.data.util.MonitorUtils;
 
@@ -177,6 +180,33 @@ public class SensorListAccessor extends StandardAccessorImpl
 		else if (action.equals("polestarSensorInfoDelete"))
 		{	onSensorInfoDelete(aContext);
 		}
+		else if (action.equals("polestarSensorStateRefresh"))
+		{	IHDSReader state=aContext.source("arg:state",IHDSDocument.class).getReader();
+			onSensorStateRefresh(state,aContext);
+		}
+	}
+	
+	/** look at historical data stored in mongoDB to update cached in memory current state of sensor **/
+	public void onSensorStateRefresh(IHDSReader aState,INKFRequestContext aContext) throws Exception
+	{
+		IPolestarContext pctx=PolestarContext.createContext(aContext);
+		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		
+		for (Object sensorId : aState.getValues("/sensors/sensor"))
+		{
+			IHDSReader sensorDef=config.getFirstNodeOrNull(String.format("key('byId','"+sensorId+"')"));
+			if (sensorDef!=null)
+			{
+				SensorState ss=getSensorState((String)sensorId,true);
+				Object lastModified=pctx.createQuery((String)sensorId, QueryType.LAST_MODIFIED).setStart(0L).execute();
+				if (lastModified!=null)
+				{
+					Object lastValue=pctx.createQuery((String)sensorId, QueryType.LAST_VALUE).setStart(0L).execute();
+					aContext.logRaw(INKFLocale.LEVEL_INFO, "Refreshed sensor state for "+sensorId);
+					ss.setValue(lastValue, (Long)lastModified, sensorDef, aContext);
+				}
+			}
+		}
 	}
 	
 	public void onSensorInfoDelete(INKFRequestContext aContext) throws Exception
@@ -227,7 +257,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 				
 				DateFormat df=DateFormat.getDateInstance(DateFormat.SHORT);
 				String firstString=first>0?df.format(new Date(first)):"none";
-				String lastString=first>0?df.format(new Date(last)):"none";
+				String lastString=last>0?df.format(new Date(last)):"none";
 				long avgSize=count>0?size/count:0L;
 				m.pushNode("sensor")
 				.addNode("id",id)
@@ -236,6 +266,8 @@ public class SensorListAccessor extends StandardAccessorImpl
 				.addNode("avgSize", avgSize)
 				.addNode("first", firstString)
 				.addNode("last", lastString)
+				.addNode("firstraw", first)
+				.addNode("lastraw", last)
 				.popNode();
 
 				//System.out.println(collection+" "+count+" "+size+" "+size/count);

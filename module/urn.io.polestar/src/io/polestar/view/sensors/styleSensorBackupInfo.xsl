@@ -20,18 +20,27 @@
 							var lastTime=new Date().getTime();
 							var lastProgress=0;
 							var lastRate=-1;
+							var n=0;
 							function timer() {
 								$.get("/polestar/sensors/backup?action=status", function(d) {
 									//console.log(d);
 									var t=new Date().getTime();
 									var rate=1000*(d.progress-lastProgress)/(t-lastTime);
-									if (lastRate>0)
-									{	lastRate=lastRate*0.98+rate*0.02;
+									if (rate === Infinity)
+									{
 									}
 									else
-									{	lastRate=rate;
+									{
+										if (lastRate>0 &amp;&amp; n>3)
+										{	lastRate=lastRate*0.98+rate*0.02;
+										}
+										else
+										{	lastRate=rate;
+										}
 									}
+									n++;
 									var timeRemaining=(d.progressTotal-d.progress)/lastRate;
+									//console.log(rate+" "+lastRate+" "+(d.progressTotal-d.progress));
 									var mins=Math.floor(timeRemaining/60);
 									var secs=Math.round(timeRemaining-mins*60);
 									lastProgress=d.progress;

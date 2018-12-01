@@ -86,11 +86,6 @@
 								    <input type="text" class="input-sm form-control" name="end" value="{$config/root/end}"/>
 								</div>
 								</div>
-							
-							
-							
-							
-							
 							</div>
 						</div>
 						

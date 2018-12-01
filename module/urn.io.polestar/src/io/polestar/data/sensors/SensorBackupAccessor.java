@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.netkernel.layer0.nkf.INKFLocale;
 import org.netkernel.layer0.nkf.INKFRequest;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFResponse;
@@ -27,6 +28,7 @@ import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
+import org.netkernel.util.Utils;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
@@ -142,8 +144,13 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 			if (!mode.equals("Replace"))
 			{	throw new NKFException("mode not supported yet");
 			}
-			long first=Long.parseLong((String)operator.getFirstValue("first"));
-			long last=Long.parseLong((String)operator.getFirstValue("last"));
+			long first=(Long)operator.getFirstValue("startTime");
+			long last=(Long)operator.getFirstValue("endTime");
+			List<String> sensorList=new ArrayList<>();
+			for (Object sensorId : operator.getValues("to"))
+			{	sensorList.add((String)sensorId);
+			}
+			
 			//System.out.println(mode+" "+first+" "+last);
 			
 			FileInputStream fis=new FileInputStream(f);
@@ -155,7 +162,7 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 			String sensorId=null;
 			DBCollection collection=null;
 			boolean processErrors=false;
-			List<String> sensorList=new ArrayList<>();
+			boolean enableProcessing=false;
 			while ((line=br.readLine())!=null)
 			{
 				if (line.startsWith("#"))
@@ -167,26 +174,47 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 						processErrors=true;
 					}
 					else
-					{	sensorList.add(sensorId);
-						deleteSensorDatainTimeRange(sensorId,first,last);
-						collection=MongoUtils.getCollectionForSensor(sensorId);
-						processErrors=false;
+					{	if (sensorList.contains(sensorId))
+						{	deleteSensorDatainTimeRange(sensorId,first,last);
+							collection=MongoUtils.getCollectionForSensor(sensorId);
+							processErrors=false;
+							enableProcessing=true;
+						}
+						else
+						{	enableProcessing=false;
+						}
 					}
 					
 				}
-				else if (!processErrors)
-				{	DBObject capture=(DBObject)JSON.parse(line);
-					BasicDBObject sensor=new BasicDBObject();
-					sensor.append("t", capture.get("t"));
-					sensor.append("v", capture.get("v"));
-					WriteResult wr=collection.insert(sensor);
-					//System.out.println("WRITE: "+sensorId+" "+capture+" "+wr.getN());
+				else if (!processErrors )
+				{	
+					if (enableProcessing)
+					{
+						try
+						{
+							DBObject capture=(DBObject)JSON.parse(line);
+							Long t=(Long)capture.get("t");
+							if (t>=first && t<=last)
+							{	BasicDBObject sensor=new BasicDBObject();
+								sensor.append("t", t);
+								sensor.append("v", capture.get("v"));
+								WriteResult wr=collection.insert(sensor);
+								//System.out.println("WRITE: "+sensorId+" "+capture+" "+wr.getN());
+							}
+						}
+						catch (Exception e)
+						{	aContext.logRaw(INKFLocale.LEVEL_WARNING, e.getMessage());
+						}
+					}
 					mProgressNow++;
 				}
 				else if (processErrors)
 				{
 					DBObject error=(DBObject)JSON.parse(line);
-					WriteResult wr=collection.insert(error);
+					Long t=(Long)error.get("t");
+					if (t>=first && t<=last)
+					{	WriteResult wr=collection.insert(error);
+					}
 					mProgressNow++;
 				}
 			}
@@ -256,10 +284,13 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 			}
 			else
 			{	
-				DBObject capture=(DBObject)JSON.parse(line);
-				long ts=(Long)capture.get("t");
-				if (ts>newest) newest=ts;
-				if (ts<oldest) oldest=ts;
+				try
+				{	DBObject capture=(DBObject)JSON.parse(line);
+					long ts=(Long)capture.get("t");
+					if (ts>newest) newest=ts;
+					if (ts<oldest) oldest=ts;
+				}
+				catch (Exception e) {;}
 				count++;
 				total++;
 			}

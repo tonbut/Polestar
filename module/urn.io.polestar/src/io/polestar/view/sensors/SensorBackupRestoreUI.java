@@ -110,9 +110,20 @@ public class SensorBackupRestoreUI extends StandardAccessorImpl
 	
 	public void onRestoreExec(INKFRequestContext aContext, IHDSReader aParams) throws Exception
 	{
-		String fileURI=(String)aParams.getFirstValue("fileURI");
 		INKFRequest req=aContext.createRequest("active:polestarSensorRestore");
-		req.addArgumentByValue("operator", aParams.toDocument());
+		IHDSMutator m=HDSFactory.newDocument();
+		m.appendChildren(aParams);
+		String startString=(String)aParams.getFirstValue("start");
+		long start=mDateFormat.parse(startString).getTime();
+		m.addNode("startTime",start);
+		String endString=(String)aParams.getFirstValue("end");
+		Date endDate=mDateFormat.parse(endString);
+		endDate.setHours(23);
+		endDate.setMinutes(59);
+		endDate.setSeconds(59);
+		long end=endDate.getTime();
+		m.addNode("endTime",end);
+		req.addArgumentByValue("operator", m.toDocument(false));
 		aContext.issueRequest(req);
 		
 		aContext.createResponseFrom("done").setExpiry(INKFResponse.EXPIRY_ALWAYS);

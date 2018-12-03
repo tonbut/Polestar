@@ -90,14 +90,14 @@ public class PeriodPollAccessor extends StandardAccessorImpl
 				finally
 				{	busyFlag.set(false);
 					if (firstErrorFlag!=null && firstErrorFlag.getAndSet(0)>=errorCountBeforeMsg)
-					{	aContext.logRaw(INKFLocale.LEVEL_INFO, "Period scripts for "+period+" restarted");
+					{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO, "Period scripts for "+period+" restarted");
 					}
 				}
 			}
 			else
 			{	int count=firstErrorFlag.incrementAndGet();
 				if (count==errorCountBeforeMsg)
-				{	aContext.logRaw(INKFLocale.LEVEL_WARNING, "Periodic scripts for "+period+" stopped due to blockage");
+				{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, "Periodic scripts for "+period+" stopped due to blockage");
 				}
 			}
 		}

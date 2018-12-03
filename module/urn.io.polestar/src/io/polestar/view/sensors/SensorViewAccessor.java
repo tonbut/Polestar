@@ -90,7 +90,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 	{
 		//aContext.createResponseFrom("<div>chart</div>");
 		
-		IPolestarContext context=PolestarContext.createContext(aContext);
+		IPolestarContext context=PolestarContext.createContext(aContext,null);
 		
 		int width=640;
 		long period=1000L*60*60*24;
@@ -158,8 +158,8 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		
 		//IHDSReader stateNode=state.getFirstNodeOrNull("key('byId','"+aId+"')");
 		//Object value=stateNode.getFirstValueOrNull("value");
-		IPolestarContext pctx=PolestarContext.createContext(aContext);
-		Object value=pctx.createQuery(aId, QueryType.LAST_VALUE).setStart(-1000L*60*60*24*365).execute();
+		//IPolestarContext pctx=PolestarContext.createContext(aContext);
+		Object value=context.createQuery(aId, QueryType.LAST_VALUE).setStart(-1000L*60*60*24*365).execute();
 		
 		String format=(String)configNode.getFirstValueOrNull("format");
 		String chartType=(String)configNode.getFirstValueOrNull("chart-type");

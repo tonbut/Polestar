@@ -15,10 +15,9 @@
 package io.polestar.data.util;
 
 import java.math.BigInteger;
-import java.text.NumberFormat;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,20 +26,45 @@ import java.util.Set;
 
 import javax.servlet.http.Cookie;
 
-import org.netkernel.layer0.nkf.*;
+import org.netkernel.layer0.nkf.INKFAsyncRequestHandle;
+import org.netkernel.layer0.nkf.INKFLocale;
+import org.netkernel.layer0.nkf.INKFRequest;
+import org.netkernel.layer0.nkf.INKFRequestContext;
+import org.netkernel.layer0.nkf.INKFResponseReadOnly;
+import org.netkernel.layer0.nkf.NKFException;
 import org.netkernel.layer0.representation.IHDSNode;
-import org.netkernel.layer0.util.PairList;
 import org.netkernel.mod.hds.IHDSDocument;
-import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 
-import io.polestar.data.sensors.MergeAction;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.WriteResult;
+
+import io.polestar.data.db.MongoUtils;
 import io.polestar.view.login.RememberMeCookie;
 
 public class MonitorUtils
 {
 	
-	
+	public static void log(INKFRequestContext aContext, String aOrigin, int aLevel, String aMessage)
+	{
+		//System.out.println("MonitorUtils.log "+aLevel+" "+aOrigin+" "+aMessage);
+		aContext.logRaw(aLevel, aMessage);
+		try
+		{	DBCollection log=MongoUtils.getCollection("log");
+			long now=System.currentTimeMillis();			
+			BasicDBObject sensor=new BasicDBObject();
+			sensor.append("t", now);
+			sensor.append("l", aLevel);
+			sensor.append("o", aOrigin);
+			sensor.append("m", aMessage);
+			WriteResult wr=log.insert(sensor);
+		
+		}
+		catch (UnknownHostException uhe)
+		{	aContext.logRaw(INKFLocale.LEVEL_SEVERE, "Can't write to log: "+uhe.getMessage());
+		}
+	}
 	
 	public static String queryHDStoJSON(IHDSDocument aData)
 	{
@@ -359,7 +383,7 @@ public class MonitorUtils
 									IHDSReader list=aContext.source("active:polestarListScripts",IHDSDocument.class).getReader();
 									String name=(String)list.getFirstValue(String.format("key('byId','%s')/name",script));
 									String msg=String.format("Slow execution of '%s' script for %s period",name,aPeriod);
-									aContext.logRaw(INKFLocale.LEVEL_WARNING, msg);
+									MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, msg);
 									warnedInner=true;
 								}
 							}

@@ -23,6 +23,7 @@ import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 
+import io.polestar.data.util.MonitorUtils;
 import io.polestar.view.template.TemplateWrapper;
 
 public class SensorBackupRestoreUI extends StandardAccessorImpl
@@ -263,7 +264,7 @@ public class SensorBackupRestoreUI extends StandardAccessorImpl
 		File f=new File(URI.create(backupFileURI));
 		boolean deleted=f.delete();
 		String msg="backup file delete "+backupFileURI+" "+deleted;
-		aContext.logRaw(INKFLocale.LEVEL_INFO, msg);
+		MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO,msg);
 		
 		aContext.createResponseFrom("done").setExpiry(INKFResponse.EXPIRY_ALWAYS);
 	}

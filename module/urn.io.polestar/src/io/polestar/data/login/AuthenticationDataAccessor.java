@@ -44,7 +44,7 @@ public class AuthenticationDataAccessor extends StandardAccessorImpl
 		{	if (!cursor.hasNext())
 			{	cursor.close();
 				//col.drop();
-				aContext.logRaw(INKFLocale.LEVEL_INFO,"Initialising authentication to defaults");
+				MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO,"Initialising authentication to defaults");
 				initialiseAuthentication(aContext);
 				cursor = col.find();
 			}

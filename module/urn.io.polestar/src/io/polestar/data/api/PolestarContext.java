@@ -18,6 +18,7 @@ import io.polestar.api.IPolestarAPI;
 import io.polestar.api.IPolestarContext;
 import io.polestar.api.IPolestarQuery;
 import io.polestar.api.QueryType;
+import io.polestar.data.util.MonitorUtils;
 import io.polestar.view.sensors.SensorViewAccessor;
 
 public class PolestarContext implements InvocationHandler, IPolestarAPI
@@ -34,16 +35,17 @@ public class PolestarContext implements InvocationHandler, IPolestarAPI
 		}
 	}
 	
-	private INKFRequestContext mContext;
+	private final INKFRequestContext mContext;
+	private final String mName;
 	
-	private PolestarContext(INKFRequestContext aContext)
-	{
-		mContext=aContext;
+	private PolestarContext(INKFRequestContext aContext, String aName)
+	{	mContext=aContext;
+		mName=aName;
 	}
 	
-	public static IPolestarContext createContext(INKFRequestContext aContext) throws Exception
+	public static IPolestarContext createContext(INKFRequestContext aContext, String aName) throws Exception
 	{
-		PolestarContext pc=new PolestarContext(aContext);
+		PolestarContext pc=new PolestarContext(aContext,aName);
 		IPolestarContext proxy = (IPolestarContext)sProxyConstructor.newInstance(new Object[] {pc} );
 		return proxy;
 	}
@@ -51,7 +53,17 @@ public class PolestarContext implements InvocationHandler, IPolestarAPI
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
 	{	Class clz=method.getDeclaringClass();
 		if (clz.isAssignableFrom(mContext.getClass()))
-		{	return method.invoke(mContext, args);
+		{	
+			if (method.getName().equals("logRaw"))
+			{	//redirect to utility method
+				Integer level=(Integer)args[0];
+				String message=(String)args[1];
+				MonitorUtils.log(mContext, mName, level, message);
+				return null;
+			}
+			else
+			{	return method.invoke(mContext, args);
+			}
 		}
 		else
 		{	return method.invoke(this, args);

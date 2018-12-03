@@ -1,0 +1,64 @@
+<div class="container">
+	<link rel="stylesheet" type="text/css" href="/polestar/pub/css/datatables.min.css"/>
+ 	<script type="text/javascript" src="/polestar/pub/datatables.min.js">_</script>
+	<script>
+		$(function() {
+			$('#logTable').DataTable({
+        		"processing": true,
+        		"serverSide": true,
+        		"ajax": "/polestar/log",
+        		"order": [[ 1, "desc" ]],
+        		"pageLength": 50,
+        		responsive: true,
+        		 "columns": [
+		            
+		            { "data": "level", "orderable": false, "render": function ( data, type, row ) {
+                    		if (data==2)
+                    		{	return '<i class="glyphicon glyphicon-info-sign"/>';
+                    		}
+                    		else if (data==1)
+                    		{	return '<i class="glyphicon glyphicon-warning-sign"/>';
+                    		}
+                    		else if (data==0)
+                    		{	return '<i class="glyphicon glyphicon-remove-sign"/>';
+                    		}
+                    		else
+                    		{
+                    			return data;
+                    		}
+                			},
+                			"width": "1%"
+		            },
+		            { "data": "time", "orderable": false, "width": "15%" },
+		            { "data": "origin", "orderable": false, "width": "15%", className: "origin" },
+		            { "data": "msg", "orderable": false, "width": "69%" }
+		        ],
+		        "createdRow": function ( row, data, index ) {
+            			if ( data.level == 1 ) {
+                			$(row).addClass('warning');
+            			}
+            			else if ( data.level == 0 ) {
+                			$(row).addClass('danger');
+            			}
+        			}
+    		});
+		});
+	</script>
+
+	<div class="row">
+	
+		<table id="logTable" class="table responsive table-condensed" style="width:100%">
+	        <thead>
+	            <tr>
+	            		<th></th>
+	                <th>Time</th>
+	                <th class="origin">Origin</th>
+	                <th>Message</th>
+	            </tr>
+	        </thead>
+	        <tbody>
+	        </tbody>
+        </table>
+	</div>
+
+</div>

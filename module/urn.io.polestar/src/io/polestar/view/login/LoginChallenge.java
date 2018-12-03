@@ -96,7 +96,7 @@ public class LoginChallenge extends StandardAccessorImpl
 			{	statusMessage="Login incorrect";
 				String hostname = aContext.source("httpRequest:/remote-host",String.class);
 				String message="Bad login from ["+hostname+"] with user ["+username+"]";
-				aContext.logRaw(INKFLocale.LEVEL_WARNING, message);
+				MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, message);
 			}
 		}
 		else

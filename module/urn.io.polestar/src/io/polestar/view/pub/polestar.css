@@ -39,3 +39,22 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 
 .ace_scrollbar-inner { background-color: red; opacity: 0.01; }
 #editor { border: solid 1px rgb(204, 204, 204); border-radius: 4px; }
+
+#logTable td { padding-top: 0; padding-bottom: 0; }
+@media (max-width: 768px) {
+	#logTable { font-size: 8px; }
+	#logTable td { padding: 0 1; }
+	#logTable .origin { display: none; }
+	
+	div.dataTables_wrapper div.dataTables_length, div.dataTables_wrapper div.dataTables_filter, div.dataTables_wrapper div.dataTables_info, div.dataTables_wrapper div.dataTables_paginate {
+		font-size: 10px; 
+	}
+	div.dataTables_length select, div.dataTables_filter input {
+		font-size: 10px;
+	}
+	
+	
+}
+@media (min-width: 768px) {
+	#logTable { font2-size: 14px; }
+}

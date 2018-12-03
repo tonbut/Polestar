@@ -104,7 +104,7 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 		{	//System.out.println(e);
 			IHDSReader scriptData=aContext.source("res:/md/script/"+id,IHDSDocument.class).getReader();
 			String scriptName=(String)scriptData.getFirstValue("/script/name");
-			aContext.logRaw(INKFLocale.LEVEL_WARNING, "Script "+scriptName+" Failed: "+e.getDeepestId()+" "+e.getDeepestMessage());
+			MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, "Script "+scriptName+" Failed: "+e.getDeepestId()+" "+e.getDeepestMessage());
 			updateScriptExecutionData(id,e,aContext);
 			throw e;
 			
@@ -136,7 +136,7 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 		{	//System.out.println(e);
 			IHDSReader scriptData=aContext.source("res:/md/script/"+id,IHDSDocument.class).getReader();
 			String scriptName=(String)scriptData.getFirstValue("/script/name");
-			aContext.logRaw(INKFLocale.LEVEL_WARNING, "Script "+scriptName+" Failed: "+e.getDeepestId()+" "+e.getDeepestMessage());
+			MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, "Script "+scriptName+" Failed: "+e.getDeepestId()+" "+e.getDeepestMessage());
 			updateScriptExecutionData(id,e,aContext);
 			throw e;
 			

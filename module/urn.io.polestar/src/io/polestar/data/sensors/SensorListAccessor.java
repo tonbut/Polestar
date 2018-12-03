@@ -65,7 +65,8 @@ public class SensorListAccessor extends StandardAccessorImpl
 	}
 	
 	public void postCommission(INKFRequestContext aContext) throws Exception
-	{	aContext.logRaw(INKFLocale.LEVEL_INFO,"## Polestar Started ##");
+	{	
+		MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO,"## Polestar Started ##");
 	
 		BasicDBObject query = new BasicDBObject("id",0);
 		DBCollection col=MongoUtils.getCollection("sensorState");
@@ -98,13 +99,13 @@ public class SensorListAccessor extends StandardAccessorImpl
 					List<DBObject> indexes=col.getIndexInfo();
 					if (indexes.size()<2)
 					{
-						aContext.logRaw(INKFLocale.LEVEL_INFO, "Creating time index for "+collection);
+						MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO,"Creating time index for "+collection);
 						col.createIndex(new BasicDBObject("t", 1));
 					}
 				}
 			}
 			catch (Exception e)
-			{	aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
+			{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
 			}
 		}
 		
@@ -119,8 +120,9 @@ public class SensorListAccessor extends StandardAccessorImpl
 			}
 		}
 		catch (Exception e)
-		{	aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
+		{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
 		}
+		
 		
 		//run startup scripts
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("startup"), true, aContext);
@@ -131,7 +133,8 @@ public class SensorListAccessor extends StandardAccessorImpl
 	{	
 		//run shutdown scripts
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("shutdown"), true, aContext);		
-		aContext.logRaw(INKFLocale.LEVEL_INFO,"Monitor Stopped");
+		MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO,"Monitor Stopped");
+
 		saveSensorState(aContext);
 		
 	}
@@ -189,7 +192,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 	/** look at historical data stored in mongoDB to update cached in memory current state of sensor **/
 	public void onSensorStateRefresh(IHDSReader aState,INKFRequestContext aContext) throws Exception
 	{
-		IPolestarContext pctx=PolestarContext.createContext(aContext);
+		IPolestarContext pctx=PolestarContext.createContext(aContext,null);
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
 		
 		for (Object sensorId : aState.getValues("/sensors/sensor"))
@@ -202,7 +205,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 				if (lastModified!=null)
 				{
 					Object lastValue=pctx.createQuery((String)sensorId, QueryType.LAST_VALUE).setStart(0L).execute();
-					aContext.logRaw(INKFLocale.LEVEL_INFO, "Refreshed sensor state for "+sensorId);
+					MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO, "Refreshed sensor state for "+sensorId);
 					ss.setValue(lastValue, (Long)lastModified, sensorDef, aContext);
 				}
 			}
@@ -294,8 +297,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			}
 		}
 		if (anyErrorChange)
-		{	//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onReadingCheck() anyErrorChange");
-			mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
+		{	mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 		}
 							
 	}
@@ -345,10 +347,10 @@ public class SensorListAccessor extends StandardAccessorImpl
 		catch (NKFException e)
 		{	
 			if (e.getDeepestId().equals("Script not found"))
-			{	aContext.logRaw(INKFLocale.LEVEL_WARNING, "\"SensorList\" script not defined yet");
+			{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, "\"SensorList\" script not defined yet");
 			}
 			else
-			{	aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
+			{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
 			}
 			config=HDSFactory.newDocument();
 			config.pushNode("sensors");
@@ -441,8 +443,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			}
 				
 			if (ss.getErrorLastModified()==updateTime)
-			{	//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE onUpdate() "+(ss.getError()!=null)+" "+sensorDef.getFirstValue("name"));
-				mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
+			{	mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 				recordError(sensorId,updateTime,aContext);
 			}
 		}
@@ -471,7 +472,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			WriteResult wr=col.insert(sensor);
 		}
 		catch (Exception e)
-		{	aContext.logRaw(INKFLocale.LEVEL_SEVERE, Utils.throwableToString(e));
+		{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_SEVERE, Utils.throwableToString(e));
 		}
 	}
 
@@ -491,7 +492,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			}
 			else
 			{	String msg=String.format("Unsupported datatype for %s of %s",aId,c.getName());
-				aContext.logRaw(INKFLocale.LEVEL_WARNING, msg);
+				MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, msg);
 			}
 		}
 	}
@@ -518,7 +519,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 			}
 			else
 			{	String msg=String.format("Unsupported datatype for %s of %s",aId,c.getName());
-				aContext.logRaw(INKFLocale.LEVEL_WARNING, msg);
+				MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, msg);
 			}
 		}
 	}

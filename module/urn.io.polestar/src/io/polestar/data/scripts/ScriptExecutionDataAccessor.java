@@ -74,7 +74,7 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 		set.append("ec",0);
 		state.append("$set", set);
 		WriteResult wr=col.update(query,state,false,true);
-		aContext.logRaw(INKFLocale.LEVEL_INFO, "Script statistics reset");
+		MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO, "Script statistics reset");
 	}
 		
 	public void onScriptExecutionStatus(INKFRequestContext aContext) throws Exception

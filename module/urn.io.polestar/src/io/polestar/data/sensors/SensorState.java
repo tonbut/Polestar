@@ -1,6 +1,5 @@
 package io.polestar.data.sensors;
 
-import org.netkernel.layer0.nkf.INKFLocale;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
@@ -157,13 +156,9 @@ class SensorState
 						if (isDifferent(errorInternal, mErrorPublic))
 						{	mErrorLastModifiedPublic=aNow;
 							mErrorPublic=null;
-							//System.out.println("error cleared");
-							//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE poll() clear "+sensorDef.getFirstValue("name"));
 						}
 						else
 						{	mErrorLastModified=mErrorLastModifiedPublic;
-							//System.out.println("error cleared but not different");
-							//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE poll() clear but not modified "+sensorDef.getFirstValue("name"));
 						}
 					}
 					else
@@ -172,19 +167,14 @@ class SensorState
 							if (isDifferent(errorInternal, mErrorPublic))
 							{	mErrorLastModifiedPublic=aNow;
 								mErrorPublic=errorInternal;
-								//System.out.println("error made public");
-								//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE poll() error made public "+sensorDef.getFirstValue("name"));
 							}
 							else
 							{	mErrorLastModified=mErrorLastModifiedPublic;
-								//System.out.println("error made public but not different");
-								//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE poll() public but not different "+sensorDef.getFirstValue("name"));
 							}
 							
 						}
 						else
-						{	//System.out.println("error but not yet");
-							//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE poll() error but not yet public "+sensorDef.getFirstValue("name"));
+						{
 						}
 					}
 				}
@@ -194,7 +184,6 @@ class SensorState
 				if (isDifferent(errorInternal, mErrorPublic))
 				{	mErrorLastModifiedPublic=mErrorLastModified;
 					mErrorPublic=getErrorInternal();
-					//aContext.logRaw(INKFLocale.LEVEL_INFO, "ERR_CHANGE poll() error "+(mErrorPublic!=null)+" "+sensorDef.getFirstValue("name"));
 				}
 				
 			}

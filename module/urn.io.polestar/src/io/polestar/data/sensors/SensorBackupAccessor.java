@@ -39,6 +39,7 @@ import com.mongodb.WriteResult;
 import com.mongodb.util.JSON;
 
 import io.polestar.data.db.MongoUtils;
+import io.polestar.data.util.MonitorUtils;
 
 public class SensorBackupAccessor extends StandardAccessorImpl
 {
@@ -203,7 +204,7 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 							}
 						}
 						catch (Exception e)
-						{	aContext.logRaw(INKFLocale.LEVEL_WARNING, e.getMessage());
+						{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, e.getMessage());
 						}
 					}
 					mProgressNow++;

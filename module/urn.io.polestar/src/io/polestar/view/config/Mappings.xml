@@ -157,19 +157,6 @@
 			<varargs/>
 		</request>
 	</endpoint>
-
-	<!--
-	<endpoint>
-		<id>polestar:sensor</id>
-		<grammar>res:/polestar/sensor/
-			<group name="id"><regex type="anything"/></group>
-		</grammar>
-		<request>
-			<identifier>active:java</identifier>
-			<argument name="class">io.polestar.view.sensors.SensorDetailAccessor</argument>
-			<varargs/>
-		</request>
-	</endpoint>-->
 	
 	<endpoint>
 		<id>polestar:sensorinfo</id>
@@ -184,14 +171,22 @@
 	
 	<!-- log -->
 	<endpoint>
-		<id>polestar:log</id>
-		<grammar>res:/polestar/log</grammar>
+		<id>polestar:log:old</id>
+		<grammar>res:/polestar/log-old</grammar>
 		<request>
 			<identifier>active:xslt</identifier>
 			<argument name="operator">res:/io/polestar/view/log/styleLog.xsl</argument>
 			<argument name="operand">netkernel:/log/io.polestar/0/60</argument>
 		</request>
 		<header name="polestar_wrap"><literal type="boolean">true</literal></header>
+	</endpoint>	
+	<endpoint>
+		<id>polestar:log</id>
+		<grammar>res:/polestar/log</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.log.LogView</argument>
+		</request>
 	</endpoint>	
 	
 	<!-- chart -->

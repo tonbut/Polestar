@@ -207,7 +207,17 @@
             </grammar>
             <class>io.polestar.data.login.AuthenticationDataAccessor</class>
         </endpoint>
-		
+        
+        <!-- log stuff -->
+        <endpoint>
+			<id>polestar:data:logQuery</id>
+            <grammar><active>
+            		<identifier>active:polestarLogQuery</identifier>
+            		<argument name="operator" min="0"/>
+            	</active></grammar>
+            <class>io.polestar.data.log.LogQueryAccessor</class>
+        </endpoint>
+        
 		<mapper>
 			<config>res:/io/polestar/data/config/Mappings.xml</config>
 			<space>

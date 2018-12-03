@@ -32,6 +32,7 @@ import com.mongodb.DBObject;
 
 import io.polestar.data.db.MongoUtils;
 import io.polestar.data.sensors.MergeAction.Type;
+import io.polestar.data.util.MonitorUtils;
 
 public class SensorQueryAccessor extends StandardAccessorImpl
 {
@@ -142,8 +143,7 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 				resultTuple.put(mergeAction, data);
 			}
 			catch (Exception e)
-			{
-				aContext.logRaw(INKFLocale.LEVEL_WARNING, "Failed to query sensor ["+id+"]:"+Utils.throwableToString(e));
+			{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, "Failed to query sensor ["+id+"]:"+Utils.throwableToString(e));
 			}
 			
 		}
@@ -439,7 +439,7 @@ public class SensorQueryAccessor extends StandardAccessorImpl
 				catch (Exception e)
 				{	String msg="Script Failure";
 					SensorListAccessor.sInstance.updateSensorState(id, null, System.currentTimeMillis(), msg, aContext);
-					aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
+					MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
 				}
 			}
 			

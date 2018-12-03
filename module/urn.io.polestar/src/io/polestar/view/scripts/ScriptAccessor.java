@@ -133,7 +133,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 				boolean exists=aContext.exists(dataIdentifier);
 				if (!exists)
 				{
-					aContext.logRaw(INKFLocale.LEVEL_INFO, "Restoring script "+id);
+					MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO, "Restoring script "+id);
 					InputStream is=zf.getInputStream(entry);
 					ByteArrayOutputStream baos=new ByteArrayOutputStream(4096);
 					Utils.pipe(is, baos);

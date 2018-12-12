@@ -26,6 +26,12 @@
 	</meta>
 	<system>
 		<dynamic/>
+		<classloader>
+			<exports>
+				<match>io.polestar.api.*</match>
+				<match>io.polestar.data.api.*</match>
+			</exports>
+		</classloader>
 	</system>
 	<rootspace name="Polestar / Public ">
 		<literal uri="res:/etc/system/SimpleDynamicImportHook.xml" type="xml">

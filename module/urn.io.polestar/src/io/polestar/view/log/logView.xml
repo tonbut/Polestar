@@ -29,9 +29,15 @@
                 			},
                 			"width": "1%"
 		            },
-		            { "data": "time", "orderable": false, "width": "15%" },
-		            { "data": "origin", "orderable": false, "width": "15%", className: "origin" },
-		            { "data": "msg", "orderable": false, "width": "69%" }
+		            { "data": "time", "orderable": false, "width": "19%" },
+		            { "data": "msg", "orderable": false, "width": "80%", "render": function ( data, type, row ) {
+		            	if (row.origin)
+		            	{	return '<div class="label label-default">'+row.origin+"</div> "+data;
+		            	}
+		            	else
+		            	{	return data;
+		            	} }
+		            }
 		        ],
 		        "createdRow": function ( row, data, index ) {
             			if ( data.level == 1 ) {
@@ -52,7 +58,6 @@
 	            <tr>
 	            		<th></th>
 	                <th>Time</th>
-	                <th class="origin">Origin</th>
 	                <th>Message</th>
 	            </tr>
 	        </thead>

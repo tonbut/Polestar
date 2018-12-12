@@ -2,6 +2,8 @@ package io.polestar.api;
 
 import org.netkernel.layer0.nkf.NKFException;
 
+import io.polestar.data.api.ICollectionIterator;
+
 /** Extended context for Polestar scripts to make common functions more convenient
  */
 public interface IPolestarAPI
@@ -119,6 +121,10 @@ public interface IPolestarAPI
 	 * @throws NKFException if sensor doesn't exist
 	 */
 	IPolestarQuery createQuery(String aSensorId, QueryType aType) throws NKFException;
+
+	/** interface for testing */
+	IPolestarQuery createQuery2(ICollectionIterator aIterator, QueryType aType) throws NKFException;
+
 	
 	/** Detect changes in an analog value rising and falling below a trigger level with hysteresis
 	 * @return a two element boolean array, first value is if value is in in true threshold, second

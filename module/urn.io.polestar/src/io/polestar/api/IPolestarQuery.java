@@ -24,7 +24,9 @@ public interface IPolestarQuery
 	 */
 	IPolestarQuery setQueryParameter(Object aParameter) throws NKFException;
 	
-	/** Set a period in milliseconds to sub-divide time between query start and end and return back multiple results
+	/** Set a period in milliseconds to sub-divide time between query start and end and return back multiple results.
+	 * If not specified then whole period is sampled and a single result returned.
+	 * Queries that return time will return time offset from start of period when setResultSetPeriod is used.
 	 * @param aPeriod period in milliseconds
 	 * @throws NKFException if period cannot be set on this type of query
 	 */
@@ -35,9 +37,25 @@ public interface IPolestarQuery
 	 */
 	IPolestarQuery setQueryMatcher(IPolestarMatcher aMatcher) throws NKFException;
 	
+	/** Execute query over a series of start-to-end periods and merge results.
+	 * Merge operation defaults to AVERAGE but can be specified with setTimeMergeOp()
+	 */
+	IPolestarQuery setTimeMerge(int aPeriodCount) throws NKFException;
+	
+	/** Specifies how multiple resultsets are merged 
+	 * Merge operation defaults to AVERAGE but can be specified with setTimeMergeOp()
+	 */
+	IPolestarQuery setTimeMergeOp(QueryType aOp) throws NKFException;
+
+	/** Set a period in milliseconds to separate merge periods. By default merge
+	 * periods are consecutive, so TimeMergePeriod is equal to (End-Start) 
+	 */
+	IPolestarQuery setTimeMergePeriod(long aPeriod) throws NKFException;
+
+	
 	/** Execute the query
 	 * @throws NKFException if query fails
-	 * @return value, timestamp, or duration from query
+	 * @return value, timestamp, duration, or IPolestarQueryResultSet from query
 	 */
 	Object execute() throws NKFException;
 }

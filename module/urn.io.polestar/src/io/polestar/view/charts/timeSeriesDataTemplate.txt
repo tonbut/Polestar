@@ -71,6 +71,38 @@ function extractArray(a, idx, defval)
     return result;
 }
 
+function fixArray(a)
+{   var result = [];
+	var last;
+	var backwardIndex;
+    for (i=0; i<a.length; i++)
+    {	var v=a[i];
+    	if (v==null)
+    	{	if (last==undefined)
+    		{	backwardIndex=i;
+    		}
+    		else
+    		{	v=last;
+    		}
+    	}
+    	else
+    	{	last=v;
+    	}
+    	result.push(v);
+    }
+    if (backwardIndex!=undefined)
+    {	if (backwardIndex<a.length-1)
+    	{	var v=a[backwardIndex+1];
+    		for (i=backwardIndex; i>=0; i--)
+    		{	result[i]=v;
+    		}
+    	}
+    }
+    
+    return result;
+}
+
+
 function extractStackArray(a, idxs)
 {   var result2 = [];
 	for (j=0; j<idxs.length; j++)
@@ -85,14 +117,17 @@ function extractStackArray(a, idxs)
 function drawArea(idx, fillStyle, strokeStyle, shape, heightFunction, baseline, interpolate, data, vis)
 {	
 	var d = extractArray(data,idx,null);
-	var d2 = extractArray(data,idx,null);
+	var d2 = fixArray(d);
+	//console.log(d2);
 	var area=vis.add(pv.Area);
+	
 	area.data(d)
 		.interpolate(interpolate)
-		.bottom(function(d) { return d==null?null:y(baseline) } )
-		.height(function(d) { return d==null?null:(heightFunction(d)-y(baseline)) } )
+		.bottom(function(d) { return d==null?y(baseline):y(baseline) } )
+		.height(function(d) { return (heightFunction(d==null?d2[this.index]:d)-y(baseline)) } )
 		.left(function() { return x(this.index);} )
-		.fillStyle( fillStyle );
+		.segmented(true)
+		.fillStyle( function(d){return d==null?"rgba(0,0,0,0)":fillStyle;} );
 	/*
 	if (strokeStyle!=null)
 		area.strokeStyle(strokeStyle);
@@ -109,13 +144,14 @@ function drawArea(idx, fillStyle, strokeStyle, shape, heightFunction, baseline, 
 
 function drawLine(idx, strokeStyle, fillStyle, dashArray, lineWidth, shape, heightFunction, interpolate, data, vis)
 {	var d = extractArray(data,idx,null);
+	var d2 = fixArray(d);
 	var line=vis.add(pv.Line);
 	line.data(d).interpolate(interpolate)
-		.bottom(function(d) { return heightFunction(d);  })
+		.bottom(function(d) { return heightFunction(d==null?d2[this.index]:d);  })
 		.left(function() {return x(this.index)})
 		.lineWidth(function(d){ return d==null?0:lineWidth; } )
 		.strokeDasharray(dashArray)
-		//.segmented(true)
+		.segmented(true)
 		.strokeStyle( function(d){ return strokeStyle; } );
 	if (shape!=null)
 	{	line.add(pv.Dot)

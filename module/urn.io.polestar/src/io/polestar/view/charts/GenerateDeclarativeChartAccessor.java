@@ -54,6 +54,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		String endSnap=(String)aOp.getFirstValueOrNull("endSnap");
 		if (endSnap==null) endSnap="now";
 		String endOffsetString=(String)aOp.getFirstValueOrNull("endOffset");
+		String endTimeString=(String)aOp.getFirstValueOrNull("endTime");
 		if (endOffsetString==null) endOffsetString="0";
 		int endOffset=Integer.parseInt(endOffsetString);
 		Calendar cal = Calendar.getInstance();
@@ -97,10 +98,13 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				endTime=cal.getTimeInMillis();
 				endTime+=period*(endOffset)+1000L*60*60*24;
 				break;	
-		}		
-	
+		}
+		if (endTimeString!=null)
+		{	endTime+=Long.parseLong(endTimeString);
+		}
+		
 		long samplesPeriod=Long.parseLong((String)aOp.getFirstValue("samplePeriod"));
-		long mergeCount=samplesPeriod/(1000L*60*5);
+		//long mergeCount=samplesPeriod/(1000L*60*5);
 		long elementCount=period/samplesPeriod;
 
 		String yAxisTop=(String)aOp.getFirstValueOrNull("yAxisTop");
@@ -111,12 +115,13 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		
 		String stackElements="";
 		
+		//****************************
 		//Request historical data
+		/*
 		IHDSMutator m=HDSFactory.newDocument();
 		m.pushNode("query");
 		m.addNode("start",endTime-period);
 		m.addNode("end",endTime);
-		m.addNode("merge",(int)mergeCount);
 		m.addNode("samplePeriod",samplesPeriod);
 		if (timeFormat!=null) m.addNode("timeFormat",timeFormat);
 		m.pushNode("sensors");
@@ -139,14 +144,22 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		req.setRepresentationClass(IHDSDocument.class);
 		IHDSDocument d=(IHDSDocument)aContext.issueRequest(req);
 		double[] minMax=getQueryHDSMaxMin(d,aOp);
+		String data=queryHDStoJSON(d);	
+		*/
+		//****************************
+		//END Request historical data
 		
-		String data=MonitorUtils.queryHDStoJSON(d);	
+		ChartSensorData csd=new ChartSensorData(aContext, aOp, endTime, period, samplesPeriod, timeFormat);
+		String data=csd.getJSON();
+		double min=csd.getMin();
+		double max=csd.getMax();
+		
 		
 		//axis
-		if (yAxisTop==null) yAxisTop=Double.toString(minMax[1]);
-		if (yAxisBottom==null) yAxisBottom=Double.toString(minMax[0]);
+		if (yAxisTop==null) yAxisTop=Double.toString(max);
+		if (yAxisBottom==null) yAxisBottom=Double.toString(min);
 		if (yAxisTicks!=null)
-		{	yTicks="y.ticks("+Integer.toString((int)Math.round(Math.abs(minMax[1]-minMax[0])/Double.parseDouble(yAxisTicks)))+")";
+		{	yTicks="y.ticks("+Integer.toString((int)Math.round(Math.abs(max-min)/Double.parseDouble(yAxisTicks)))+")";
 		}
 		else
 		{	yTicks="y.ticks()";
@@ -214,11 +227,14 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				String interpolate=(String)sensorNode.getFirstValueOrNull("interpolate");
 				if (interpolate!=null) interpolate="\""+interpolate+"\"";
 				
+				
 				String valueMultiplyString=(String)sensorNode.getFirstValueOrNull("valueMultiply");
 				if (valueMultiplyString==null) valueMultiplyString="1";
 				String valueOffsetString=(String)sensorNode.getFirstValueOrNull("valueOffset");
 				if (valueOffsetString==null) valueOffsetString="0";
-				String function="return (d==null)?null:y((d+"+valueOffsetString+")*"+valueMultiplyString+")";
+				//String function="return (d==null)?null:y((d+"+valueOffsetString+")*"+valueMultiplyString+")";
+				
+				String function="return (d==null)?null:y(d)";
 				
 				String baseline;
 				String baselineString=(String)sensorNode.getFirstValueOrNull("baseline");
@@ -227,7 +243,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				}
 				else
 				{	//protovis bug rendering area that stops at baseline
-					double yRange=Math.abs(minMax[1]-minMax[0]);
+					double yRange=Math.abs(max-min);
 					baseline=Double.toString( Double.parseDouble(yAxisBottom)-yRange*0.01 );
 				}
 				
@@ -443,6 +459,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				if (strokeData.length()>1) strokeData+=",";
 				strokeData+="\""+stroke+"\"";
 				
+				/*
 				String valueMultiplyString=(String)sensorNode.getFirstValueOrNull("valueMultiply");
 				if (valueMultiplyString==null) valueMultiplyString="1";
 				String valueOffsetString=(String)sensorNode.getFirstValueOrNull("valueOffset");
@@ -450,7 +467,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				String function="function(d) { return (d==null)?null:y((d+"+valueOffsetString+")*"+valueMultiplyString+");}";
 				if (functionData.length()>1) functionData+=",";
 				functionData+=function;
-				
+				*/
 			
 				if (chartType==null)
 				{	
@@ -490,7 +507,8 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		// TODO can baseline be set to anything other than 0?
 		sb.append("    .layers(sd)\n");
 		sb.append("    .x(function() { return x(this.index);} )\n");
-		sb.append("    .y(function(d) { return stackFunctions[this.parent.index](d); })\n");
+		//sb.append("    .y(function(d) { return stackFunctions[this.parent.index](d); })\n");
+		sb.append("    .y(function(d) { return y(d); })\n");
 		
 		sb.append(chartType);
 		sb.append("    .fillStyle(function(d) { return stackFill[this.parent.index];})\n");
@@ -583,5 +601,64 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		return new double[] {min,max};
 	}
 	
+	public static String queryHDStoJSON(IHDSDocument aData)
+	{
+		
+		//long now=System.currentTimeMillis();
+		StringBuilder sb=new StringBuilder(4096);
+		sb.append("[ ");
+		
+		for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
+		{
+			sb.append("[ ");
+			Long time=(Long)row.getFirstValue("time");
+			sb.append(Long.toString(time));
+			sb.append(",'");
+			String timeString=(String)row.getFirstValue("timeString");
+			sb.append(timeString);
+			sb.append("'");
+			//if (time<=now)
+			//{
+				int i=0;
+				for (IHDSReader valueNode : row.getNodes("*"))
+				{
+					if (i>=2)
+					{
+						sb.append(",");
+						Object v=valueNode.getFirstValue(".");
+						outputJSONValue(sb,v,"%.3f");
+					}
+					i++;
+				}
+			//}
+			sb.append("],\n");
+		}
+		
+		sb.append("]");
+		return sb.toString();	
+	}
+	
+	private static void outputJSONValue(StringBuilder sb, Object v, String format)
+	{
+		boolean needsQuotes=(v instanceof String);
+		if (needsQuotes) sb.append("'");
+		if (format==null)
+		{	sb.append(v);
+		}
+		else if (v==null)
+		{	sb.append("null");
+		}
+		else
+		{	String sf;
+			try
+			{	sf=String.format(format, v);
+			} catch (Exception e)
+			{	sf=v.toString();
+			}
+			sb.append(sf);
+		}
+		
+		if (needsQuotes) sb.append("'");
+	}
 	
 }

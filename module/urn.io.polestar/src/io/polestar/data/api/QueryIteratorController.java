@@ -1,12 +1,15 @@
 package io.polestar.data.api;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.polestar.api.IPolestarMatcher;
+import io.polestar.api.IPolestarQueryResultSet;
 
-class QueryIteratorController
+public class QueryIteratorController
 {
-	interface IQueryIteratorController
+	public abstract static class IQueryIteratorController
 	{
 		/** Accept next value of sensor
 		 * @return true when iteration should continue, false to break
@@ -15,23 +18,72 @@ class QueryIteratorController
 		 * @param aIndex index of value from beginning
 		 * @param aDuration duration of reading since previous or since start/end boundary
 		 */
-		boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex);
+		abstract boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex);
 		
-		/** Return the result after iteration completes */
-		Object getResult();
+		/** Return the result after iteration completes and clear ready for reuse */
+		abstract Object getResult();
+		
+		/** full reset between query periods*/
+		void reset()
+		{
+		}
 	}
 
+	
+	public static IQueryIteratorController getDiscreteMostInstance()
+	{
+		return new IQueryIteratorController()
+		{	private Map<Object,Long> mDurations=new HashMap<>();
+		
+			public Object getResult()
+			{
+				Object chosen=null;
+				long longestDuration=-1;
+				for (Map.Entry<Object, Long> e : mDurations.entrySet())
+				{
+					if (e.getValue()>longestDuration)
+					{	chosen=e.getKey();
+					}
+				}
+				mDurations.clear();
+				return chosen;
+			}
+			
+			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
+			{	if (aValue!=null)
+				{	Long existing=mDurations.get(aValue);
+					if (existing==null)
+					{	existing=aDuration;
+					}
+					else
+					{	existing=existing+aDuration;
+					}
+					mDurations.put(aValue, existing);
+				}
+				return true;
+			}
+		};
+		
+	}
+	
 	
 	public static IQueryIteratorController getFirstValueInstance()
 	{	return new IQueryIteratorController()
 		{	private Object mValue;
 		
 			public Object getResult()
-			{	return mValue;
+			{	Object value=mValue;
+				mValue=null;
+				//System.out.println("FV= "+value);
+				return value;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
-			{	mValue=aValue;
+			{	
+				//System.out.println("FV: "+aValue+" "+aTimestamp+">"+(aTimestamp+aDuration)+" "+aIndex);
+				if (mValue==null && aDuration>0)
+				{	mValue=aValue;
+				}
 				return false;
 			}
 		};
@@ -42,7 +94,9 @@ class QueryIteratorController
 		{	private Object mValue;
 		
 			public Object getResult()
-			{	return mValue;
+			{	Object value=mValue;
+				mValue=null;
+				return value;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
@@ -55,17 +109,19 @@ class QueryIteratorController
 		};
 	}
 	
-	public static IQueryIteratorController getFirstMatchTimeInstance(final IPolestarMatcher matcher)
+	public static IQueryIteratorController getFirstMatchTimeInstance(final IPolestarMatcher matcher, final boolean aStartOrEnd)
 	{	return new IQueryIteratorController()
 		{	private Object mValue;
 		
 			public Object getResult()
-			{	return mValue;
+			{	Object value=mValue;
+				mValue=null;
+				return value;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
 			{	if (matcher.matches(aValue, aTimestamp))
-				{	mValue=aTimestamp;
+				{	mValue=aStartOrEnd?aTimestamp:aTimestamp+aDuration-1;
 					return false;
 				}
 				return true;
@@ -78,7 +134,9 @@ class QueryIteratorController
 		{	private long mDuration;
 		
 			public Object getResult()
-			{	return mDuration;
+			{	long duration=mDuration;
+				mDuration=0;
+				return duration;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
@@ -95,7 +153,9 @@ class QueryIteratorController
 		{	private long mTime;
 		
 			public Object getResult()
-			{	return mTime;
+			{	long time=mTime;
+				mTime=0;
+				return time;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
@@ -111,16 +171,19 @@ class QueryIteratorController
 	public static IQueryIteratorController getAverageInstance()
 	{	return new IQueryIteratorController()
 		{	private double mTotal;
-			private int mCount;
+			private long mDuration;
 		
 			public Object getResult()
-			{	return mCount>0?(mTotal/(double)mCount):null;
+			{	Object result= mDuration>0?(mTotal/(double)mDuration):null;
+				mTotal=0;
+				mDuration=0;
+				return result;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
 			{	if (aValue instanceof Number)
-				{	mTotal+=((Number)aValue).doubleValue();
-					mCount++;
+				{	mTotal+=((Number)aValue).doubleValue()*aDuration;
+					mDuration+=aDuration;
 				}
 				return true;
 			}
@@ -129,14 +192,17 @@ class QueryIteratorController
 	
 	public static IQueryIteratorController getMaxInstance()
 	{	return new IQueryIteratorController()
-		{	private double mMax=Double.MIN_VALUE;
+		{	private double mMax=Double.NEGATIVE_INFINITY;
 		
 			public Object getResult()
-			{	return mMax!=Double.MIN_VALUE?mMax:null;
+			{	Object result= mMax!=Double.NEGATIVE_INFINITY?mMax:null;
+				mMax=Double.NEGATIVE_INFINITY;
+				return result;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
-			{	if (aValue instanceof Number)
+			{	
+				if (aValue instanceof Number)
 				{	double v=((Number)aValue).doubleValue();
 					if (v>mMax) mMax=v;
 				}
@@ -150,7 +216,9 @@ class QueryIteratorController
 		{	private double mMin=Double.MAX_VALUE;
 		
 			public Object getResult()
-			{	return mMin!=Double.MIN_VALUE?mMin:null;
+			{	Object result= mMin!=Double.MIN_VALUE?mMin:null;
+				mMin=Double.MAX_VALUE;
+				return result;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
@@ -162,17 +230,86 @@ class QueryIteratorController
 			}
 		};
 	}
+	
+	public static IQueryIteratorController getDiffInstance()
+	{	return new IQueryIteratorController()
+		{	private Double mLast=null;
+			private double mValue=0;
+		
+			public Object getResult()
+			{	Object result= (mLast!=null)?mValue-mLast:0.0;
+				mLast=mValue;
+				return result;
+			}
+			
+			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
+			{	if (aValue instanceof Number)
+				{	double v=((Number)aValue).doubleValue();
+					if (mLast==null)
+					{	mLast=v;
+					}
+					mValue=v;
+				}
+				return true;
+			}
+		};
+	}
+	
+	public static IQueryIteratorController getSumInstance()
+	{	return new IQueryIteratorController()
+		{	private double mTotal=0;
+		
+			public Object getResult()
+			{	Object result=mTotal;
+				mTotal=0;
+				return result;
+			}
+			
+			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
+			{	if (aIndex>0 && aValue instanceof Number)
+				{	double v=((Number)aValue).doubleValue();
+					mTotal+=v;
+				}
+				return true;
+			}
+		};
+	}
+	
+	public static IQueryIteratorController getRunningTotalInstance()
+	{	return new IQueryIteratorController()
+		{	private double mTotal=0;
+		
+			public Object getResult()
+			{	return mTotal;
+			}
+			
+			public void reset()
+			{	mTotal=0;
+			}
+			
+			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
+			{	if (aIndex>0 && aValue instanceof Number)
+				{	double v=((Number)aValue).doubleValue();
+					mTotal+=v;
+				}
+				return true;
+			}
+		};
+	}
 		
 	public static IQueryIteratorController getCountInstance()
 	{	return new IQueryIteratorController()
 		{	private int mCount;
 		
 			public Object getResult()
-			{	return mCount;
+			{	Object result=mCount;
+				mCount=0;
+				return result;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
-			{	mCount++;
+			{	if (aIndex>0) mCount++;
+				//System.out.println("COUNT: "+aValue+" "+aTimestamp+">"+(aTimestamp+aDuration)+" "+aIndex);
 				return true;
 			}
 		};
@@ -185,7 +322,11 @@ class QueryIteratorController
 			private double m2;
 		
 			public Object getResult()
-			{	return Math.sqrt(m2/(mCount-1));
+			{	Object result=Math.sqrt(m2/(mCount-1));
+				mCount=0;
+				mMean=0;
+				m2=0;
+				return result;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
@@ -203,15 +344,19 @@ class QueryIteratorController
 		};
 	}
 	
-	public static IQueryIteratorController getPercentileInstance(float aPercentile, long aSamplePeriod)
+	public static IQueryIteratorController getPercentileInstance(float aPercentile, IPolestarQueryResultSet aSamplePeriods)
 	{	return new IQueryIteratorController()
 		{	
+			int mSamplePeriodIndex=0;
+			Float mSamplePeriod;
+		
 			//private List<float> mValues=new ArrayList
 			float[] mArray = new float[256];
 			int mIndex=0;
 		
 			public Object getResult()
-			{	if (mIndex>0)
+			{	Object result=null;
+				if (mIndex>0)
 				{	float[] a=new float[mIndex];
 					System.arraycopy(mArray, 0, a, 0, mIndex);
 					Arrays.sort(a);
@@ -224,20 +369,30 @@ class QueryIteratorController
 					float ratio=desiredIndex-(float)(int)desiredIndex;
 					float v1=a[di1];
 					float v2=a[di2];
-					return (v1*(1-ratio)+v2*ratio);
+					result= (v1*(1-ratio)+v2*ratio);
 				}
-				else
-				{	return null;
-				}
+				mIndex=0;
+				mArray = new float[256];
+				mSamplePeriodIndex++;
+				mSamplePeriod=null;
+				return result;
+
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
 			{	
+				if (mSamplePeriod==null)
+				{
+					Long samplePeriod=(Long)aSamplePeriods.getValue(mSamplePeriodIndex);
+					mSamplePeriod=samplePeriod.floatValue();
+				}
+				
 				if (aValue instanceof Number)
 				{	float newValue=((Number)aValue).floatValue();
 					
-					int c=(int)Math.round((float)aDuration/(float)aSamplePeriod);
-					//System.out.println(aDuration+" "+c);
+					int c=(int)Math.round((float)aDuration/mSamplePeriod);
+					if (c>255) c=255;
+					System.out.println(aDuration+" "+c);
 					for (int i=0; i<c; i++)
 					{
 						if (mIndex<mArray.length)
@@ -256,28 +411,31 @@ class QueryIteratorController
 		};
 	}
 	
+	/*used by percentile to get median sample period. This is need as input to calculation */
 	public static IQueryIteratorController getMedianDurationInstance()
 	{	return new IQueryIteratorController()
 		{	long[] mArray = new long[256];
 			int mIndex=0;
 			
 			public Object getResult()
-			{	
+			{	Object result=null;
 				if (mIndex>0)
 				{	long[] a=new long[mIndex];
 					System.arraycopy(mArray, 0, a, 0, mIndex);
 					Arrays.sort(a);
 					float desiredIndex=mIndex/4;
 					long v1=a[(int)desiredIndex];
-					return v1;
+					result=v1;
 				}
-				else
-				{	return null;
-				}
+				mIndex=0;
+				mArray = new long[256];
+				//System.out.println("MedianDuration="+result);
+				return result;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
-			{	if (mIndex<mArray.length)
+			{	
+				if (mIndex<mArray.length)
 				{	mArray[mIndex++]=aDuration;
 				}
 				else
@@ -285,6 +443,158 @@ class QueryIteratorController
 					System.arraycopy(mArray, 0, a, 0, mArray.length);
 					mArray=a;
 					mArray[mIndex++]=aDuration;
+				}
+				return true;
+			}
+		};
+	}
+	
+	public static IQueryIteratorController getPositiveDiffInstance()
+	{
+		return new IQueryIteratorController()
+		{
+			Double first=null;
+			Double last=null;
+			
+			public Object getResult()
+			{	if (first!=null)
+				{	Double value=last-first;
+					first=last;
+					if (value>0)
+					{	return value;
+					}
+				}
+				return 0;
+			}
+			
+			public void reset()
+			{	first=last=null;
+			}
+			
+			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
+			{	if (aValue instanceof Number)
+				{	double v=((Number)aValue).doubleValue();
+					if (first==null)
+					{	first=last=v;
+					}
+					else
+					{	last=v;
+					}
+				}
+				return true;
+			}
+		};
+	}
+		
+	public static IQueryIteratorController getBooleanEdgeCountInstance(final boolean aRising)
+	{
+		return new IQueryIteratorController()
+		{
+			int mCount;
+			Boolean mLast;
+			
+			public Object getResult()
+			{	int result=mCount;
+				mCount=0;
+				return result;
+			}
+			
+			public void reset()
+			{	mLast=null;
+			}
+			
+			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
+			{	
+				if (aValue!=null && aValue instanceof Boolean)
+				{	Boolean b=(Boolean)aValue;
+					if (aRising==b && (mLast==null || aRising!=mLast))
+					{	mCount++;
+					}
+					mLast=b;
+				}
+				return true;
+			}
+		};
+	}
+	
+	public static IQueryIteratorController getBooleanChangeInstance()
+	{
+		return new IQueryIteratorController()
+		{
+			private boolean mHadFalse;
+			private boolean mHadTrue;
+			private boolean mLast;
+			private boolean mLastReal;
+			
+			public Object getResult()
+			{	
+				boolean result;
+				if (mHadFalse && !mHadTrue)
+				{	result=false;
+				}
+				else if (mHadTrue && !mHadFalse)
+				{	result=true;
+				}
+				else if (mHadTrue && mHadFalse)
+				{	result=!mLast;
+				}
+				else
+				{	result=mLastReal;
+				}
+				mLast=result;
+				mHadFalse=false;
+				mHadTrue=false;
+				return result;
+			}
+			
+			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
+			{	if (aValue!=null && aValue instanceof Boolean)
+				{	boolean v=(Boolean)aValue;
+					if (v)
+					{	mHadTrue=true;
+					}
+					else
+					{	mHadFalse=true;
+					}
+					mLastReal=v;
+				}
+				return true;
+			}
+		};
+	}
+	
+	public static IQueryIteratorController getRotation360Instance()
+	{
+		return new IQueryIteratorController()
+		{
+			private double mValue=-1; 
+			
+			public Object getResult()
+			{	return mValue;
+			}
+			
+			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
+			{	
+				if (aValue!=null && aValue instanceof Number)
+				{	double v=((Number)aValue).doubleValue();
+				
+					if  (mValue==-1)
+					{	mValue=v;
+					}
+					else
+					{	double diff=v-mValue;
+						double nv;
+						if (diff>180)
+						{	nv=v-360;
+						}
+						else if (diff<-180)
+						{	nv=v+360;
+						}
+						else
+						{	nv=v;
+						}
+						mValue=mValue*0.75+nv*0.25;
+					}
 				}
 				return true;
 			}

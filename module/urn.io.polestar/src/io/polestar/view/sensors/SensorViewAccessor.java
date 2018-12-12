@@ -93,12 +93,14 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		IPolestarContext context=PolestarContext.createContext(aContext,null);
 		
 		int width=640;
+		final long DAY=1000L*60*60*24;
 		long period=1000L*60*60*24;
 		long samplePeriod=1000L*60*60;
 		String timeFormat="kk:mm";
 		long xAxisTicks=samplePeriod;
 		int offset=0;
 		String endSnap=null;
+		Long endTime=null;
 		try
 		{
 			IHDSNode params=aContext.source("httpRequest:/params",IHDSNode.class);
@@ -138,6 +140,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 				xAxisTicks=samplePeriod*3;
 				timeFormat="d MMM";
 				endSnap="day";
+				endTime=-DAY;
 			}
 			if (periodString.equals("year"))
 			{	period=31104000000L;
@@ -145,6 +148,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 				xAxisTicks=period/12;
 				timeFormat="d MMM";
 				endSnap="day";
+				endTime=-DAY;
 			}
 
 		} catch (Exception e)
@@ -159,7 +163,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		//IHDSReader stateNode=state.getFirstNodeOrNull("key('byId','"+aId+"')");
 		//Object value=stateNode.getFirstValueOrNull("value");
 		//IPolestarContext pctx=PolestarContext.createContext(aContext);
-		Object value=context.createQuery(aId, QueryType.LAST_VALUE).setStart(-1000L*60*60*24*365).execute();
+		
 		
 		String format=(String)configNode.getFirstValueOrNull("format");
 		String chartType=(String)configNode.getFirstValueOrNull("chart-type");
@@ -169,18 +173,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		int detail=128;
 		//samplePeriod=period/detail;
 		
-		boolean isNumeric=false;
-		boolean isBoolean=false;
-		boolean isMap=false;
-		if (value instanceof Number)
-		{	isNumeric=true;
-		}
-		else if (value instanceof Boolean)
-		{	isBoolean=true;
-		}
-		else if (value instanceof Map)
-		{	isMap=true;
-		}
+		
 		
 		IHDSMutator m=HDSFactory.newDocument();
 		m.pushNode("chart")
@@ -193,7 +186,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		.addNode("height", Integer.toString(height))
 		.addNode("xAxisTicks", Long.toString(xAxisTicks));
 		if (endSnap!=null) m.addNode("endSnap", endSnap);
-	
+		if (endTime!=null) m.addNode("endTime", Long.toString(endTime));
 		if (aError)
 		{	m.addNode("yAxisTicks", "1");
 		}
@@ -215,6 +208,19 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		}
 		else
 		{
+			Object value=context.createQuery(aId, QueryType.LAST_VALUE).setStart(-1000L*60*60*24*365).execute();
+			boolean isNumeric=false;
+			boolean isBoolean=false;
+			boolean isMap=false;
+			if (value instanceof Number)
+			{	isNumeric=true;
+			}
+			else if (value instanceof Boolean)
+			{	isBoolean=true;
+			}
+			else if (value instanceof Map)
+			{	isMap=true;
+			}
 		
 			if (isNumeric || isBoolean)
 			{

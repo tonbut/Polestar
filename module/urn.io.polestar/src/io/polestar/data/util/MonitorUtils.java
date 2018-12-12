@@ -66,65 +66,6 @@ public class MonitorUtils
 		}
 	}
 	
-	public static String queryHDStoJSON(IHDSDocument aData)
-	{
-		
-		//long now=System.currentTimeMillis();
-		StringBuilder sb=new StringBuilder(4096);
-		sb.append("[ ");
-		
-		for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
-		{
-			sb.append("[ ");
-			Long time=(Long)row.getFirstValue("time");
-			sb.append(Long.toString(time));
-			sb.append(",'");
-			String timeString=(String)row.getFirstValue("timeString");
-			sb.append(timeString);
-			sb.append("'");
-			//if (time<=now)
-			//{
-				int i=0;
-				for (IHDSReader valueNode : row.getNodes("*"))
-				{
-					if (i>=2)
-					{
-						sb.append(",");
-						Object v=valueNode.getFirstValue(".");
-						outputJSONValue(sb,v,"%.3f");
-					}
-					i++;
-				}
-			//}
-			sb.append("],\n");
-		}
-		
-		sb.append("]");
-		return sb.toString();	
-	}
-	
-	private static void outputJSONValue(StringBuilder sb, Object v, String format)
-	{
-		boolean needsQuotes=(v instanceof String);
-		if (needsQuotes) sb.append("'");
-		if (format==null)
-		{	sb.append(v);
-		}
-		else if (v==null)
-		{	sb.append("null");
-		}
-		else
-		{	String sf;
-			try
-			{	sf=String.format(format, v);
-			} catch (Exception e)
-			{	sf=v.toString();
-			}
-			sb.append(sf);
-		}
-		
-		if (needsQuotes) sb.append("'");
-	}
 	
 	
 	

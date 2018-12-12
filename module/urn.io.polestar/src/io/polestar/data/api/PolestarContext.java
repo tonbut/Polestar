@@ -283,12 +283,32 @@ public class PolestarContext implements InvocationHandler, IPolestarAPI
 	}
 
 	@Override
-	public IPolestarQuery createQuery(String aSensorId, QueryType aType) throws NKFException
+	public IPolestarQuery createQuery(String aSensor, QueryType aType) throws NKFException
 	{	
-		getSensorState(aSensorId);
-		return new PolestarQuery(aSensorId, aType, mContext, this);
+		String fragment;
+		String sensorId;
+		int i=aSensor.indexOf('#');
+		if (i>=0)
+		{	fragment=aSensor.substring(i+1);
+			sensorId=aSensor.substring(0, i);
+		}
+		else
+		{	sensorId=aSensor;
+			fragment=null;
+		}
+		
+		getSensorState(sensorId);
+		return new PolestarQuery2(sensorId, fragment, aType, mContext, this);
+	}
+	
+	@Override
+	public IPolestarQuery createQuery2(ICollectionIterator aIterator, QueryType aType) throws NKFException
+	{	
+		return new PolestarQuery2(aIterator, aType, mContext, this);
 	}
 
+	
+	
 	@Override
 	public boolean[] analogueChangeDetect(double value, double falseThreshold, double trueThreshold, String aStatePath)
 			throws NKFException

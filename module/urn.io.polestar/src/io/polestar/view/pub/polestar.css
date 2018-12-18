@@ -29,6 +29,9 @@ body { padding-top: 64px; font-size: 14px; font-family: 'Helvetica Neue', sans-s
 .sensor-id { font-style: normal; }
 
 .alpaca-form-buttons-container { text-align: left !important; }
+.alpaca-container-item:not(:first-child) {  margin-top: 4px !important; }
+#alpaca2 .form-group { margin-bottom: 4px !important; }
+
 .polestarSensor .alpaca-container-item { background: #F0F0F0; }
 .sensorDetail { padding-top: 1em; }
 .sensorDetail label { text-align: right; font-weight: 700; }

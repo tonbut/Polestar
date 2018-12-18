@@ -148,19 +148,24 @@ public class QueryIteratorController
 		};
 	}
 	
-	public static IQueryIteratorController getTimeAtIndexInstance(final int index)
+	public static IQueryIteratorController getTimeAtIndexInstance(final int index, final boolean start)
 	{	return new IQueryIteratorController()
-		{	private long mTime;
+		{	private Long mTime;
 		
 			public Object getResult()
-			{	long time=mTime;
-				mTime=0;
+			{	Long time=mTime;
+				mTime=null;
 				return time;
 			}
 			
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
 			{	if (index==aIndex)
-				{	mTime=aTimestamp;
+				{	if (start)
+					{	mTime=aTimestamp;
+					}
+					else
+					{	mTime=aTimestamp+aDuration;
+					}
 					return false;
 				}
 				return true;
@@ -254,6 +259,44 @@ public class QueryIteratorController
 			}
 		};
 	}
+	
+	/** might only work with forward iterator! */
+	public static IQueryIteratorController getRateOfChangeInstance()
+	{	return new IQueryIteratorController()
+		{	private Double mLast=null;
+			private double mValue=0;
+			private long mStartTime;
+			private long mEndTime;
+		
+			public Object getResult()
+			{	Object result;
+				if (mLast!=null)
+				{	double diff=mValue-mLast;
+					double duration=(double)(mEndTime-mStartTime);
+					result=(diff*60000)/duration;
+				}
+				else
+				{	result=null;
+				}
+				mLast=null;
+				return result;
+			}
+			
+			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
+			{	if (aValue instanceof Number)
+				{	double v=((Number)aValue).doubleValue();
+					if (mLast==null)
+					{	mLast=v;
+						mStartTime=aTimestamp;
+					}
+					mValue=v;
+					mEndTime=aTimestamp+aDuration;
+				}
+				return true;
+			}
+		};
+	}
+	
 	
 	public static IQueryIteratorController getSumInstance()
 	{	return new IQueryIteratorController()
@@ -392,7 +435,7 @@ public class QueryIteratorController
 					
 					int c=(int)Math.round((float)aDuration/mSamplePeriod);
 					if (c>255) c=255;
-					System.out.println(aDuration+" "+c);
+					//System.out.println(aDuration+" "+c);
 					for (int i=0; i<c; i++)
 					{
 						if (mIndex<mArray.length)

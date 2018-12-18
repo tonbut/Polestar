@@ -51,7 +51,7 @@
 							"sort":false,
 							"hideNone":true
 						},
-						"mergeType": {
+						"mergeAction": {
 							"hideNone":true
 						},
 						"type": {
@@ -75,6 +75,11 @@
 	            			"sort":false,
 							"hideNone":true
 	            		},
+	            		"stroke": {
+	            			"dependencies": {
+	            				"type": ["bar","area","boolean"]
+	            			}
+	            		},
 	            		
 	            		"lineWidth": {
 	            			"dependencies": {
@@ -93,6 +98,18 @@
 	            			"dependencies": {
 	            				"type": ["line","area"]
 	            			}
+	            		},
+	            		"periodCount": {
+	            			"dependencies": {
+	            				"periodMerge": [true]
+	            			}
+	            		},
+	            		"mergeOp": {
+	            			"dependencies": {
+	            				"periodMerge": [true]
+	            			},
+	            			"sort":false,
+						"hideNone":true
 	            		}
 	            	}
 	            }

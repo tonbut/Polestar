@@ -87,12 +87,12 @@
         	"type": "array",
         	"items": {
         		"type": "object",
-        		"title": "Sensor",
         		"properties": {
         			"id": {
         				"type": "string",
         				"title":"Sensor",
-        				"enum": [ %SENSORS% ]
+        				"enum": [ %SENSORS% ],
+        				"default": "%FIRST_SENSOR%"
         			},
         			"dname": {
         				"type": "string",
@@ -101,13 +101,8 @@
         			"mergeAction": {
         				"type": "string",
         				"title": "Processing",
-        				"enum": [ "sample","average", "max", "min", "diff", "positive_diff", "sum", "running_total", "rotation_360_average", "boolean_change","count", "boolean_rising_edge_count", "boolean_falling_edge_count" ],
+        				"enum": [ "sample","average", "max", "min", "diff", "positive_diff", "sum", "rate_of_change", "running_total", "rotation_360_average", "boolean_change","count", "boolean_rising_edge_count", "boolean_falling_edge_count", "first_modified_relative", "last_modified_relative" ],
         				"default": "sample"
-        			},
-        			"baseline": {
-        				"type": "number",
-        				"title":"Baseline",
-        				"default":0
         			},
         			"valueOffset": {
         				"type": "number",
@@ -119,11 +114,21 @@
         				"title":"Value Multiplier",
         				"default":1
         			},
+        			"chartOffset": {
+        				"type": "number",
+        				"title":"Chart Offset",
+        				"default":0
+        			},
         			"type": {
         				"type": "string",
         				"title":"Chart Element",
         				"enum": [ "bar","area", "line", "boolean" ],
         				"default": "line"
+        			},
+        			"baseline": {
+        				"type": "number",
+        				"title":"Baseline",
+        				"default":0
         			},
         			"stacked": {
         				"type": "boolean",
@@ -162,7 +167,25 @@
         				"title":"Show Data Points",
         				"enum": [ "square","circle","triangle","diamond","cross"],
         				"default": ""
+        			},
+        			"periodMerge": {
+        				"type": "boolean",
+        				"title":"Merge Periods",
+        				"default": false
+        			},
+        			"periodCount": {
+        				"type": "integer",
+        				"title":"Period Count",
+        				"minimum": 2,
+        				"default":4
+        			},
+        			"mergeOp": {
+        				"type": "select",
+        				"title":"Merge Op",
+        				"enum": [ "average","max","min","median","10th centile","90th centile" ],
+        				"default": "average"
         			}
+        			
         		},
         		"dependencies": {
         			"baseline": ["type"],
@@ -170,7 +193,10 @@
         			"lineWidth": ["type"],
         			"strokeDasharray": ["type"],
         			"shape": ["type"],
-        			"stacked": ["type"]
+        			"stacked": ["type"],
+        			"stroke": ["type"],
+        			"periodCount": ["periodMerge"],
+        			"mergeOp": ["periodMerge"]
         		}
         	}
         }

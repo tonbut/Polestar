@@ -33,18 +33,19 @@ public class ChartSensorData
 		public String format;
 		private double mScale;
 		private double mOffset;
+		private double mChartOffset;
 		
-		public SensorConfig(String aFormat, double aScale, double aOffset)
+		public SensorConfig(String aFormat, double aScale, double aOffset, double aChartOffset)
 		{	format=aFormat;
 			mScale=aScale;
 			mOffset=aOffset;
+			mChartOffset=aChartOffset;
 		}
 		
 		public double numericTransform(double v)
-		{	return (v+mOffset)*mScale;
+		{	return mChartOffset+(v+mOffset)*mScale;
 		}
-		
-		
+
 	}
 	
 	
@@ -78,12 +79,26 @@ public class ChartSensorData
 				{	sensorId=sensorIdRaw;
 				}
 				String mergeAction=(String)sensorNode.getFirstValue("mergeAction");
-				//System.out.println(sensorId+" "+mergeAction);
+
 				QueryType qt=QueryType.valueOf(mergeAction.toUpperCase());
 				IPolestarQuery q=ctx.createQuery(sensorId, qt);
 				q.setEnd(aEnd);
 				q.setStart(aEnd-aPeriod);
 				q.setResultSetPeriod(aSamplePeriod);
+				
+				String periodMerge=(String)sensorNode.getFirstValueOrNull("periodMerge");
+				
+				if (periodMerge!=null && Boolean.parseBoolean(periodMerge))
+				{
+					Integer periodCount=Integer.parseInt((String)sensorNode.getFirstValue("periodCount"));
+					String mergeOpString=(String)sensorNode.getFirstValue("mergeOp");
+					System.out.println(sensorId+" "+periodMerge+" "+periodCount+" "+mergeOpString);
+					QueryType mergeOp=QueryType.valueOf(mergeOpString.toUpperCase());
+					q.setTimeMerge(periodCount);
+					q.setTimeMergeOp(mergeOp);
+				}
+				
+				
 				IPolestarQueryResultSet rs=(IPolestarQueryResultSet)q.execute();
 				resultSets.add(rs);
 				
@@ -94,13 +109,15 @@ public class ChartSensorData
 									
 					String valueMultiplyString=(String)sensorNode.getFirstValueOrNull("valueMultiply");
 					String valueOffsetString=(String)sensorNode.getFirstValueOrNull("valueOffset");
+					String chartOffsetString=(String)sensorNode.getFirstValueOrNull("chartOffset");
 					double scale=valueMultiplyString==null?1.0:Double.parseDouble(valueMultiplyString);
-					double offset=valueOffsetString==null?0.0:Double.parseDouble(valueOffsetString);
+					double dataOffset=valueOffsetString==null?0.0:Double.parseDouble(valueOffsetString);
+					double chartOffset=chartOffsetString==null?0.0:Double.parseDouble(chartOffsetString);
 					
-					configs.add(new SensorConfig(format,scale,offset));
+					configs.add(new SensorConfig(format,scale,dataOffset,chartOffset));
 				}
 				else
-				{	configs.add(new SensorConfig(null,1,0));
+				{	configs.add(new SensorConfig(null,1,0,0));
 				}
 				
 			}

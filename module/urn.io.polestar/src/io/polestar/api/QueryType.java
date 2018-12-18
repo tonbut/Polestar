@@ -34,6 +34,8 @@ public enum QueryType {
     ROTATION_360_AVERAGE,
     /** First value */
     SAMPLE,
+    /** rate of change over sample period -diff/time **/
+    RATE_OF_CHANGE,
     
     /** Time last modified */
     LAST_MODIFIED, LAST_MODIFIED_RELATIVE,

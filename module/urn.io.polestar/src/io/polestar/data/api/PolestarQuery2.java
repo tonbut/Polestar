@@ -1,6 +1,7 @@
 package io.polestar.data.api;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,7 @@ public class PolestarQuery2 implements IPolestarQuery
 	private int mPeriodMergeCount;
 	private QueryType mPeriodMergeOp=QueryType.AVERAGE;
 	private long mTimeMergePeriod;
+	private Object mPeriodMergeParameter;
 	
 	public PolestarQuery2(String aSensor, String aFragment, QueryType aType, INKFRequestContext aContext, PolestarContext aPolestarContext)
 	{	
@@ -158,6 +160,12 @@ public class PolestarQuery2 implements IPolestarQuery
 	@Override
 	public IPolestarQuery setTimeMergeOp(QueryType aOp) throws NKFException
 	{	mPeriodMergeOp=aOp;
+		return this;
+	}
+	
+	@Override
+	public IPolestarQuery setTimeMergeParameter(Object aParameter) throws NKFException
+	{	mPeriodMergeParameter=aParameter;
 		return this;
 	}
 	
@@ -595,25 +603,61 @@ public class PolestarQuery2 implements IPolestarQuery
 		List<Long> times=new ArrayList<Long>(rsSize);
 		List<Object> values=new ArrayList<Object>(rsSize);
 		
+		IQueryIteratorController qic;
+		switch (mPeriodMergeOp)
+		{
+			case AVERAGE:
+				qic=QueryIteratorController.getAverageInstance();
+				break;
+			case MAX:
+				qic=QueryIteratorController.getMaxInstance();
+				break;
+			case MIN:
+				qic=QueryIteratorController.getMinInstance();
+				break;
+			case SUM:
+				qic=QueryIteratorController.getSumInstance();
+				break;
+			case STDDEV:
+				qic=QueryIteratorController.getStandardDeviationInstance();
+				break;
+			case PERCENTILE:
+				List<Long> mt=new ArrayList<Long>(rsSize);
+				List<Object> mv=new ArrayList<Object>(rsSize);
+				for (int i=0; i<rsSize; i++)
+				{	mt.add(0L);
+					mv.add(1L);
+				}
+				IPolestarQueryResultSet sp=new PolestarQueryResultSet(mt,mv);
+				if (mPeriodMergeParameter!=null && mPeriodMergeParameter instanceof Number)
+				{
+					float percentile=((Number)mPeriodMergeParameter).floatValue();
+					qic=QueryIteratorController.getPercentileInstance(percentile, sp);
+				}
+				else
+				{	throw new NKFException("Percentile Merge Operation requires numeric parameter");
+				}
+				break;
+			default:
+				throw new NKFException("Unsupported Time Merge Operation",mPeriodMergeOp.name());
+		}
+		
+		
+		
 		for (int rsIndex=0; rsIndex<rsSize; rsIndex++)
 		{
-			times.add(rs0.getTimestamp(rsIndex));
 			
-			double total=0;
-			int count=0;
 			for (int periodIndex=0; periodIndex<periods; periodIndex++)
 			{
 				Object value=aPeriodResults.get(periodIndex).getValue(rsIndex);
-				System.out.println(rsIndex+" "+periodIndex+" "+value);
+				//System.out.println(rsIndex+" "+periodIndex+" "+value);
 				
-				if (value instanceof Number)
-				{
-					double v=((Number)value).doubleValue();
-					total+=v;
-					count++;
-				}
+				qic.accept(value, periodIndex, 1, periodIndex);
+				
 			}
-			values.add((total/count));
+			Object result=qic.getResult();
+			values.add(result);
+			times.add(rs0.getTimestamp(rsIndex));
 			
 		}
 		return new PolestarQueryResultSet(times, values);
@@ -662,7 +706,8 @@ public class PolestarQuery2 implements IPolestarQuery
 			return onGeneric(QueryIteratorController.getCountInstance(),true);
 		case STDDEV:
 			return onGeneric(QueryIteratorController.getStandardDeviationInstance(),true);
-		
+		case RATE_OF_CHANGE:
+			return onGeneric(QueryIteratorController.getRateOfChangeInstance(),true);
 		case PERCENTILE:
 			return onPercentile();
 		case SAMPLE:
@@ -703,10 +748,10 @@ public class PolestarQuery2 implements IPolestarQuery
 			
 		case LAST_MODIFIED:
 		case LAST_MODIFIED_RELATIVE:
-			return onGeneric(QueryIteratorController.getTimeAtIndexInstance(0),false,isRelative());
+			return onGeneric(QueryIteratorController.getTimeAtIndexInstance(1,false),false,isRelative());
 		case FIRST_MODIFIED:
 		case FIRST_MODIFIED_RELATIVE:
-			return onGeneric(QueryIteratorController.getTimeAtIndexInstance(1),true,isRelative());
+			return onGeneric(QueryIteratorController.getTimeAtIndexInstance(1,true),true,isRelative());
 			
 		case DURATION_EQUALS:
 			return onGeneric(QueryIteratorController.getMatchDurationInstance(MatcherFactory.getEqualsInstance(getParameter())),true);

@@ -30,11 +30,17 @@
                 			"width": "1%"
 		            },
 		            { "data": "time", "orderable": false, "width": "19%" },
-		            { "data": "msg", "orderable": false, "width": "80%", "render": function ( data, type, row ) {
-		            	if (row.origin)
-		            	{	return '<div class="label label-default">'+row.origin+"</div> "+data;
+		            { "data": "origin", "orderable": false, "width": "10%", "render": function ( data, type, row ) {
+		            	if (row.origin) return '<div class="label label-default">'+row.origin+"</div>";
+		            	else return "";
 		            	}
-		            	else
+		            	
+		            },
+		            { "data": "msg", "orderable": false, "width": "70%", "render": function ( data, type, row ) {
+		            	//if (row.origin)
+		            	//{	return '<div class="label label-default">'+row.origin+"</div> "+data;
+		            	//}
+		            	//else
 		            	{	return data;
 		            	} }
 		            }
@@ -58,6 +64,7 @@
 	            <tr>
 	            		<th></th>
 	                <th>Time</th>
+	                <th>Origin</th>
 	                <th>Message</th>
 	            </tr>
 	        </thead>

@@ -104,7 +104,6 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		}
 		
 		long samplesPeriod=Long.parseLong((String)aOp.getFirstValue("samplePeriod"));
-		//long mergeCount=samplesPeriod/(1000L*60*5);
 		long elementCount=period/samplesPeriod;
 
 		String yAxisTop=(String)aOp.getFirstValueOrNull("yAxisTop");
@@ -115,45 +114,10 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		
 		String stackElements="";
 		
-		//****************************
-		//Request historical data
-		/*
-		IHDSMutator m=HDSFactory.newDocument();
-		m.pushNode("query");
-		m.addNode("start",endTime-period);
-		m.addNode("end",endTime);
-		m.addNode("samplePeriod",samplesPeriod);
-		if (timeFormat!=null) m.addNode("timeFormat",timeFormat);
-		m.pushNode("sensors");
-		
-		for (IHDSReader sensorNode : aOp.getNodes("sensors/sensor"))
-		{
-			String sensorId=(String)sensorNode.getFirstValue("id");
-			String dname=(String)sensorNode.getFirstValueOrNull("dname");
-			if (dname!=null && dname.indexOf('#')>=0)
-			{	String fragment=dname.substring(dname.indexOf('#')+1);
-				sensorId=sensorId+"#"+fragment;
-			}
-			String mergeAction=(String)sensorNode.getFirstValue("mergeAction");
-			m.pushNode("sensor").addNode("id",sensorId).addNode("mergeAction",mergeAction).popNode();
-		}
-		
-		INKFRequest req=aContext.createRequest("active:polestarSensorQuery");
-		req.addArgumentByValue("operator",m.toDocument(false));
-		req.setRepresentationClass(String.class);
-		req.setRepresentationClass(IHDSDocument.class);
-		IHDSDocument d=(IHDSDocument)aContext.issueRequest(req);
-		double[] minMax=getQueryHDSMaxMin(d,aOp);
-		String data=queryHDStoJSON(d);	
-		*/
-		//****************************
-		//END Request historical data
-		
 		ChartSensorData csd=new ChartSensorData(aContext, aOp, endTime, period, samplesPeriod, timeFormat);
 		String data=csd.getJSON();
 		double min=csd.getMin();
 		double max=csd.getMax();
-		
 		
 		//axis
 		if (yAxisTop==null) yAxisTop=Double.toString(max);
@@ -277,12 +241,13 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				}
 				
 				sb2.append(js);
-				n++;
+				
 			}
 			else
 			{	//stacked
 				hasStack=true;
 			}
+			n++;
 		}
 		String chartElements=sb2.toString();
 		
@@ -317,6 +282,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 			int n2=0;
 			int lx=5;
 			int row=1;
+			int rowHeight=16;
 			for (IHDSReader sensorNode : aOp.getNodes("sensors/sensor"))
 			{
 				String id=(String)sensorNode.getFirstValue("id");
@@ -351,13 +317,13 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				{	row++;
 					lx=5;
 				}
-				String js2="vis.add(pv.Dot).left("+lx+").bottom("+(-5+row*-20)+").shape(\""+shape+"\").fillStyle("+fill+").strokeStyle("+stroke+").anchor(\"right\").add(pv.Label).textStyle(\""+textColor+"\").text(\""+sensorName+"\")\n";
+				String js2="vis.add(pv.Dot).left("+lx+").bottom("+(-5+row*-rowHeight)+").shape(\""+shape+"\").fillStyle("+fill+").strokeStyle("+stroke+").anchor(\"right\").add(pv.Label).textStyle(\""+textColor+"\").text(\""+sensorName+"\")\n";
 				lx+=legendLength;
 				sb.append(js2);
 				n2++;
 			}
 			legend=sb.toString();
-			bottomMargin=Integer.toString(20*(1+row));
+			bottomMargin=Integer.toString(rowHeight*(1+row));
 		}
 		
 		
@@ -458,16 +424,6 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 				String stroke=(String)sensorNode.getFirstValueOrNull("stroke");
 				if (strokeData.length()>1) strokeData+=",";
 				strokeData+="\""+stroke+"\"";
-				
-				/*
-				String valueMultiplyString=(String)sensorNode.getFirstValueOrNull("valueMultiply");
-				if (valueMultiplyString==null) valueMultiplyString="1";
-				String valueOffsetString=(String)sensorNode.getFirstValueOrNull("valueOffset");
-				if (valueOffsetString==null) valueOffsetString="0";
-				String function="function(d) { return (d==null)?null:y((d+"+valueOffsetString+")*"+valueMultiplyString+");}";
-				if (functionData.length()>1) functionData+=",";
-				functionData+=function;
-				*/
 			
 				if (chartType==null)
 				{	
@@ -516,149 +472,6 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		
 		//System.out.println(sb.toString());
 		return sb.toString();
-	}
-	
-	
-	private double[] getQueryHDSMaxMin(IHDSDocument aData, IHDSReader aOp)
-	{
-		double max=Double.NEGATIVE_INFINITY;
-		double min=Double.POSITIVE_INFINITY;
-		
-		
-		
-		int j=2;
-		Set<Integer> stackedElements=new HashSet();
-		for (IHDSReader sensorNode : aOp.getNodes("sensors/sensor"))
-		{
-			String stackedString=(String)sensorNode.getFirstValueOrNull("stacked");
-			boolean stacked="true".equals(stackedString);
-			if (stacked)
-			{	stackedElements.add(j);
-			}
-			j++;
-		}
-		
-		//System.out.println(stackedElements);
-		
-		// non stacked elements
-		for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
-		{	int i=0;
-			for (IHDSReader valueNode : row.getNodes("*"))
-			{	if (i>=2 && !stackedElements.contains(i))
-				{	Object v=valueNode.getFirstValue(".");
-					if (v instanceof Number)
-					{	double d=((Number)v).doubleValue();
-						if (d>max) max=d;
-						if (d<min) min=d;
-					}
-				}
-				i++;
-			}
-		}
-		
-		//sum stacked elements
-		if (stackedElements.size()>0)
-		{
-			for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
-			{	int i=0;
-				double t=0; 
-				// TODO baseline for stack
-				for (IHDSReader valueNode : row.getNodes("*"))
-				{	if (stackedElements.contains(i))
-					{	Object v=valueNode.getFirstValue(".");
-						if (v instanceof Number)
-						{	double d=((Number)v).doubleValue();
-							t+=d;
-						}
-					}
-					i++;
-				}
-				if (t>max) max=t;
-				if (t<min) min=t;
-			}
-		
-			//need proper baseline
-			if (min>0.0) min=0.0;
-		}		
-		
-		if (max==Double.NEGATIVE_INFINITY && min==Double.POSITIVE_INFINITY)
-		{	max=1.0;
-			min=0.0;
-		}
-		else if (max==Double.NEGATIVE_INFINITY)
-		{	max=min+1.0;
-		}
-		else if (min==Double.POSITIVE_INFINITY)
-		{	min=max-1.0;
-		}
-		else if (min==max)
-		{	min-=0.5;
-			max+=0.5f;
-		}
-		
-		//System.out.println(min+" "+max);
-		
-		return new double[] {min,max};
-	}
-	
-	public static String queryHDStoJSON(IHDSDocument aData)
-	{
-		
-		//long now=System.currentTimeMillis();
-		StringBuilder sb=new StringBuilder(4096);
-		sb.append("[ ");
-		
-		for (IHDSReader row : aData.getReader().getNodes("/rows/row"))
-		{
-			sb.append("[ ");
-			Long time=(Long)row.getFirstValue("time");
-			sb.append(Long.toString(time));
-			sb.append(",'");
-			String timeString=(String)row.getFirstValue("timeString");
-			sb.append(timeString);
-			sb.append("'");
-			//if (time<=now)
-			//{
-				int i=0;
-				for (IHDSReader valueNode : row.getNodes("*"))
-				{
-					if (i>=2)
-					{
-						sb.append(",");
-						Object v=valueNode.getFirstValue(".");
-						outputJSONValue(sb,v,"%.3f");
-					}
-					i++;
-				}
-			//}
-			sb.append("],\n");
-		}
-		
-		sb.append("]");
-		return sb.toString();	
-	}
-	
-	private static void outputJSONValue(StringBuilder sb, Object v, String format)
-	{
-		boolean needsQuotes=(v instanceof String);
-		if (needsQuotes) sb.append("'");
-		if (format==null)
-		{	sb.append(v);
-		}
-		else if (v==null)
-		{	sb.append("null");
-		}
-		else
-		{	String sf;
-			try
-			{	sf=String.format(format, v);
-			} catch (Exception e)
-			{	sf=v.toString();
-			}
-			sb.append(sf);
-		}
-		
-		if (needsQuotes) sb.append("'");
 	}
 	
 }

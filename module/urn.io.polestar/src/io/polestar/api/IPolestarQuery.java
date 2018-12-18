@@ -46,6 +46,11 @@ public interface IPolestarQuery
 	 * Merge operation defaults to AVERAGE but can be specified with setTimeMergeOp()
 	 */
 	IPolestarQuery setTimeMergeOp(QueryType aOp) throws NKFException;
+	
+	/** Set a parameter for a specific query
+	 * @param aParameter value for specific query type.
+	 */
+	IPolestarQuery setTimeMergeParameter(Object aParameter) throws NKFException;
 
 	/** Set a period in milliseconds to separate merge periods. By default merge
 	 * periods are consecutive, so TimeMergePeriod is equal to (End-Start) 

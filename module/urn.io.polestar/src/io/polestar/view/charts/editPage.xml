@@ -189,6 +189,12 @@
     		preview();
 		});
 		
+		var sensorElement=control.childrenByPropertyId["sensors"];
+		sensorElement.on("add", function() { preview(); } );
+		sensorElement.on("remove", function() { preview(); } );
+		sensorElement.on("move", function() { preview(); } );
+		
+		
 	}
 	
     	});

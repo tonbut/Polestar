@@ -318,12 +318,14 @@ public class ChartViewAccessor extends StandardAccessorImpl
 		IHDSReader sensors=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
 		StringBuilder sb=new StringBuilder();
 		boolean first=true;
+		String firstSensor="";
 		for (IHDSReader sensor : sensors.getNodes("/sensors/sensor"))
 		{
 			String sid=(String)sensor.getFirstValue("id");
 			//String name=(String)sensor.getFirstValue("name");
 			if (first)
 			{	first=false;
+				firstSensor=sid;
 			}
 			else
 			{	sb.append(",");
@@ -331,6 +333,7 @@ public class ChartViewAccessor extends StandardAccessorImpl
 			sb.append("\""+sid+"\"");
 		}
 		schema=schema.replace("%SENSORS%", sb.toString());
+		schema=schema.replace("%FIRST_SENSOR%", firstSensor);
 		
 		INKFResponse respOut=aContext.createResponseFrom(schema);
 		respOut.setMimeType("application/json");

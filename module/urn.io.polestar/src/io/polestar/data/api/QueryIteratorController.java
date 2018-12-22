@@ -190,6 +190,10 @@ public class QueryIteratorController
 				{	mTotal+=((Number)aValue).doubleValue()*aDuration;
 					mDuration+=aDuration;
 				}
+				else if (aValue instanceof Boolean)
+				{	mTotal+=((Boolean)aValue)?aDuration:0;
+					mDuration+=aDuration;
+				}
 				return true;
 			}
 		};
@@ -211,6 +215,10 @@ public class QueryIteratorController
 				{	double v=((Number)aValue).doubleValue();
 					if (v>mMax) mMax=v;
 				}
+				else if (aValue instanceof Boolean)
+				{	double v=((Boolean)aValue)?1:0;
+					if (v>mMax) mMax=v;
+				}
 				return true;
 			}
 		};
@@ -229,6 +237,10 @@ public class QueryIteratorController
 			public boolean accept(Object aValue, long aTimestamp, long aDuration, int aIndex)
 			{	if (aValue instanceof Number)
 				{	double v=((Number)aValue).doubleValue();
+					if (v<mMin) mMin=v;
+				}
+				else if (aValue instanceof Boolean)
+				{	double v=((Boolean)aValue)?1:0;
 					if (v<mMin) mMin=v;
 				}
 				return true;

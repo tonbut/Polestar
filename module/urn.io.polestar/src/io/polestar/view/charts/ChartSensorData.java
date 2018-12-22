@@ -266,7 +266,7 @@ public class ChartSensorData
 			double d=((Number)v).doubleValue();
 			d=config.numericTransform(d);
 			
-			if (format==null) format="%.3f";
+			if (format==null || !format.contains("%")) format="%.3f";
 			sb.append(String.format(format, d));
 		}
 		else if (format==null || v==null)

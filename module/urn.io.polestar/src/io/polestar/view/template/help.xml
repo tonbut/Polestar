@@ -85,6 +85,7 @@ m=HDSFactory.newDocument()
 	.addNode("subtitle","deathstar automation!")
 	.addNode("icon","/polestar/pub/icon/deathstar.png")
 	.addNode("show-script-triggers",false)
+	.addNode("logRetentionPeriod",1000L*60*60*24*7)
 	.pushNode("sensor-ticker")
 	.addNode("period",1000L*60*60*24*1)
 	.addNode("samplePeriod",1000L*60*60);

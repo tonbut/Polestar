@@ -216,6 +216,13 @@
         
         <!-- log stuff -->
         <endpoint>
+			<id>polestar:data:logCleanup</id>
+            <grammar><active>
+            		<identifier>active:polestarLogCleanup</identifier>
+            	</active></grammar>
+            <class>io.polestar.data.log.LogCleanupAccessor</class>
+        </endpoint>
+        <endpoint>
 			<id>polestar:data:logQuery</id>
             <grammar><active>
             		<identifier>active:polestarLogQuery</identifier>
@@ -223,6 +230,9 @@
             	</active></grammar>
             <class>io.polestar.data.log.LogQueryAccessor</class>
         </endpoint>
+        
+       
+        
         
 		<mapper>
 			<config>res:/io/polestar/data/config/Mappings.xml</config>

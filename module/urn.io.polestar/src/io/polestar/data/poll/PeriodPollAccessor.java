@@ -85,6 +85,10 @@ public class PeriodPollAccessor extends StandardAccessorImpl
 					{	//save sensor state to db
 						aContext.source("active:polestarSensorStatePersist");
 					}
+					else if (period.equals("86400000")) // 1day
+					{
+						aContext.source("active:polestarLogCleanup");
+					}
 					MonitorUtils.executePeriodicScripts(period, true, aContext);
 				}
 				finally

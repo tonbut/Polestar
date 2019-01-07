@@ -230,8 +230,11 @@ public class ChartViewAccessor extends StandardAccessorImpl
 		
 	private IHDSMutator getFormHDS(INKFRequestContext aContext) throws Exception
 	{
-		IHDSNode params=aContext.source("httpRequest:/params",IHDSNode.class);
-		String chartJSON=params.getFirstNode("/*").getName();
+		String body=aContext.source("httpRequest:/body",String.class);
+		//System.out.println("body="+body);
+		//IHDSNode params=aContext.source("httpRequest:/params",IHDSNode.class);
+		
+		String chartJSON=body; //params.getFirstNode("/*").getName();
 		INKFRequest req=aContext.createRequest("active:JSONToHDS");
 		req.addArgumentByValue("operand", chartJSON);
 		req.addArgumentByValue("operator", "<config><addRootElement>chart</addRootElement><convertToString>true</convertToString></config>");

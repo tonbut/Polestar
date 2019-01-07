@@ -13,7 +13,7 @@
 			<script>
 				<xsl:comment>
 					$(function() {
-						$('#multiselect').multiselect( { keepRenderingSort: true, submitAllRight: true });
+						$('#multiselect').multiselect( { keepRenderingSort: true });
 						$('.input-daterange').datepicker({
 							format: "dd/mm/yyyy"
 						});
@@ -22,7 +22,7 @@
 						$("#restoreButton").click( function() {
 						//$("#form").submit( function(e) {
 							//e.preventDefault();
-							//$("#multiselect_to").find('option').prop('selected', true);
+							$("#multiselect_to").find('option').prop('selected', true);
 							var data=$("#form").serialize();
 							console.log(data);
 							$("#restoreButton").attr("disabled", "disabled");

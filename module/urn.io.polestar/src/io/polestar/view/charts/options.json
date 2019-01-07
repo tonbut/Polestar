@@ -110,6 +110,12 @@
 	            			},
 	            			"sort":false,
 						"hideNone":true
+	            		},
+	            		"matchFunction": {
+	            			"type": "textarea",
+	            			"dependencies": {
+	            				"mergeAction": [ "first_match_time_relative" ]
+	            			}
 	            		}
 	            	}
 	            }

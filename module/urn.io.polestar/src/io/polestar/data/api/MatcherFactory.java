@@ -4,11 +4,11 @@ import io.polestar.api.IPolestarMatcher;
 
 public abstract class MatcherFactory
 {
-	public static IPolestarMatcher getEqualsInstance(final Object aValue)
+	public static IPolestarMatcher getEqualsInstance(final Object mValue)
 	{	return new IPolestarMatcher()
 		{	@Override
 			public boolean matches(Object aValue, long aTimestamp)
-			{	return aValue.equals(aValue);
+			{	return mValue.equals(aValue);
 			}
 		};
 	}

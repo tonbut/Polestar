@@ -138,6 +138,7 @@ public class SensorBackupAccessor extends StandardAccessorImpl
 			mStatusMessage="";
 		
 			IHDSReader operator=aContext.source("arg:operator",IHDSDocument.class).getReader();
+			System.out.println(operator);
 			String fileURI=(String)operator.getFirstValue("fileURI");
 			f=new File(URI.create(fileURI));
 			String mode=(String)operator.getFirstValue("mode");

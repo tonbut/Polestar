@@ -249,8 +249,14 @@ public class SensorViewAccessor extends StandardAccessorImpl
 				m.addNode("type","area");
 			}
 			if (isBoolean)
-			{	m.addNode("interpolate","step-before");
-				m.addNode("mergeAction", "boolean_change");
+			{	if ("analog".equals(chartType))
+				{	m.addNode("interpolate","step-before");
+					m.addNode("mergeAction", "average");
+				}
+				else
+				{	m.addNode("interpolate","step-before");
+					m.addNode("mergeAction", "boolean_change");
+				}
 			}
 			if (isMap)
 			{
@@ -429,12 +435,16 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		m.addNode("json","");
 		m.pushNode("sensors");
 		
-		StringBuilder sb=new StringBuilder();
-		sb.append("[");
+		StringBuilder sbID=new StringBuilder();
+		sbID.append("[");
+		StringBuilder sbInterpolate=new StringBuilder();
+		sbInterpolate.append("[");
+		
 		for (IHDSReader sensor : config.getNodes("/sensors/sensor"))
 		{	Object id=sensor.getFirstValue("id");
 			Object value=state.getFirstValue("key('byId','"+id+"')/value");
 			String mergeAction="sample";
+			String interpolation="basis";
 			if (value!=null && (value instanceof Float || value instanceof Double))
 			{	mergeAction="average";
 			}
@@ -445,15 +455,25 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			String format=(String)sensor.getFirstValueOrNull("chart-type");
 			if ("count".equals(format))
 			{	mergeAction="positive_diff";
+				//interpolation="step-before";
 			}
 			if (value!=null && value instanceof Boolean)
-			{	mergeAction="boolean_change";
+			{	
+				if ("analog".equals(format))
+				{	mergeAction="average";
+					//interpolation="step-before";
+				}
+				else
+				{	mergeAction="boolean_change";
+				}
 			}
-			sb.append(" '").append(id).append("',");
+			sbID.append(" '").append(id).append("',");
+			sbInterpolate.append(" '").append(interpolation).append("',");
 			//System.out.println(id+" "+value);
 			m.pushNode("sensor").addNode("id",id).addNode("mergeAction",mergeAction).popNode();
 		}
-		sb.append(" ]");
+		sbID.append(" ]");
+		sbInterpolate.append(" ]");
 		m.popNode();
 		
 		
@@ -465,7 +485,8 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		//System.out.println(data);
 		
 		String s=aContext.source("res:/io/polestar/view/sensors/ticker.xml",String.class);
-		s=s.replace("%ID%",sb.toString());
+		s=s.replace("%ID%",sbID.toString());
+		s=s.replace("%INTERPOLATE%",sbInterpolate.toString());
 		s=s.replace("%D%",data);
 		
 		INKFResponse resp=aContext.createResponseFrom(s);

@@ -1,5 +1,6 @@
 package io.polestar.view.charts;
 
+import java.lang.reflect.Constructor;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -8,14 +9,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.netkernel.lang.groovy.representation.CompiledGroovyRep;
+import org.netkernel.layer0.nkf.INKFLocale;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFResponse;
 import org.netkernel.layer0.nkf.NKFException;
 import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.urii.impl.NetKernelException;
+import org.netkernel.util.Utils;
 
 import io.polestar.api.IPolestarContext;
+import io.polestar.api.IPolestarMatcher;
 import io.polestar.api.IPolestarQuery;
 import io.polestar.api.IPolestarQueryResultSet;
 import io.polestar.api.QueryType;
@@ -78,13 +83,18 @@ public class ChartSensorData
 				else
 				{	sensorId=sensorIdRaw;
 				}
-				String mergeAction=(String)sensorNode.getFirstValue("mergeAction");
-
-				QueryType qt=QueryType.valueOf(mergeAction.toUpperCase());
+				String mergeAction=((String)sensorNode.getFirstValue("mergeAction")).toUpperCase();
+				
+				QueryType qt=QueryType.valueOf(mergeAction);
 				IPolestarQuery q=ctx.createQuery(sensorId, qt);
 				q.setEnd(aEnd);
 				q.setStart(aEnd-aPeriod);
 				q.setResultSetPeriod(aSamplePeriod);
+				
+				String mf=(String)sensorNode.getFirstValueOrNull("matchFunction");
+				if (mf!=null)
+				{	q.setQueryMatcher(createDynamicMatcher(mf,aContext));
+				}
 				
 				String periodMerge=(String)sensorNode.getFirstValueOrNull("periodMerge");
 				
@@ -167,6 +177,31 @@ public class ChartSensorData
 		catch (Exception e)
 		{	throw new NKFException("Unhandled exception querying chart data", null, e);
 		}
+	}
+	
+	private IPolestarMatcher createDynamicMatcher(String aMatchFunction,INKFRequestContext aContext) throws Exception
+	{	
+		try
+		{	CompiledGroovyRep g=aContext.transrept(aMatchFunction,CompiledGroovyRep.class);
+			Class c=g.getCompiledScript();
+			Class[] noFields = new Class[0];
+			Object[] noParams = new Object[0];
+			//Object[] matchParams = new ["",Long.valueOf(1L)] as Object[];
+	
+			Constructor constructor=c.getDeclaredConstructor(noFields);
+			IPolestarMatcher instance=(IPolestarMatcher)constructor.newInstance(noParams);
+			return instance;
+		}
+		catch (Throwable e)
+		{
+			aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
+			return new IPolestarMatcher()
+			{	public boolean matches(Object aValue, long aTimestamp)
+				{	return true;
+				}
+			};
+		}
+
 	}
 	
 	private void computeMaxMin(List<IPolestarQueryResultSet> aData, IHDSReader aOp, List<SensorConfig> aConfigs)

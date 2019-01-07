@@ -47,6 +47,7 @@ var colours= [ "#C02020", "#20C020", "#2020C0", "#000000", "#606060" ];
 
 var ids= %ID%;
 var gd= %D%;
+var interpolate= %INTERPOLATE%;
 var len=gd.length;
 var w = 100, h = 36;
 var rmargin=20;
@@ -80,9 +81,12 @@ for (i=0; i<ids.length; i++)
             var mm=maxMin(d);
             if (mm.max==mm.min) mm.max=mm.min+1;
             var y = pv.Scale.linear(mm.min, mm.max).range(0, h);
+
+            //var interpolation="basis";
+           	var interpolation=interpolate[i];
             
             vis.add(pv.Line)
-                .data(d).interpolate("basis")
+                .data(d).interpolate(interpolation)
                 .bottom(function(d){ return y(d==null?mm.min:d); })
                 .left(function() {return x(this.index+0.5)})
                 .lineWidth(2)

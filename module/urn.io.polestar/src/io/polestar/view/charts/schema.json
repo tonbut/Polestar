@@ -101,8 +101,13 @@
         			"mergeAction": {
         				"type": "string",
         				"title": "Processing",
-        				"enum": [ "sample","average", "max", "min", "diff", "positive_diff", "sum", "rate_of_change", "running_total", "rotation_360_average", "boolean_change","count", "boolean_rising_edge_count", "boolean_falling_edge_count", "first_modified_relative", "last_modified_relative" ],
+        				"enum": [ "sample","average", "max", "min", "diff", "positive_diff", "sum", "rate_of_change", "running_total", "rotation_360_average", "boolean_change","count", "boolean_rising_edge_count", "boolean_falling_edge_count", "first_modified_relative", "last_modified_relative", "first_match_time_relative" ],
         				"default": "sample"
+        			},
+        			"matchFunction": {
+        				"type": "string",
+        				"title": "Match Function",
+        				"default": "import io.polestar.api.*;\npublic class A implements IPolestarMatcher{\n  public boolean matches(Object aValue, long aTimestamp) {\n    return true;\n  }\n}"
         			},
         			"valueOffset": {
         				"type": "number",
@@ -196,7 +201,8 @@
         			"stacked": ["type"],
         			"stroke": ["type"],
         			"periodCount": ["periodMerge"],
-        			"mergeOp": ["periodMerge"]
+        			"mergeOp": ["periodMerge"],
+        			"matchFunction": ["mergeAction"]
         		}
         	}
         }

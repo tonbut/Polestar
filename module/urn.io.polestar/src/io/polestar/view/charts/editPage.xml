@@ -112,11 +112,23 @@
 	                    var val = this.getValue();
 	                    if (this.isValid(true))
 	                    {	var jsonData=JSON.stringify(val, null, "  ");
-	                    	$.post("/polestar/charts/saveas/"+id,jsonData,function(d) {
-	                    		var newId=d.id;
-	                    		//console.log(d);
-	                    		window.location.href = "/polestar/charts/edit/"+newId;
-	                    	});
+	                    
+	                    	$.ajax({
+					  			  type: "POST",
+								  url: "/polestar/charts/saveas/"+id,
+								  data: jsonData,
+								  contentType: "text/plain",
+								  success: function(d) {
+					      			var newId=d.id;
+	                    			window.location.href = "/polestar/charts/edit/"+newId;
+					       			}
+							});
+	                    
+	                    	//$.post("/polestar/charts/saveas/"+id,jsonData,function(d) {
+	                    	//	var newId=d.id;
+	                    	//	//console.log(d);
+	                    	//	window.location.href = "/polestar/charts/edit/"+newId;
+	                    	//});
 	                    }
 	                }
 	            },
@@ -127,9 +139,19 @@
 	                    var val = this.getValue();
 	                    if (this.isValid(true))
 	                    {	var jsonData=JSON.stringify(val, null, "  ");
-	                    	$.post("/polestar/charts/save/"+id,jsonData,function(d) {
-	                    		window.location.href = "/polestar/charts";
-	                    	});
+	                    	//$.post("/polestar/charts/save/"+id,jsonData,function(d) {
+	                    	//	window.location.href = "/polestar/charts";
+	                    	//});
+	                    	
+	                    	$.ajax({
+					  			  type: "POST",
+								  url: "/polestar/charts/save/"+id,
+								  data: jsonData,
+								  contentType: "text/plain",
+								  success: function(d) {
+					      			window.location.href = "/polestar/charts";
+					       			}
+							});
 	                    }
 	                }
 	            },
@@ -141,9 +163,20 @@
 	                    var val = this.getValue();
 	                    if (this.isValid(true)) {
 	                    	var jsonData=JSON.stringify(val, null, "  ");
-	                    	$.post("/polestar/charts/preview/"+id,jsonData,function(d) {
-	                    		$("#exampleChart").html(d);
-	                    	});
+	                    	
+	                    	$.ajax({
+					  			  type: "POST",
+								  url: "/polestar/charts/preview/"+id,
+								  data: jsonData,
+								  contentType: "text/plain",
+								  success: function(d) {
+					      			$("#exampleChart").html(d);
+					       			}
+							});
+	                    	
+	                    	//$.post("/polestar/charts/preview/"+id,jsonData,function(d) {
+	                    	//	$("#exampleChart").html(d);
+	                    	//});
 	                    
 	                        //this.ajaxSubmit().done(function() {
 	                            //alert("Posted!");
@@ -209,9 +242,20 @@
     {
     	var val = gControl.getValue();
     	var jsonData=JSON.stringify(val, null, "  ");
-    	$.post("/polestar/charts/preview/"+id,jsonData,function(d) {
-      		$("#exampleChart").html(d);
-       	});
+    	//$.post("/polestar/charts/preview/"+id,jsonData,function(d) {
+      	//	$("#exampleChart").html(d);
+       	//});
+       	
+       	$.ajax({
+  			  type: "POST",
+			  url: "/polestar/charts/preview/"+id,
+			  data: jsonData,
+			  contentType: "text/plain",
+			  success: function(d) {
+      			$("#exampleChart").html(d);
+       			}
+		});
+       	
     }
     
     function updateTimeButtons()

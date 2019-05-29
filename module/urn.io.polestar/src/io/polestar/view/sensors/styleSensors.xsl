@@ -116,22 +116,24 @@
 
                 function innerShowTicker()
                 {
-                    $.get("/polestar/sensors/ticker",function(d) {
-                    
-                        //update HTML to include additional row
-                        $(".sensor-item > .row ").each(function(i,el){
-                        	if ($(el).children().size()==2)
-                        	{	var sensorId=$(el).parent().attr("sensorId");
-	                            $(el).children("div:nth-child(1)").removeClass("col-xs-8").addClass("col-xs-6");
+                	$(".sensor-item > .row ").each(function(i,el){
+                        if ($(el).children().size()==2)
+                        {	var sensorId=$(el).parent().attr("sensorId");
+                        	$.get("/polestar/sensors/ticker/"+sensorId,function(d) {
+                        	
+                        		$(el).children("div:nth-child(1)").removeClass("col-xs-8").addClass("col-xs-6");
 	                            $(el).children("div:nth-child(2)").removeClass("col-xs-4").addClass("col-xs-3");
-	                            var d=$("&lt;div class='col-xs-3 ticker' id='s:"+sensorId+"'&gt;&lt;/div&gt;");
-	                            d.insertAfter($(el).children("div:nth-child(1)"));
-	                        }
-                        });
+	                            var di=$("&lt;div class='col-xs-3 ticker' id='s:"+sensorId+"'&gt;&lt;/div&gt;");
+	                            
+	                            var k=$(d);
+	                            di.append(k);
+	                            di.insertAfter($(el).children("div:nth-child(1)"));
+                        	});
+                        }
+                    });
                     
-                        $("#scriptContainer").html($(d));
-                    },"html");
-                
+                    
+                	
                 }
 				
 				function doClearFilter()

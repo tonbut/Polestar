@@ -14,7 +14,9 @@ import org.netkernel.layer0.nkf.INKFLocale;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFResponse;
 import org.netkernel.layer0.nkf.NKFException;
+import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
+import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.urii.impl.NetKernelException;
 import org.netkernel.util.Utils;
@@ -29,7 +31,7 @@ import io.polestar.view.sensors.SensorViewAccessor;
 
 public class ChartSensorData
 {
-	private String mData;
+	private IHDSDocument mData;
 	private double mMax;
 	private double mMin;
 	
@@ -56,7 +58,6 @@ public class ChartSensorData
 	
 	public ChartSensorData(INKFRequestContext aContext, IHDSReader aOp, long aEnd, long aPeriod, long aSamplePeriod, String aDateFormat) throws NKFException
 	{
-		
 		try
 		{	IPolestarContext ctx=PolestarContext.createContext(aContext, null);
 			IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
@@ -64,10 +65,10 @@ public class ChartSensorData
 			//query sensors for data
 			List<IHDSReader> sensors=aOp.getNodes("sensors/sensor");
 			if (sensors.size()==0)
-			{	mData="[]";
+			{	
+				mData=HDSFactory.newDocument().pushNode("data").toDocument(false);
 				return;
 			}
-			
 			
 			List<IPolestarQueryResultSet> resultSets=new ArrayList<IPolestarQueryResultSet>(sensors.size());
 			List<SensorConfig> configs=new ArrayList<>(sensors.size());
@@ -108,7 +109,6 @@ public class ChartSensorData
 					q.setTimeMergeOp(mergeOp);
 				}
 				
-				
 				IPolestarQueryResultSet rs=(IPolestarQueryResultSet)q.execute();
 				resultSets.add(rs);
 				
@@ -135,38 +135,34 @@ public class ChartSensorData
 			//create data transformation functions
 			
 			
-			//format json
-			DateFormat df=new SimpleDateFormat(aDateFormat);
-			StringBuilder sb=new StringBuilder(4096);
+			//format HDS
+			DateFormat df=aDateFormat!=null?new SimpleDateFormat(aDateFormat):null;
+			IHDSMutator m=HDSFactory.newDocument();
 			IPolestarQueryResultSet firstRS=resultSets.get(0);
 			int rsLength=firstRS.size();
 			
-			sb.append("[ ");
+			m.pushNode("data");
 			
 			for (int i=0; i<rsLength; i++)
 			{
-				sb.append("[ ");
+				m.pushNode("d");
 				
 				long time=firstRS.getTimestamp(i);
-				sb.append(time);
-				sb.append(",'");
-				sb.append(df.format(new Date(time)));
-				sb.append("',");
+				m.addNode("t",time);
+				if (df!=null)
+				{	m.addNode("tf", df.format(new Date(time)));
+				}
 				
 				for (int j=0; j<resultSets.size(); j++)
 				{
-					if (j!=0)
-					{	sb.append(", ");
-					}
 					Object value=resultSets.get(j).getValue(i);
-					outputValue(sb, value, configs.get(j));
+					m.addNode("s"+j, outputValue( value, configs.get(j)));
 				}
 				
-				sb.append("],\n");
+				m.popNode();
 			}
 			
-			sb.append("]");
-			mData=sb.toString();
+			mData=m.toDocument(false);
 			//System.out.println(mData);
 			
 			//compute max/min
@@ -291,10 +287,8 @@ public class ChartSensorData
 		
 	}
 	
-	private void outputValue(StringBuilder sb, Object v, SensorConfig config)
+	private Object outputValue( Object v, SensorConfig config)
 	{
-		boolean needsQuotes=(v instanceof String);
-		if (needsQuotes) sb.append("'");
 		String format=config.format;
 		if (v!=null && v instanceof Number)
 		{
@@ -302,10 +296,10 @@ public class ChartSensorData
 			d=config.numericTransform(d);
 			
 			if (format==null || !format.contains("%")) format="%.3f";
-			sb.append(String.format(format, d));
+			return String.format(format, d);
 		}
 		else if (format==null || v==null)
-		{	sb.append(v);
+		{	return v;
 		}
 		else
 		{	String sf;
@@ -314,10 +308,9 @@ public class ChartSensorData
 			} catch (Exception e)
 			{	sf=v.toString();
 			}
-			sb.append(sf);
+			return sf;
 		}
-		
-		if (needsQuotes) sb.append("'");
+
 	}
 	
 	
@@ -329,7 +322,7 @@ public class ChartSensorData
 	{	return mMax;
 	}
 	
-	public String getJSON()
+	public IHDSDocument getData()
 	{
 		return mData;
 		

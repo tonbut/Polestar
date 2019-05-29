@@ -43,6 +43,7 @@ import io.polestar.api.IPolestarContext;
 import io.polestar.api.QueryType;
 import io.polestar.data.api.PolestarContext;
 import io.polestar.data.util.MonitorUtils;
+import io.polestar.view.charts.ChartSensorData;
 import io.polestar.view.template.TemplateWrapper;
 
 public class SensorViewAccessor extends StandardAccessorImpl
@@ -69,7 +70,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			{	onFilteredList(aContext);
 			}
 			else if (action.equals("ticker"))
-			{	onTicker(aContext);
+			{	onDetailChart(aContext,id,false,true);
 			}
 			else if (action.equals("info"))
 			{	onInfo(aContext);
@@ -78,18 +79,17 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			{	onDetail(aContext,id);
 			}
 			else if (action.equals("detailChart") && id!=null)
-			{	onDetailChart(aContext,id,false);
+			{	onDetailChart(aContext,id,false,false);
 			}
 			else if (action.equals("errorChart") && id!=null)
-			{	onDetailChart(aContext,id,true);
+			{	onDetailChart(aContext,id,true,false);
 			}
 		}
 	}
 	
+	/*
 	public void onDetailChart(INKFRequestContext aContext, String aId, boolean aError) throws Exception
-	{
-		//aContext.createResponseFrom("<div>chart</div>");
-		
+	{		
 		IPolestarContext context=PolestarContext.createContext(aContext,null);
 		
 		int width=640;
@@ -100,18 +100,15 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		long xAxisTicks=samplePeriod;
 		int offset=0;
 		String endSnap=null;
-		Long endTime=null;
+		Long endTime=System.currentTimeMillis();
 		try
 		{
 			IHDSNode params=aContext.source("httpRequest:/params",IHDSNode.class);
 			String chartJSON=params.getFirstNode("/*").getName();
 			INKFRequest req=aContext.createRequest("active:JSONToHDS");
 			req.addArgumentByValue("operand", chartJSON);
-			//req.addArgumentByValue("operator", "<config><addRootElement>chart</addRootElement><convertToString>true</convertToString></config>");
 			req.setRepresentationClass(IHDSDocument.class);
 			IHDSReader chartHDS=((IHDSDocument)aContext.issueRequest(req)).getReader();
-			//System.out.println(chartHDS);
-		
 			width=Integer.parseInt(chartHDS.getFirstValue("/width2").toString());
 			offset=Integer.parseInt(chartHDS.getFirstValue("/offset").toString());
 			
@@ -156,55 +153,60 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		
 		int height=aError?(width/16):(width/4);
 		
-		IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
 		IHDSReader configNode=config.getFirstNodeOrNull("key('byId','"+aId+"')");
 		
-		//IHDSReader stateNode=state.getFirstNodeOrNull("key('byId','"+aId+"')");
-		//Object value=stateNode.getFirstValueOrNull("value");
-		//IPolestarContext pctx=PolestarContext.createContext(aContext);
-		
-		
-		String format=(String)configNode.getFirstValueOrNull("format");
 		String chartType=(String)configNode.getFirstValueOrNull("chart-type");
 		if (chartType==null) chartType="";
-		//String mergeAction=getMergeActionForSensor(value, format);
-		
-		int detail=128;
-		//samplePeriod=period/detail;
 		
 		
 		
-		IHDSMutator m=HDSFactory.newDocument();
-		m.pushNode("chart")
+		IHDSMutator mD=HDSFactory.newDocument();
+		mD.pushNode("chart");
+		//.addNode("chartPeriod", Long.toString(period))
+		//.addNode("endOffset", Integer.toString(offset))
+		//.addNode("samplePeriod", Long.toString(samplePeriod))
+		//.addNode("timeFormat", timeFormat);
+
+		if (endSnap!=null) mD.addNode("endSnap", endSnap);
+		if (endTime!=null) mD.addNode("endTime", Long.toString(endTime));
+		
+		IHDSMutator mC=HDSFactory.newDocument();
+		mC.pushNode("chart")
 		.addNode("type", "TimeSeriesData")
-		.addNode("chartPeriod", Long.toString(period))
-		.addNode("endOffset", Integer.toString(offset))
-		.addNode("samplePeriod", Long.toString(samplePeriod))
-		.addNode("timeFormat", timeFormat)
 		.addNode("width", Integer.toString(width))
 		.addNode("height", Integer.toString(height))
-		.addNode("xAxisTicks", Long.toString(xAxisTicks));
-		if (endSnap!=null) m.addNode("endSnap", endSnap);
-		if (endTime!=null) m.addNode("endTime", Long.toString(endTime));
+		.addNode("xAxisTicks", Long.toString(xAxisTicks))
+		.addNode("backgroundColor", "rgba(255,255,255,0)")
+		.addNode("textColor", "#000000")
+		.addNode("axisColor", "#CCCCCC")
+		.addNode("xAxis","tf");
+
 		if (aError)
-		{	m.addNode("yAxisTicks", "1");
+		{	mC.addNode("yAxisTicks", "1");
 		}
 		
-		m.pushNode("sensors");
+		mC.pushNode("dataSets");
+		mD.pushNode("sensors");
 		
 		if (aError)
 		{
-			m.pushNode("sensor")
-			.addNode("id", aId)
-			.addNode("dname", aId+"#_ERROR")
+			mD.pushNode("sensor")
+			.addNode("id", aId+"#_ERROR")
+			.addNode("mergeAction", "max");
+			
+			mC.pushNode("dataSet")
+			.addNode("id", "s0")
 			.addNode("type","area")
 			.addNode("interpolate","step-before")
-			.addNode("mergeAction", "max")
 			.addNode("fill","rgba(0,0,0,0.08)")
 			.addNode("lineWidth", "3")
 			.addNode("stroke","rgb(217, 83, 79)")
-			;
+			.popNode().popNode();
+			
+			mC.addNode("legend", "false");
+
+			
 		}
 		else
 		{
@@ -224,13 +226,302 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		
 			if (isNumeric || isBoolean)
 			{
-				m.pushNode("sensor")
-				.addNode("id", aId)
+				mD.pushNode("dataSet")
+				.addNode("id", aId);
+				
+				mC.pushNode("sensor")
+				.addNode("id", "s0")
 				.addNode("fill","rgba(0,0,0,0.08)")
 				.addNode("lineWidth", "3")
 				.addNode("stroke","#448")
-				.addNode("type","area")
-				;
+				.addNode("type","area");
+			}
+			
+			if (isNumeric)
+			{	if ("count".equals(chartType))
+				{	mC.addNode("interpolate","step-before");
+					mD.addNode("mergeAction", "positive_diff");
+				}
+				else if ("discrete".equals(chartType))
+				{	mC.addNode("interpolate","step-before");
+					mD.addNode("mergeAction", "average");
+				}
+				else
+				{	mC.addNode("interpolate","basis");
+					mD.addNode("mergeAction", "average");
+				}
+				mC.addNode("type","area");
+			}
+			if (isBoolean)
+			{	if ("analog".equals(chartType))
+				{	mC.addNode("interpolate","step-before");
+					mD.addNode("mergeAction", "average");
+				}
+				else
+				{	mC.addNode("interpolate","step-before");
+					mD.addNode("mergeAction", "boolean_change");
+				}
+			}
+
+			if (isMap)
+			{
+				Set<String> keys=((Map)value).keySet();
+				int index=0;
+				
+				if ("discrete".equals(chartType))
+				{
+					for (String key : keys)
+					{
+						mD.pushNode("dataSet")
+						.addNode("id", aId)
+						.addNode("mergeAction", "average")
+						.popNode();
+						
+						mC.pushNode("sensor")
+							.addNode("id", "s"+index)
+							.addNode("dname", key+"#"+key)
+							.addNode("interpolate","step-before")
+							.addNode("type","area")
+							.addNode("lineWidth", "2")
+							.addNode("stroke",MonitorUtils.getColourScheme(index))
+							.addNode("fill","rgba(0,0,0,0.05)")
+						.popNode();
+						index++;
+					}
+					mC.popNode();
+					mD.popNode();
+				}
+				else if ("stacked".equals(chartType))
+				{
+					for (String key : keys)
+					{
+						mD.pushNode("dataSet")
+						.addNode("id", aId);
+						
+						m.pushNode("sensor")
+							.addNode("id", aId)
+							.addNode("dname", key+"#"+key)
+							.addNode("interpolate","step-before")
+							.addNode("stacked", "true")
+							.addNode("mergeAction", "average")
+							.addNode("type","bar")
+							.addNode("lineWidth", "2")
+							.addNode("fill",MonitorUtils.getColourScheme(index))
+						.popNode();
+						index++;
+					}
+					m.popNode();
+				}
+				else
+				{
+					for (String key : keys)
+					{
+						m.pushNode("sensor")
+							.addNode("id", aId)
+							.addNode("dname", key+"#"+key)
+							.addNode("interpolate","basis")
+							.addNode("mergeAction", "average")
+							.addNode("type","area")
+							.addNode("lineWidth", "2")
+							.addNode("stroke",MonitorUtils.getColourScheme(index))
+							.addNode("fill","rgba(0,0,0,0.05)")
+						.popNode();
+						index++;
+					}
+					m.popNode();
+				}
+				
+				m.addNode("legend", "true");
+			}
+		
+		}
+		
+		//get Data
+		System.out.println(mD);
+		IHDSDocument d=mD.toDocument(false);
+		IHDSReader r=d.getReader();
+		ChartSensorData2 csd=new ChartSensorData2(aContext, r, endTime, period, samplePeriod, timeFormat);
+		
+		
+		System.out.println(mC);
+		System.out.println(csd.getData());
+		INKFRequest req2=aContext.createRequest("active:declarativeChart");
+		req2.addArgumentByValue("operator",mC.toDocument(false));
+		req2.addArgumentByValue("operand",csd.getData());
+		INKFResponseReadOnly respIn=aContext.issueRequestForResponse(req2);
+
+		INKFResponse respOut=aContext.createResponseFrom(respIn);
+		
+	}
+	*/
+	
+	public void onDetailChart(INKFRequestContext aContext, String aId, boolean aError, boolean aTicker) throws Exception
+	{
+		IPolestarContext context=PolestarContext.createContext(aContext,null);
+		
+		int width=640;
+		int height;
+		final long DAY=1000L*60*60*24;
+		long period=1000L*60*60*24;
+		long samplePeriod=1000L*60*60;
+		String timeFormat="kk:mm";
+		long xAxisTicks=samplePeriod;
+		int offset=0;
+		String endSnap=null;
+		Long endTime=null;
+		
+		if (!aTicker)
+		{
+			try
+			{
+				IHDSNode params=aContext.source("httpRequest:/params",IHDSNode.class);
+				String chartJSON=params.getFirstNode("/*").getName();
+				INKFRequest req=aContext.createRequest("active:JSONToHDS");
+				req.addArgumentByValue("operand", chartJSON);
+				req.setRepresentationClass(IHDSDocument.class);
+				IHDSReader chartHDS=((IHDSDocument)aContext.issueRequest(req)).getReader();
+		
+				width=Integer.parseInt(chartHDS.getFirstValue("/width2").toString());
+				offset=Integer.parseInt(chartHDS.getFirstValue("/offset").toString());
+				
+				String periodString=(String)chartHDS.getFirstValue("/period");		
+				
+				if (periodString.equals("hour"))
+				{	period=3600000L;
+					samplePeriod=period/60;
+					xAxisTicks=period/12;
+				}
+				if (periodString.equals("day"))
+				{	period=86400000L;
+					samplePeriod=period/48;
+					xAxisTicks=period/12;
+				}
+				if (periodString.equals("week"))
+				{	period=604800000L;
+					samplePeriod=period/(12*7);
+					xAxisTicks=period/7;
+					timeFormat="E";
+					endSnap="day";
+				}
+				if (periodString.equals("month"))
+				{	period=2592000000L;
+					samplePeriod=period/30;
+					xAxisTicks=samplePeriod*3;
+					timeFormat="d MMM";
+					endSnap="day";
+					endTime=-DAY;
+				}
+				if (periodString.equals("year"))
+				{	period=31104000000L;
+					samplePeriod=period/120;
+					xAxisTicks=period/12;
+					timeFormat="d MMM";
+					endSnap="day";
+					endTime=-DAY;
+				}
+	
+			} catch (Exception e)
+			{;}
+			
+			height=aError?(width/16):(width/4);
+		}
+		else
+		{
+			try
+			{	IHDSReader mconf=aContext.source("res:/md/execute/named/Configuration",IHDSDocument.class).getReader();
+				Object periodValue=mconf.getFirstValueOrNull("sensor-ticker/period");
+				if (periodValue!=null) period=Long.parseLong(periodValue.toString());
+				Object samplePeriodValue=mconf.getFirstValueOrNull("sensor-ticker/samplePeriod");
+				if (samplePeriodValue!=null) samplePeriod=Long.parseLong(samplePeriodValue.toString());
+			}
+			catch (Exception e)
+			{	//e.printStackTrace();
+			}
+			
+			width=100;
+			height=36;
+		}
+		
+		
+		//IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
+		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		IHDSReader configNode=config.getFirstNodeOrNull("key('byId','"+aId+"')");
+		
+		
+		//String format=(String)configNode.getFirstValueOrNull("format");
+		String chartType=(String)configNode.getFirstValueOrNull("chart-type");
+		if (chartType==null) chartType="";
+		
+		IHDSMutator m=HDSFactory.newDocument();
+		m.pushNode("chart")
+		.addNode("type", "TimeSeriesData")
+		.addNode("excludeJS", "true")
+		.addNode("chartPeriod", Long.toString(period))
+		.addNode("endOffset", Integer.toString(offset))
+		.addNode("samplePeriod", Long.toString(samplePeriod))
+		.addNode("timeFormat", timeFormat)
+		.addNode("width", Integer.toString(width))
+		.addNode("height", Integer.toString(height));
+		if (aTicker)
+		{	m.addNode("xAxisTicks","none");
+		}
+		else
+		{	m.addNode("xAxisTicks", Long.toString(xAxisTicks));
+		}
+		if (aTicker)
+		{
+			m.addNode("axisColor", "rgba(255,255,255,0)");
+		}
+		
+		if (endSnap!=null) m.addNode("endSnap", endSnap);
+		if (endTime!=null) m.addNode("endTime", Long.toString(endTime));
+		if (aError)
+		{	m.addNode("yAxisTicks", "1");
+		}
+		else if (aTicker)
+		{	m.addNode("yAxisTicks", "range");
+		}
+		
+		m.pushNode("sensors");
+		
+		if (aError)
+		{
+			m.pushNode("sensor")
+			.addNode("id", aId)
+			.addNode("dname", aId+"#_ERROR")
+			.addNode("type","area")
+			.addNode("interpolate","step-before")
+			.addNode("mergeAction", "max")
+			.addNode("fill","rgba(0,0,0,0.08)")
+			.addNode("lineWidth", "3")
+			.addNode("stroke","rgb(217, 83, 79)")
+			;
+		}
+		else
+		{
+			Object value=context.getSensorValue(aId);
+			//createQuery(aId, QueryType.LAST_VALUE).setStart(-1000L*60*60*24*365).execute();
+			boolean isNumeric=false;
+			boolean isBoolean=false;
+			boolean isMap=false;
+			if (value instanceof Number)
+			{	isNumeric=true;
+			}
+			else if (value instanceof Boolean)
+			{	isBoolean=true;
+			}
+			else if (value instanceof Map)
+			{	isMap=true;
+			}
+		
+			if (isNumeric || isBoolean)
+			{
+				m.pushNode("sensor")
+				.addNode("id", aId)
+				.addNode("fill","rgba(0,0,0,0.08)")
+				.addNode("lineWidth", aTicker?"2":"3")
+				.addNode("stroke","#448")
+				.addNode("type","area");
 			}
 			
 			if (isNumeric)
@@ -318,22 +609,15 @@ public class SensorViewAccessor extends StandardAccessorImpl
 					m.popNode();
 				}
 				
-				m.addNode("legend", "true");
+				if (!aTicker) m.addNode("legend", "true");
 			}
 		}
-		
-		
 		
 		INKFRequest req2=aContext.createRequest("active:polestarDeclarativeChart");
 		req2.addArgumentByValue("operator",m.toDocument(false));
 		INKFResponseReadOnly respIn=aContext.issueRequestForResponse(req2);
-
 		INKFResponse respOut=aContext.createResponseFrom(respIn);
-		
 	}
-	
-	
-	
 	
 	public void onDetail(INKFRequestContext aContext, String aId) throws Exception
 	{
@@ -404,98 +688,6 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		INKFResponse resp=aContext.createResponseFrom(subresp);
 		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);
 	}
-	
-	public void onTicker(INKFRequestContext aContext) throws Exception
-	{
-		
-		
-		IHDSReader state=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
-		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
-		
-		Long period=null;
-		Long samplePeriod=null;
-		try
-		{	IHDSReader mconf=aContext.source("res:/md/execute/named/Configuration",IHDSDocument.class).getReader();
-			Object periodValue=mconf.getFirstValueOrNull("sensor-ticker/period");
-			if (periodValue!=null) period=Long.parseLong(periodValue.toString());
-			Object samplePeriodValue=mconf.getFirstValueOrNull("sensor-ticker/samplePeriod");
-			if (samplePeriodValue!=null) samplePeriod=Long.parseLong(samplePeriodValue.toString());
-		}
-		catch (Exception e)
-		{	//e.printStackTrace();
-		}
-		if (period==null) period=1000L*60*60*24;
-		if (samplePeriod==null) samplePeriod=1000L*60*30;
-		
-		//build query config
-		IHDSMutator m=HDSFactory.newDocument();
-		m.pushNode("query");
-		m.addNode("start",-period);
-		m.addNode("samplePeriod",samplePeriod);
-		m.addNode("json","");
-		m.pushNode("sensors");
-		
-		StringBuilder sbID=new StringBuilder();
-		sbID.append("[");
-		StringBuilder sbInterpolate=new StringBuilder();
-		sbInterpolate.append("[");
-		
-		for (IHDSReader sensor : config.getNodes("/sensors/sensor"))
-		{	Object id=sensor.getFirstValue("id");
-			Object value=state.getFirstValue("key('byId','"+id+"')/value");
-			String mergeAction="sample";
-			String interpolation="basis";
-			if (value!=null && (value instanceof Float || value instanceof Double))
-			{	mergeAction="average";
-			}
-			if (value!=null && (value instanceof Map))
-			{	mergeAction="average_map";
-			}
-			
-			String format=(String)sensor.getFirstValueOrNull("chart-type");
-			if ("count".equals(format))
-			{	mergeAction="positive_diff";
-				//interpolation="step-before";
-			}
-			if (value!=null && value instanceof Boolean)
-			{	
-				if ("analog".equals(format))
-				{	mergeAction="average";
-					//interpolation="step-before";
-				}
-				else
-				{	mergeAction="boolean_change";
-				}
-			}
-			sbID.append(" '").append(id).append("',");
-			sbInterpolate.append(" '").append(interpolation).append("',");
-			//System.out.println(id+" "+value);
-			m.pushNode("sensor").addNode("id",id).addNode("mergeAction",mergeAction).popNode();
-		}
-		sbID.append(" ]");
-		sbInterpolate.append(" ]");
-		m.popNode();
-		
-		
-		//INKFRequest req=aContext.createRequest("active:polestarHistoricalQuery");
-		INKFRequest req=aContext.createRequest("active:polestarSensorQuery");
-		req.addArgumentByValue("operator",m.toDocument(false));
-		req.setRepresentationClass(String.class);
-		String data=(String)aContext.issueRequest(req);
-		//System.out.println(data);
-		
-		String s=aContext.source("res:/io/polestar/view/sensors/ticker.xml",String.class);
-		s=s.replace("%ID%",sbID.toString());
-		s=s.replace("%INTERPOLATE%",sbInterpolate.toString());
-		s=s.replace("%D%",data);
-		
-		INKFResponse resp=aContext.createResponseFrom(s);
-		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
-		//resp.setExpiry(INKFResponse.EXPIRY_CONSTANT,System.currentTimeMillis()+120000L);
-		//resp.setMimeType("text/plain");
-	}
-	
-	
 
 	//store and retrieve sort order from session
 	private static String processSort(String aSort, INKFRequestContext aContext) throws Exception

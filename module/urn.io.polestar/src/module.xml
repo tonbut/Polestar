@@ -17,7 +17,7 @@
 	<meta>
 		<identity>
 			<uri>urn:io:polestar</uri>
-			<version>0.5.5</version>
+			<version>0.5.6</version>
 		</identity>
 		<info>
 			<name>Polestar IoT Hub</name>
@@ -39,6 +39,7 @@
 				<type>PolestarWeb</type>
 				<type>HTTPFulcrum2</type>
 				<type>HTTPFulcrum</type>
+				<type>HTTPFulcrumInsecure</type>
 			</connection>
 		</literal>
 		<branch-merge>
@@ -65,7 +66,10 @@
 						</import>						
 						<import>
 							<uri>urn:org:netkernel:lang:groovy</uri>
-						</import>						
+						</import>		
+						<import>
+							<uri>urn:org:netkernel:mod:wfw</uri>
+						</import>				
 					</space>
 				</mapper>
 				<import>
@@ -79,7 +83,11 @@
 				<import>
 					<uri>urn:org:netkernel:ext:layer1</uri>
 					<private/>
-				</import>						
+				</import>
+				<import>
+		            <uri>urn:org:netkernel:mod:security</uri>
+		            <private/>
+		        </import>					
 			</space>
 		</branch-merge>
 		<import>

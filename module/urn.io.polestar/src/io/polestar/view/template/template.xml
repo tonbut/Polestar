@@ -44,6 +44,9 @@
 	<body>
 		<script src="/polestar/pub/jquery-2.0.3.min.js">_</script>
 		<script src="/polestar/pub/bootstrap.min.js">_</script>
+		<script src="/polestar/pub/protovis-d3.2.js">_</script>
+		<script src="/polestar/pub/chartlib.js">_</script>
+		
 
 		<div class="navbar navbar-default navbar-fixed-top " role="navigation">
 			<div class="container">

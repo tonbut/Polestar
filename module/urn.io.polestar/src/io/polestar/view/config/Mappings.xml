@@ -16,6 +16,18 @@
 -->
 <config>
 	<endpoint>
+		<grammar>res:/polestar/pub/protovis-d3.2.js</grammar>
+		<request>
+			<identifier>res:/org/netkernel/mod/wfw/pub/protovis-d3.2.js</identifier>
+		</request>
+	</endpoint>
+	<endpoint>
+		<grammar>res:/polestar/pub/chartlib.js</grammar>
+		<request>
+			<identifier>res:/org/netkernel/mod/wfw/pub/chartlib.js</identifier>
+		</request>
+	</endpoint>
+	<endpoint>
 		<request>
 			<identifier>meta:polestar:statics</identifier>
 		</request>
@@ -201,6 +213,20 @@
 		<request>
 			<identifier>active:java</identifier>
 			<argument name="class">io.polestar.view.charts.GenerateDeclarativeChartAccessor</argument>
+			<varargs/>
+		</request>
+	</endpoint>
+	<endpoint>
+		<id>polestar:chartData</id>
+		<grammar>
+			<active>
+				<identifier>active:polestarChartData</identifier>
+				<argument name="operator"/>
+			</active>
+		</grammar>
+		<request>
+			<identifier>active:java</identifier>
+			<argument name="class">io.polestar.view.charts.ChartDataAccessor</argument>
 			<varargs/>
 		</request>
 	</endpoint>

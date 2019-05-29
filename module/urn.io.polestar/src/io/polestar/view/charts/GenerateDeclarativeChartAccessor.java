@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 import org.netkernel.layer0.nkf.INKFRequest;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFResponse;
+import org.netkernel.layer0.nkf.INKFResponseReadOnly;
 import org.netkernel.layer0.nkf.NKFException;
 import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
@@ -46,6 +47,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 	
 	private void onTimeSeriesData(INKFRequestContext aContext, IHDSReader aOp) throws NKFException
 	{
+		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
 		long period=Long.parseLong((String)aOp.getFirstValue("chartPeriod"));
 		long endTime;
 		String xTicks="";
@@ -104,21 +106,107 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		}
 		
 		long samplesPeriod=Long.parseLong((String)aOp.getFirstValue("samplePeriod"));
-		long elementCount=period/samplesPeriod;
+		//long elementCount=period/samplesPeriod;
 
-		String yAxisTop=(String)aOp.getFirstValueOrNull("yAxisTop");
-		String yAxisBottom=(String)aOp.getFirstValueOrNull("yAxisBottom");
+		//String yAxisTop=(String)aOp.getFirstValueOrNull("yAxisTop");
+		//String yAxisBottom=(String)aOp.getFirstValueOrNull("yAxisBottom");
 		String timeFormat=(String)aOp.getFirstValue("timeFormat");
-		String yAxisTicks=(String)aOp.getFirstValueOrNull("yAxisTicks");
-		String xAxisTicks=(String)aOp.getFirstValueOrNull("xAxisTicks");
+		//String yAxisTicks=(String)aOp.getFirstValueOrNull("yAxisTicks");
+		//String xAxisTicks=(String)aOp.getFirstValueOrNull("xAxisTicks");
 		
 		String stackElements="";
 		
 		ChartSensorData csd=new ChartSensorData(aContext, aOp, endTime, period, samplesPeriod, timeFormat);
-		String data=csd.getJSON();
+		IHDSDocument data=csd.getData();
 		double min=csd.getMin();
 		double max=csd.getMax();
 		
+		IHDSMutator m=HDSFactory.newDocument();
+		m.pushNode("chart")
+		.addNode("type", "TimeSeriesData")
+		.addNode("xAxis", "tf");
+		
+		copyThrough(aOp,m,"backgroundColor","rgba(255,255,255,0)");
+		copyThrough(aOp,m,"textColor","#000000");
+		copyThrough(aOp,m,"axisColor","#CCCCCC");
+		copyThrough(aOp,m,"width","640");
+		copyThrough(aOp,m,"height","240");
+		copyThrough(aOp,m,"legend","false");
+		copyThrough(aOp,m,"title",null);
+		copyThrough(aOp,m,"excludeJS",null);
+		copyThrough(aOp,m,"yAxisTop",Double.toString(max));
+		copyThrough(aOp,m,"yAxisBottom",Double.toString(min));
+		copyThrough(aOp,m,"yAxisTicks",null);
+		copyThrough(aOp,m,"xAxisTicks",null);
+		
+		m.pushNode("dataSets");
+		int i=0;
+		for (IHDSReader sensor : aOp.getNodes("sensors/sensor"))
+		{
+			String id=(String)sensor.getFirstValue("id");
+			m.pushNode("dataSet")
+			.addNode("id", "s"+i);
+			
+			String dname=(String)sensor.getFirstValueOrNull("dname");
+			if (dname!=null)
+			{	int si=dname.indexOf('#');
+				if (si>=0) dname=dname.substring(0,si);
+			}
+			else
+			{	dname=(String)config.getFirstValue("key('byId','"+id+"')/name");
+			}
+			m.addNode("name", dname);
+			copyThrough(sensor,m,"interpolate",null);
+			String type=(String)copyThrough(sensor,m,"type",null);
+			if (type.equals("line"))
+			{	copyThrough(sensor,m,"fill","stroke", null);
+				m.addNode("fill", "rgba(255,255,255,0)");
+			}
+			else
+			{	Object fill=copyThrough(sensor,m,"fill",null);
+				copyThrough(sensor,m,"stroke",fill);
+			}
+			copyThrough(sensor,m,"lineWidth",null);
+			copyThrough(sensor,m,"shape",null);
+			copyThrough(sensor,m,"strokeDasharray",null);
+			copyThrough(sensor,m,"baseline",null);
+			copyThrough(sensor,m,"stacked",null);
+			//copyThrough(sensor,m,"valueOffset",null);
+			//copyThrough(sensor,m,"valueMultiply",null);
+			//copyThrough(sensor,m,"chartOffset",null);
+			m.popNode();
+			i++;
+		}
+		
+		
+		
+		
+		INKFRequest req2=aContext.createRequest("active:declarativeChart");
+		req2.addArgumentByValue("operator",m.toDocument(false));
+		req2.addArgumentByValue("operand",data);
+		INKFResponseReadOnly respIn=aContext.issueRequestForResponse(req2);
+
+		INKFResponse respOut=aContext.createResponseFrom(respIn);
+
+	}
+	
+	private Object copyThrough(IHDSReader aOp, IHDSMutator m, String aNodeName, Object aDefault)
+	{
+		Object o=aOp.getFirstValueOrNull(aNodeName);
+		if (o==null) o=aDefault;
+		if (o!=null) m.addNode(aNodeName, o);
+		return o;
+	}
+	
+	private Object copyThrough(IHDSReader aOp, IHDSMutator m, String aFrom, String aTo, Object aDefault)
+	{
+		Object o=aOp.getFirstValueOrNull(aFrom);
+		if (o==null) o=aDefault;
+		if (o!=null) m.addNode(aTo, o);
+		return o;
+	}
+	
+		/*
 		//axis
 		if (yAxisTop==null) yAxisTop=Double.toString(max);
 		if (yAxisBottom==null) yAxisBottom=Double.toString(min);
@@ -473,5 +561,6 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		//System.out.println(sb.toString());
 		return sb.toString();
 	}
+	*/
 	
 }

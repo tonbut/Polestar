@@ -454,7 +454,6 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		
 		IHDSMutator m=HDSFactory.newDocument();
 		m.pushNode("chart")
-		.addNode("type", "TimeSeriesData")
 		.addNode("excludeJS", "true")
 		.addNode("chartPeriod", Long.toString(period))
 		.addNode("endOffset", Integer.toString(offset))

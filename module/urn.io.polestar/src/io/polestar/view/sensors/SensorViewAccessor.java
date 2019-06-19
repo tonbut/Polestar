@@ -365,7 +365,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		long period=1000L*60*60*24;
 		long samplePeriod=1000L*60*60;
 		String timeFormat="kk:mm";
-		long xAxisTicks=samplePeriod;
+		long xAxisTicks=10;
 		int offset=0;
 		String endSnap=null;
 		Long endTime=null;
@@ -389,24 +389,24 @@ public class SensorViewAccessor extends StandardAccessorImpl
 				if (periodString.equals("hour"))
 				{	period=3600000L;
 					samplePeriod=period/60;
-					xAxisTicks=period/12;
+					xAxisTicks=12;
 				}
 				if (periodString.equals("day"))
 				{	period=86400000L;
 					samplePeriod=period/48;
-					xAxisTicks=period/12;
+					xAxisTicks=12;
 				}
 				if (periodString.equals("week"))
 				{	period=604800000L;
 					samplePeriod=period/(12*7);
-					xAxisTicks=period/7;
+					xAxisTicks=7;
 					timeFormat="E";
 					endSnap="day";
 				}
 				if (periodString.equals("month"))
 				{	period=2592000000L;
 					samplePeriod=period/30;
-					xAxisTicks=samplePeriod*3;
+					xAxisTicks=10;
 					timeFormat="d MMM";
 					endSnap="day";
 					endTime=-DAY;
@@ -414,7 +414,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 				if (periodString.equals("year"))
 				{	period=31104000000L;
 					samplePeriod=period/120;
-					xAxisTicks=period/12;
+					xAxisTicks=12;
 					timeFormat="d MMM";
 					endSnap="day";
 					endTime=-DAY;

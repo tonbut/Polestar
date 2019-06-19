@@ -302,13 +302,13 @@ public class ChartSensorData
 		{	return v;
 		}
 		else
-		{	String sf;
-			try
-			{	sf=v.toString(); //String.format(format, v);
-			} catch (Exception e)
-			{	sf=v.toString();
+		{	
+			if (v instanceof Number)
+			{	return String.format("%f",((Number)v).doubleValue());
 			}
-			return sf;
+			else
+			{	return v.toString();
+			}
 		}
 
 	}

@@ -68,4 +68,8 @@ dependencies {
     compile group:'urn.org.netkernel', name: 'mod.hds', version: '[0.5.0,)'
     compile group:'urn.org.netkernel', name: 'tpt.http', version: '[2.31.1,)'
     compile group:'urn.org.netkernel', name: 'client.http', version: '[3.3.1,)'
+    compile group:'org.mongodb', name: 'bson', version: '3.4.2'
+    compile group:'org.mongodb', name: 'mongodb-driver', version: '3.4.2'
+    compile group:'org.mongodb', name: 'mongo-java-driver', version: '3.4.2'
+    compile group:'org.mongodb', name: 'mongodb-driver-core', version: '3.4.2'
 }

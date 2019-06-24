@@ -395,6 +395,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 		for (IHDSReader sensorStateNode : aState.getNodes("/sensors/sensor"))
 		{	String sensorId=(String)sensorStateNode.getFirstValue("id");
 			String exception=(String)sensorStateNode.getFirstValueOrNull("error");
+			boolean setException=sensorStateNode.getFirstNodeOrNull("error")!=null;
 			Object newValue=sensorStateNode.getFirstValueOrNull("value");
 			Long updateTime=(Long)sensorStateNode.getFirstValueOrNull("time");
 			Long updateWindow=(Long)sensorStateNode.getFirstValueOrNull("window");
@@ -411,7 +412,9 @@ public class SensorListAccessor extends StandardAccessorImpl
 			SensorState ss=getSensorState(sensorId,true);
 			if (ss.getLastModified()<updateTime)
 			{		
-				ss.setUserError(exception, updateTime);
+				if (setException)
+				{	ss.setUserError(exception, updateTime);
+				}
 				ss.setValue(newValue, updateTime, sensorDef,aContext);
 			}
 			

@@ -45,7 +45,8 @@ public class PeriodPollAccessor extends StandardAccessorImpl
 		{	m.pushNode("poll");
 			m.addNode("period",e.getKey());
 			boolean busy=e.getValue().get();
-			int count=sInstance.mFirstErrorMap.get(e.getKey()).get();
+			AtomicInteger ai=sInstance.mFirstErrorMap.get(e.getKey());
+			int count=(ai!=null)?ai.get():0;
 			m.addNode("error", busy && count>0 );
 			m.addNode("count", count);
 			m.popNode();

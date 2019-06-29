@@ -82,7 +82,9 @@ public class SensorListAccessor extends StandardAccessorImpl
 					try
 					{	SensorState ss=new SensorState(sensor);
 						mSensorStates.put(id, ss);
-					} catch (Exception e) {;}
+					} catch (Exception e) {
+						aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
+					}
 				}
 			}
 		} finally
@@ -134,7 +136,6 @@ public class SensorListAccessor extends StandardAccessorImpl
 		MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO,"Monitor Stopped");
 
 		saveSensorState(aContext);
-		
 	}
 	
 	private void saveSensorState(INKFRequestContext aContext) throws Exception
@@ -152,7 +153,6 @@ public class SensorListAccessor extends StandardAccessorImpl
 		BasicDBObject query = new BasicDBObject("id",0);
 		WriteResult wr=col.update(query, set, true, false);
 	}
-	
 
 	public void onSource(INKFRequestContext aContext) throws Exception
 	{	String action=aContext.getThisRequest().getArgumentValue(ParsedIdentifierImpl.ARG_ACTIVE_TYPE);
@@ -384,6 +384,12 @@ public class SensorListAccessor extends StandardAccessorImpl
 					if (lastModified!=null && lastModified>0)
 					{
 						Object value=pctx.createQuery(id, QueryType.LAST_VALUE).setStart(0).execute();
+						if (value!=null && value instanceof DBObject)
+						{	
+							//System.out.println(id+" "+value.getClass());
+							DBObject dbo=(DBObject)value;
+							value=dbo.toMap();
+						}
 						
 						IHDSMutator m=HDSFactory.newDocument();
 						m.addNode("value",value);

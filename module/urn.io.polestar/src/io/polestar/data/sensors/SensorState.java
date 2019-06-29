@@ -39,9 +39,15 @@ class SensorState
 		if (errorLastModified==null)
 		{	mErrorLastModified=0L;
 		}
+		else
+		{	mErrorLastModified=errorLastModified;
+		}
 		Long errorLastModifiedPublic=(Long)aState.getFirstValueOrNull("errorLastModifiedPublic");
 		if (errorLastModifiedPublic==null)
 		{	mErrorLastModifiedPublic=0L;
+		}
+		else
+		{	mErrorLastModifiedPublic=errorLastModifiedPublic;
 		}
 	}
 	

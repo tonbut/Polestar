@@ -19,6 +19,12 @@
     
     <xsl:template match="/">
     	<div class="container top">
+    	
+    		<div class="row">
+    			<button class="btn btn-default" onclick="regenerateSensorState()">regenerate current sensor state</button>
+    		</div>
+    	
+    	
     		<div class="row">
 		    	<table class="table table-hover condensed table-responsive">
 		    		<thead>
@@ -59,6 +65,10 @@
 			}
 			function doDelete() {
 				location.href="/polestar/sensorinfo?delete="+toDelete;
+			}
+			
+			function regenerateSensorState() {
+				location.href="/polestar/sensorinfo?regenerate";
 			}
 			
 			</xsl:comment></script>

@@ -43,7 +43,6 @@ class SensorState
 		if (errorLastModifiedPublic==null)
 		{	mErrorLastModifiedPublic=0L;
 		}
-		mErrorLastModified=errorLastModified;
 	}
 	
 	public void serializeToHDS(IHDSMutator aMutator, long aNow)

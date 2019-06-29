@@ -675,6 +675,15 @@ public class SensorViewAccessor extends StandardAccessorImpl
 			aContext.issueRequest(req);
 		}
 		
+		String regenerate=aContext.source("httpRequest:/param/regenerate",String.class);
+		if (regenerate!=null)
+		{
+			INKFRequest req=aContext.createRequest("active:polestarSensorRegenerate");
+			aContext.issueRequest(req);
+			
+			aContext.sink("httpResponse:/redirect","/polestar/sensors");
+			return;
+		}
 		
 		IHDSDocument state=aContext.source("active:polestarSensorInfo",IHDSDocument.class);
 		//System.out.println(state);

@@ -34,6 +34,7 @@ import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 import org.netkernel.util.Utils;
 
 import io.polestar.api.IPolestarContext;
+import io.polestar.api.IPolestarQuery;
 import io.polestar.api.QueryType;
 import io.polestar.data.api.PolestarContext;
 import io.polestar.data.db.MongoUtils;
@@ -87,15 +88,13 @@ public class SensorListAccessor extends StandardAccessorImpl
 		} finally
 		{	cursor.close();
 		}
-		
 	
 		//index all sensors
 		Set<String> collections=MongoUtils.getDB().getCollectionNames();
 		for (String collection : collections)
 		{	try
 			{	if (collection.startsWith("sensor:"))
-				{	
-					col=MongoUtils.getCollection(collection);
+				{	col=MongoUtils.getCollection(collection);
 					List<DBObject> indexes=col.getIndexInfo();
 					if (indexes.size()<2)
 					{
@@ -128,7 +127,6 @@ public class SensorListAccessor extends StandardAccessorImpl
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("startup"), true, aContext);
 	}
 	
-
 	public void preDecommission(INKFRequestContext aContext) throws Exception
 	{	
 		//run shutdown scripts
@@ -186,6 +184,9 @@ public class SensorListAccessor extends StandardAccessorImpl
 		else if (action.equals("polestarSensorStateRefresh"))
 		{	IHDSReader state=aContext.source("arg:state",IHDSDocument.class).getReader();
 			onSensorStateRefresh(state,aContext);
+		}
+		else if (action.equals("polestarSensorRegenerate"))
+		{	onSensorStateRegenerate(aContext);
 		}
 	}
 	
@@ -363,6 +364,46 @@ public class SensorListAccessor extends StandardAccessorImpl
 		IHDSDocument state=getState(aContext);
 		INKFResponse resp=aContext.createResponseFrom(state);
 		resp.setExpiry(INKFResponse.EXPIRY_MIN_FUNCTION_DEPENDENT,mStateUpdateExpiry);
+	}
+	
+	public void onSensorStateRegenerate(INKFRequestContext aContext) throws Exception
+	{
+		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
+		IPolestarContext pctx=PolestarContext.createContext(aContext,null);
+		for (IHDSReader sensorDef : config.getNodes("/sensors/sensor"))
+		{
+			String id=(String)sensorDef.getFirstValue("id");
+			SensorState ss=getSensorState(id,false);
+			if (ss==DEFAULT_SENSOR_STATE || ss.getLastUpdated()==0L)
+			{
+				aContext.logRaw(INKFLocale.LEVEL_INFO, "Regenerating sensor state"+id);
+				try
+				{
+					IPolestarQuery query=pctx.createQuery(id, QueryType.LAST_MODIFIED).setStart(0);
+					Long lastModified=(Long)query.execute();
+					if (lastModified!=null && lastModified>0)
+					{
+						Object value=pctx.createQuery(id, QueryType.LAST_VALUE).setStart(0).execute();
+						
+						IHDSMutator m=HDSFactory.newDocument();
+						m.addNode("value",value);
+						m.addNode("userError", null);
+						m.addNode("valueError", null);
+						m.addNode("staleError", null);
+						m.addNode("error", null);
+						m.addNode("lastModified", lastModified);
+						m.addNode("lastUpdated", lastModified);
+						ss=new SensorState(m.toDocument(false).getReader());
+						mSensorStates.put(id,ss);
+					}
+				}
+				catch (Exception e)
+				{	String msg=String.format("Error regenerating sensor state for %s\n%s", id, Utils.throwableToString(e) );
+					aContext.logRaw(INKFLocale.LEVEL_WARNING, msg);
+				}
+			}
+		}
+		onChanges(aContext);
 	}
 	
 	private IHDSDocument getState(INKFRequestContext aContext) throws Exception

@@ -91,6 +91,9 @@
 			</space>
 		</branch-merge>
 		<import>
+			<uri>urn:io:polestar:grafana</uri>
+		</import>
+		<import>
 			<uri>urn:org:netkernel:ext:layer1</uri>
 			<private/>
 		</import>
@@ -310,5 +313,25 @@
 		</import>
 	</rootspace>
 		
-		
+	<rootspace name="Polestar / Grafana " uri="urn:io:polestar:grafana" public="false" private-filter="false">
+		<endpoint>
+			<id>polestar:grafana:jsonendpoint</id>
+			<grammar>res:/
+				<group name="type"><regex>(search|query|annotations|tag-keys|tag-values)</regex></group>
+			</grammar>
+			<class>io.polestar.grafana.JSONEndpoint</class>
+		</endpoint>
+		<import>
+			<uri>urn:io:polestar:data</uri>
+			<private/>
+		</import>
+		<import>
+			<uri>urn:org:netkernel:json:core</uri>
+			<private/>
+		</import>
+		<import>
+			<uri>urn:org:netkernel:mod:hds</uri>
+			<private/>
+		</import>
+	</rootspace>
 </module>

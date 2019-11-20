@@ -10,6 +10,8 @@ import org.netkernel.layer0.nkf.INKFRequest;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFResponse;
 import org.netkernel.layer0.nkf.INKFResponseReadOnly;
+import org.netkernel.layer0.representation.IHDSNode;
+import org.netkernel.layer0.util.Base64;
 import org.netkernel.layer0.util.Utils;
 import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
@@ -22,6 +24,7 @@ import io.polestar.api.IPolestarQuery;
 import io.polestar.api.IPolestarQueryResultSet;
 import io.polestar.api.QueryType;
 import io.polestar.data.api.PolestarContext;
+import io.polestar.data.util.MonitorUtils;
 
 public class JSONEndpoint extends StandardAccessorImpl
 {
@@ -37,28 +40,53 @@ public class JSONEndpoint extends StandardAccessorImpl
 	{
 		String type=aContext.getThisRequest().getArgumentValue("type");
 		
-		
-		try
+		if (checkAuth(aContext))
 		{
-			INKFRequest req=aContext.createRequest("active:JSONToHDS");
-			req.addArgument("operand", "httpRequest:/body");
-			req.setRepresentationClass(IHDSDocument.class);
-			IHDSReader s=((IHDSDocument)aContext.issueRequest(req)).getReader();
-			//System.out.println(String.format("Grafana.%s: %s",type,s.toString()));
-			switch(type)
-			{	case "search":
-					onSearch(s,aContext);
-					break;
-				case "query":
-					onQuery(s,aContext);
-					break;
+			try
+			{
+				INKFRequest req=aContext.createRequest("active:JSONToHDS");
+				req.addArgument("operand", "httpRequest:/body");
+				req.setRepresentationClass(IHDSDocument.class);
+				IHDSReader s=((IHDSDocument)aContext.issueRequest(req)).getReader();
+				//System.out.println(String.format("Grafana.%s: %s",type,s.toString()));
+				switch(type)
+				{	case "search":
+						onSearch(s,aContext);
+						break;
+					case "query":
+						onQuery(s,aContext);
+						break;
+				}
+			}
+			catch (Exception e)
+			{
+				String msg=String.format("Unhandled Grafana error handing %s:\n%s", type, Utils.throwableToString(e));
+				aContext.logRaw(INKFLocale.LEVEL_WARNING, msg);
 			}
 		}
-		catch (Exception e)
-		{
-			String msg=String.format("Unhandled Grafana error handing %s:\n%s", type, Utils.throwableToString(e));
-			aContext.logRaw(INKFLocale.LEVEL_WARNING, msg);
+	}
+	
+	private boolean checkAuth(INKFRequestContext aContext) throws Exception
+	{
+		boolean authorized=false;
+		String authHeader=aContext.source("httpRequest:/header/Authorization",String.class);
+		if (authHeader!=null && authHeader.startsWith("Basic "))
+		{	authHeader=authHeader.substring(6);
+			byte[] decoded=Base64.decode(authHeader);
+			String decodedString=new String(decoded,"ASCII");
+			int i=decodedString.indexOf(':');
+			String username=decodedString.substring(0,i);
+			String password=decodedString.substring(i+1);
+			IHDSNode user=MonitorUtils.authenticate(username, password, aContext);
+			if (user!=null)
+			{	authorized=true;
+			}
 		}
+		if (!authorized)
+		{	INKFResponse resp=aContext.createResponseFrom("not authorized");
+			resp.setHeader("httpResponse:/code", 403);
+		}
+		return authorized;
 	}
 	
 	public void onQuery(IHDSReader aBody, INKFRequestContext aContext) throws Exception

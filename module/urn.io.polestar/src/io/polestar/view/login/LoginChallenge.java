@@ -25,20 +25,7 @@ import io.polestar.view.template.TemplateWrapper;
 public class LoginChallenge extends StandardAccessorImpl
 {
 	
-	private static IHDSNode authenticate(String aUsername, String aPassword, INKFRequestContext aContext) throws Exception
-	{	IHDSNode result=MonitorUtils.getUserDetails(aUsername,aContext);
-		if (result!=null)
-		{	String passwordHash=(String)result.getFirstValue("password");
-			INKFRequest req=aContext.createRequest("active:checkPasswordHash");
-			req.addArgumentByValue("hash",passwordHash);
-			req.addArgumentByValue("password",aPassword);
-			req.setRepresentationClass(Boolean.class);
-			if (!(Boolean)aContext.issueRequest(req))
-			{	result=null;
-			}
-		}
-		return result;
-	}
+	
 	
 	
 	public void onSource(INKFRequestContext aContext) throws Exception
@@ -74,7 +61,7 @@ public class LoginChallenge extends StandardAccessorImpl
 		String statusMessage=null;
 		if (username!=null && password!=null)
 		{	
-			IHDSNode user=authenticate(username, password, aContext);
+			IHDSNode user=MonitorUtils.authenticate(username, password, aContext);
 			if (user!=null)
 			{	aContext.sink("session:/username", username);
 				String role=(String)user.getFirstValue("role");

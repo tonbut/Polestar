@@ -46,6 +46,21 @@ import io.polestar.view.login.RememberMeCookie;
 public class MonitorUtils
 {
 	
+	public static IHDSNode authenticate(String aUsername, String aPassword, INKFRequestContext aContext) throws Exception
+	{	IHDSNode result=MonitorUtils.getUserDetails(aUsername,aContext);
+		if (result!=null)
+		{	String passwordHash=(String)result.getFirstValue("password");
+			INKFRequest req=aContext.createRequest("active:checkPasswordHash");
+			req.addArgumentByValue("hash",passwordHash);
+			req.addArgumentByValue("password",aPassword);
+			req.setRepresentationClass(Boolean.class);
+			if (!(Boolean)aContext.issueRequest(req))
+			{	result=null;
+			}
+		}
+		return result;
+	}
+	
 	public static void log(INKFRequestContext aContext, String aOrigin, int aLevel, String aMessage)
 	{
 		//System.out.println("MonitorUtils.log "+aLevel+" "+aOrigin+" "+aMessage);

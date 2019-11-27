@@ -1,30 +1,15 @@
 package io.polestar.data.scripts;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.bson.BSONObject;
 import org.netkernel.layer0.nkf.INKFLocale;
 import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.nkf.INKFResponse;
 import org.netkernel.layer0.urii.ParsedIdentifierImpl;
-import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
-import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 import org.netkernel.util.Utils;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.WriteResult;
-
-import io.polestar.data.db.MongoUtils;
+import io.polestar.data.db.PersistenceFactory;
 import io.polestar.data.util.MonitorUtils;
 
 public class ScriptExecutionDataAccessor extends StandardAccessorImpl
@@ -33,16 +18,6 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 	
 	public ScriptExecutionDataAccessor()
 	{	this.declareThreadSafe();
-	}
-	
-	public void postCommission(INKFRequestContext aContext) throws Exception
-	{	
-		DBCollection col=MongoUtils.getCollection(COLLECTION_SCRIPT_EXEC);
-		List<DBObject> indexes=col.getIndexInfo();
-		if (indexes.size()==0)
-		{	col.createIndex(new BasicDBObject("id", 1));
-		}
-		//col.remove(new BasicDBObject());
 	}
 	
 	public void onSource(INKFRequestContext aContext) throws Exception
@@ -65,105 +40,29 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 	
 	public void onScriptExecutionReset(INKFRequestContext aContext) throws Exception
 	{
-		DBCollection col=MongoUtils.getCollection(COLLECTION_SCRIPT_EXEC);
-		
-		BasicDBObject query=new BasicDBObject();
-		BasicDBObject state=new BasicDBObject();
-		BasicDBObject set=new BasicDBObject();
-		set.append("c", 0);
-		set.append("ec",0);
-		state.append("$set", set);
-		WriteResult wr=col.update(query,state,false,true);
+		PersistenceFactory.getPersistence(aContext).resetScriptStats(aContext);
 		MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO, "Script statistics reset");
 	}
 		
 	public void onScriptExecutionStatus(INKFRequestContext aContext) throws Exception
 	{
-		DBCollection col=MongoUtils.getCollection(COLLECTION_SCRIPT_EXEC);
-		//System.out.println(col.getStats());
-		//DBCursor cursor = col.find(new BasicDBObject("id",new BasicDBObject("$ne","blah")));
-		DBCursor cursor = col.find();
-		IHDSMutator m=HDSFactory.newDocument();
-		m.pushNode("scripts");
-		while (cursor.hasNext())
-		{	DBObject dbo=cursor.next();
-			String id=(String)dbo.get("id");
-			
-			Number c=(Number)dbo.get("c");
-			if (c==null) c=Integer.valueOf(0);
-			Number ec=(Number)dbo.get("ec");
-			if (ec==null) ec=Integer.valueOf(0);
-			float errorPercent=ec.floatValue()/c.floatValue();
-			Long lastExec=(Long)dbo.get("t");
-			Long lastError=(Long)dbo.get("et");
-			String error=(String)dbo.get("e");
-			Long lastEdited=(Long)dbo.get("ed");
-			
-			m.pushNode("script")
-			.addNode("id", id)
-			.addNode("count", c)
-			.addNode("errors", ec)
-			.addNode("errorPercent", errorPercent)
-			.addNode("lastExecTime", lastExec)
-			.addNode("lastErrorTime", lastError)
-			.addNode("lastError", error)
-			.addNode("lastEdited", lastEdited)
-			.popNode();
-			
-		}
-		m.declareKey("byId", "/scripts/script", "id");
-		aContext.createResponseFrom(m.toDocument(false)).setExpiry(INKFResponse.EXPIRY_ALWAYS);
+		IHDSDocument stats=PersistenceFactory.getPersistence(aContext).getScriptStats(aContext);
+		IHDSReader r=stats.getReader();
+		r.declareKey("byId", "/scripts/script", "id");
+		INKFResponse resp=aContext.createResponseFrom(r.toDocument());
+		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 	}
 	
 	public void onScriptExecutionUpdate(INKFRequestContext aContext) throws Exception
 	{
-		String id=aContext.source("arg:id",String.class);
+		String idString=aContext.source("arg:id",String.class);
+		long id=MonitorUtils.fromHexString(idString);
 		boolean isEdit=aContext.getThisRequest().argumentExists("edit");
-		
+		String error=null;
+		if (aContext.getThisRequest().argumentExists("error"))
+		{	error=aContext.source("arg:error",String.class);
+		}
 		long now=System.currentTimeMillis();
-		
-		DBCollection col=MongoUtils.getCollection(COLLECTION_SCRIPT_EXEC);
-		
-		BasicDBList inO=new BasicDBList();
-		inO.add(id);
-		BasicDBObject query=new BasicDBObject("id", new BasicDBObject("$in",inO));
-		
-		//eq doesn't work in older versions of mongoDB
-		//BasicDBObject query=new BasicDBObject("id", new BasicDBObject("$eq",id));
-		
-		BasicDBObject state=new BasicDBObject();
-		state.append("$setOnInsert", new BasicDBObject("id",id));
-		
-		BasicDBObject set=new BasicDBObject();
-		BasicDBObject inc=new BasicDBObject();
-		
-		if (isEdit)
-		{	set.append("ed",now);
-			state.append("$set", set);
-		}
-		else
-		{	//execution
-			set.append("t", now);
-			inc.append("c",1);
-			
-			String error=null;
-			if (aContext.getThisRequest().argumentExists("error"))
-			{	error=aContext.source("arg:error",String.class);
-			}
-			
-			if (error==null || error.length()==0)
-			{	//set.append("e",null);
-			}
-			else
-			{	set.append("e",error);
-				set.append("et",now);
-				inc.append("ec",1);
-			}
-			state.append("$set", set);
-			state.append("$inc", inc);
-		}
-
-		
-		WriteResult wr=col.update(query,state,true,false);
+		PersistenceFactory.getPersistence(aContext).updateScriptStats(id,isEdit,error,now);
 	}
 }

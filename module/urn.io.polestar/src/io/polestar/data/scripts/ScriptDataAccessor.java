@@ -16,16 +16,18 @@ package io.polestar.data.scripts;
 
 import java.util.Random;
 
-import org.netkernel.layer0.nkf.*;
+import org.netkernel.layer0.nkf.INKFRequestContext;
+import org.netkernel.layer0.nkf.INKFResponse;
+import org.netkernel.layer0.nkf.NKFException;
 import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
-import io.polestar.data.db.MongoUtils;
-import io.polestar.data.util.MonitorUtils;
 
-import com.mongodb.*;
+import io.polestar.data.db.IPolestarPersistence;
+import io.polestar.data.db.PersistenceFactory;
+import io.polestar.data.util.MonitorUtils;
 
 public class ScriptDataAccessor extends StandardAccessorImpl
 {
@@ -44,54 +46,31 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 		{	fragment=aContext.getThisRequest().getArgumentValue("fragment");
 		}
 		
-		BasicDBObject query = new BasicDBObject("id", id);
-		DBCollection col=MongoUtils.getCollection("scripts");
-		DBCursor cursor = col.find(query);
-		try
-		{	if(cursor.hasNext())
-			{	DBObject dbo=cursor.next();
-			
-				if (fragment==null)
-				{	IHDSMutator m=HDSFactory.newDocument();
-					m.pushNode("script");
-					m.addNode("id",idString);
-					m.addNode("name",(String)dbo.get("name"));
-					m.addNode("script",(String)dbo.get("script"));
-					m.addNode("state",(String)dbo.get("state"));
-					m.addNode("triggers",(String)dbo.get("triggers"));
-					m.addNode("period",(String)dbo.get("period"));
-					m.addNode("target",(String)dbo.get("target"));
-					m.addNode("keywords",(String)dbo.get("keywords"));
-					m.addNode("public",dbo.get("public"));
-					m.popNode();
-					INKFResponse resp=aContext.createResponseFrom(m.toDocument(false));
-					//resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
-					MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id, "gt:script:"+id+":state");
-					return;
-				}
-				else
-				{	Object rep=null;
-					if (fragment.equals("script"))
-					{	
-						String script=(String)dbo.get("script");
-						String name=(String)dbo.get("name");
-						script=String.format(SCRIPT_HEAD,name)+script;
-						rep=script;
-						MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id);
-					}
-					else if (fragment.equals("state"))
-					{	rep=dbo.get("state");
-						MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id+":state");
-					}
-					INKFResponse resp=aContext.createResponseFrom(rep);
-					//resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
-					return;
-				}
-		   }
-		} finally
-		{	cursor.close();
+		IHDSDocument script=PersistenceFactory.getPersistence(aContext).getScript(id, aContext);
+		if (fragment==null)
+		{
+			INKFResponse resp=aContext.createResponseFrom(script);
+			MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id, "gt:script:"+id+":state");
 		}
-		throw new NKFException("Script not found","with id="+idString);
+		else
+		{
+			Object rep=null;
+			IHDSReader r=script.getReader();
+			if (fragment.equals("script"))
+			{	
+				String code=(String)r.getFirstValue("/script/script");
+				String name=(String)r.getFirstValue("/script/name");
+				code=String.format(SCRIPT_HEAD,name)+code;
+				rep=code;
+				MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id);
+			}
+			else if (fragment.equals("state"))
+			{	
+				rep=r.getFirstValue("/script/state");
+				MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id+":state");
+			}
+			INKFResponse resp=aContext.createResponseFrom(rep);
+		}
 	}
 
 	public void onSink(INKFRequestContext aContext) throws Exception
@@ -103,91 +82,55 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 		{	fragment=aContext.getThisRequest().getArgumentValue("fragment");
 		}
 		
-		BasicDBObject query = new BasicDBObject("id", id);
-		DBCollection col=MongoUtils.getCollection("scripts");
-		
-		BasicDBObject update = new BasicDBObject();
-		boolean needsUpdate=false;
-
+		IHDSDocument saveState;
 		if (fragment==null)
-		{	IHDSReader primary=aContext.sourcePrimary(IHDSDocument.class).getReader().getFirstNode("*");
-			Object name=primary.getFirstValueOrNull("name");	
-			if (name!=null)
-			{	update.append("name", name);
-				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id, ListScriptsAccessor.GT_SCRIPT_LIST);
-				needsUpdate=true;
-			}
-			Object triggers=primary.getFirstValueOrNull("triggers");	
-			if (triggers!=null)
-			{	update.append("triggers", triggers);
-				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id, ListScriptsAccessor.GT_SCRIPT_LIST);
-				needsUpdate=true;
-			}
-			Object period=primary.getFirstValueOrNull("period");	
-			if (period!=null)
-			{	update.append("period", period);
-				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id, ListScriptsAccessor.GT_SCRIPT_LIST);
-				needsUpdate=true;
-			}
-			Object target=primary.getFirstValueOrNull("target");	
-			if (target!=null)
-			{	update.append("target", target);
-				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id, ListScriptsAccessor.GT_SCRIPT_LIST);
-				needsUpdate=true;
-			}
-			Object keywords=primary.getFirstValueOrNull("keywords");	
-			if (keywords!=null)
-			{	update.append("keywords", keywords);
-				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id, ListScriptsAccessor.GT_SCRIPT_LIST);
-				needsUpdate=true;
-			}
-			Object isPublic=primary.getFirstValueOrNull("public");	
-			if (isPublic!=null)
-			{	update.append("public", isPublic);
-				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id);
-				needsUpdate=true;
-			}
-			Object script=primary.getFirstValueOrNull("script");
-			if (script!=null)
-			{	update.append("script", script);
-				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id);
-				needsUpdate=true;
-			}
-			Object state=primary.getFirstValueOrNull("state");
-			if (state!=null)
-			{	update.append("state", state);
-				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id+":state");
-				needsUpdate=true;
-			}
+		{	saveState=aContext.sourcePrimary(IHDSDocument.class);
 		}
 		else
 		{	if (fragment.equals("state"))
-			{	Object state=aContext.sourcePrimary(String.class);
-				update.append("state", state);
-				MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id+":state");
-				needsUpdate=true;
+			{
+				Object state=aContext.sourcePrimary(String.class);
+				IHDSMutator m=HDSFactory.newDocument();
+				m.pushNode("script").addNode("state", state);
+				saveState=m.toDocument(false);
+			}
+			else
+			{	throw new NKFException("unknown fragment "+fragment);
+			}
+		}
+		PersistenceFactory.getPersistence(aContext).setScript(id, saveState, aContext);
+		
+		boolean cutList=false;
+		boolean cutState=false;
+		for (IHDSReader childNode : saveState.getReader().getNodes("/script/*"))
+		{
+			String name=(String)childNode.getFirstValue("name()");
+			if (!cutList && (name.equals("name") || name.equals("triggers") || name.equals("period") || name.equals("target") || name.equals("keywords")))
+			{	cutList=true;
+			}
+			if (!cutState && name.equals("state"))
+			{	cutState=true;
 			}
 		}
 		
-		if (needsUpdate)
-		{	BasicDBObject set = new BasicDBObject("$set",update);
-			WriteResult wr=col.update(query, set);
-		}
+		MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id);
+		if (cutList) MonitorUtils.cutGoldenThread(aContext, ListScriptsAccessor.GT_SCRIPT_LIST);
+		if (cutState) MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id+":state");
 	}
 
 	public void onExists(INKFRequestContext aContext) throws Exception
 	{	String idString=aContext.getThisRequest().getArgumentValue("id");
 		Long id=MonitorUtils.fromHexString(idString);
-		BasicDBObject query = new BasicDBObject("id", id);
-		DBCollection col=MongoUtils.getCollection("scripts");
-		DBCursor cursor = col.find(query);
-		boolean exists=false;
+		boolean result;
 		try
-		{	exists=cursor.hasNext();
-		} finally
-		{	cursor.close();
+		{
+			IHDSDocument script=PersistenceFactory.getPersistence(aContext).getScript(id, aContext);
+			result=true;
 		}
-		aContext.createResponseFrom(exists).setExpiry(INKFResponse.EXPIRY_ALWAYS);
+		catch (NKFException e)
+		{	result=false;
+		}
+		aContext.createResponseFrom(result).setExpiry(INKFResponse.EXPIRY_ALWAYS);
 	}
 
 	public void onNew(INKFRequestContext aContext) throws Exception
@@ -202,19 +145,24 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 			id=r.nextLong();
 			idString=MonitorUtils.hexString(id);
 		}
-		BasicDBObject doc = new BasicDBObject("name", "Script "+idString);
-		doc.append("id", id);
-		doc.append("triggers", "");
-		doc.append("keywords", "");
-		doc.append("script", "");
-		doc.append("state", "<state/>");
-		doc.append("public", "private");
 		
-		DBCollection col=MongoUtils.getCollection("scripts");
-		long size=col.getCount();
-		doc.append("order", (int)size);
+		IPolestarPersistence persistence=PersistenceFactory.getPersistence(aContext);
 		
-		col.insert(doc);
+		int size=((Number)persistence.getScriptList(aContext).getReader().getFirstValue("count(/scripts/script)")).intValue();
+		
+		IHDSMutator m=HDSFactory.newDocument();
+		m.pushNode("script")
+			.addNode("name", "Script "+idString)
+			.addNode("id", id)
+			.addNode("triggers", "")
+			.addNode("keywords", "")
+			.addNode("script", "")
+			.addNode("state", "<state/>")
+			.addNode("public", "private")
+			.addNode("order", size);
+		
+		persistence.addScript(m.toDocument(false),aContext);
+		
 		aContext.createResponseFrom("res:/md/script/"+idString);
 		MonitorUtils.cutGoldenThread(aContext, ListScriptsAccessor.GT_SCRIPT_LIST);
 	}
@@ -223,11 +171,8 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 	{
 		String idString=aContext.getThisRequest().getArgumentValue("id");
 		Long id=MonitorUtils.fromHexString(idString);
-		BasicDBObject query = new BasicDBObject("id", id);
-		DBCollection col=MongoUtils.getCollection("scripts");
-		WriteResult wr=col.remove(query);
-		boolean result=wr.getN()>0;
-		aContext.createResponseFrom(result);
+		boolean deleted=PersistenceFactory.getPersistence(aContext).deleteScript(id, aContext);
+		aContext.createResponseFrom(deleted);
 		MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id, ListScriptsAccessor.GT_SCRIPT_LIST);
 	}
 	

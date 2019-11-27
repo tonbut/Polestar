@@ -15,7 +15,6 @@
 package io.polestar.data.util;
 
 import java.math.BigInteger;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,11 +35,7 @@ import org.netkernel.layer0.representation.IHDSNode;
 import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSReader;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.WriteResult;
-
-import io.polestar.data.db.MongoUtils;
+import io.polestar.data.db.PersistenceFactory;
 import io.polestar.view.login.RememberMeCookie;
 
 public class MonitorUtils
@@ -61,29 +56,12 @@ public class MonitorUtils
 		return result;
 	}
 	
-	public static void log(INKFRequestContext aContext, String aOrigin, int aLevel, String aMessage)
+	public static void log(INKFRequestContext aContext, String aOrigin, int aLevel, String aMessage) throws NKFException
 	{
-		//System.out.println("MonitorUtils.log "+aLevel+" "+aOrigin+" "+aMessage);
 		aContext.logRaw(aLevel, aMessage);
-		try
-		{	DBCollection log=MongoUtils.getCollection("log");
-			long now=System.currentTimeMillis();			
-			BasicDBObject sensor=new BasicDBObject();
-			sensor.append("t", now);
-			sensor.append("l", aLevel);
-			sensor.append("o", aOrigin);
-			sensor.append("m", aMessage);
-			WriteResult wr=log.insert(sensor);
-		
-		}
-		catch (UnknownHostException uhe)
-		{	aContext.logRaw(INKFLocale.LEVEL_SEVERE, "Can't write to log: "+uhe.getMessage());
-		}
+		PersistenceFactory.getPersistence(aContext).log(aOrigin,aLevel,aMessage,aContext);
 	}
-	
-	
-	
-	
+
 	private static String[] sColourScheme = {
 			"#d52a2d", "#30a039", "#2177b1", "#fe802a", "#9367ba", "#8c564c", "#e278c0", "#7f7f7f", "#bcbd3b", "#1fbecd" };
 

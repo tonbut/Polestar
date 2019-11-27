@@ -35,6 +35,7 @@
 			<varargs/>
 		</request>
 	</endpoint>
+	<!--
 	<endpoint>
 		<id>polestar:data:queryCapture</id>
 		<grammar>
@@ -63,6 +64,7 @@
 			<varargs/>
 		</request>
 	</endpoint>
+	-->
 	<endpoint>
 		<id>polestar:data:selfSignedConnectionManager</id>
 		<grammar>

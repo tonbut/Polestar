@@ -19,22 +19,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.netkernel.layer0.nkf.*;
+import org.netkernel.layer0.nkf.INKFRequestContext;
 import org.netkernel.layer0.util.MultiMap;
-import org.netkernel.layer0.util.Utils;
 import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
-import io.polestar.data.util.MonitorUtils;
-
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 
 public class ScriptTriggersAccessor extends StandardAccessorImpl
 {

@@ -30,6 +30,7 @@
 			<exports>
 				<match>io.polestar.api.*</match>
 				<match>io.polestar.data.api.*</match>
+				<match>io.polestar.data.db.*</match>
 			</exports>
 		</classloader>
 	</system>
@@ -187,8 +188,8 @@
 			<id>polestar:data:error</id>
 			<grammar><active>
 				<identifier>active:polestarSensorErrorInfo</identifier>
-				<identifier>active:polestarSensorErrorList</identifier>
-				<argument name="id" min="0"/>
+				<!--<identifier>active:polestarSensorErrorList</identifier>-->
+				<argument name="id"/> <!--  min="0" -->
 				<argument name="duration"/>
 			</active></grammar>
 			<class>io.polestar.data.sensors.SensorErrorAccessor</class>
@@ -255,6 +256,12 @@
 				</fileset>
 			</space>
 		</mapper>
+		
+		<endpoint>
+			<private/>
+			<class>io.polestar.data.db.PersistenceFactory</class>
+		</endpoint>
+		
 		<import>
 			<uri>urn:org:netkernel:ext:layer1</uri>
 		</import>						

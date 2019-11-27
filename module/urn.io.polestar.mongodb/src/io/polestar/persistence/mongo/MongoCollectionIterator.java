@@ -1,4 +1,4 @@
-package io.polestar.data.api;
+package io.polestar.persistence.mongo;
 
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -11,7 +11,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 
-import io.polestar.data.db.MongoUtils;
+import io.polestar.data.api.ICollectionIterator;
 
 public class MongoCollectionIterator
 {
@@ -21,13 +21,13 @@ public class MongoCollectionIterator
 	
 	private static Object getSensorValue(DBObject aCapture, String aFragment)
 	{	Object v=aCapture.get("v");
-		if (v instanceof Map && aFragment!=null)
+		if (v instanceof Map)
 		{	v=((Map)v).get(aFragment);		
 		}
 		return v;
 	}
 	
-	public static ICollectionIterator getSensorForwardIterator(final String aSensor, final long aStart, final long aEnd, final String fragment)
+	public static ICollectionIterator getSensorForwardIterator(final String aSensor, final long aStart, final long aEnd, final String fragment, MongoPersistence aPersistence)
 	{
 		return new ICollectionIterator()
 		{
@@ -49,7 +49,7 @@ public class MongoCollectionIterator
 				{
 					if (mState==State.INIT)
 					{
-						DBCollection col=MongoUtils.getCollectionForSensor(aSensor);
+						DBCollection col=aPersistence.getCollectionForSensor(aSensor);
 						BasicDBObject startI=new BasicDBObject("t", new BasicDBObject("$lt",aStart));
 						DBCursor cursor = col.find(startI).sort(new BasicDBObject("t",-1)).limit(1);
 						if (cursor.hasNext())
@@ -65,7 +65,7 @@ public class MongoCollectionIterator
 						result=true;
 					}
 					else if (mState==State.PRE)
-					{	DBCollection col=MongoUtils.getCollectionForSensor(aSensor);
+					{	DBCollection col=aPersistence.getCollectionForSensor(aSensor);
 						BasicDBObject startO=new BasicDBObject("t", new BasicDBObject("$gte",aStart));
 						BasicDBObject endO=new BasicDBObject("t", new BasicDBObject("$lt",aEnd));
 						BasicDBList listO=new BasicDBList();
@@ -114,7 +114,7 @@ public class MongoCollectionIterator
 		};
 	}
 	
-	public static ICollectionIterator getSensorBackwardIterator(final String aSensor, final long aStart, final long aEnd, final String fragment)
+	public static ICollectionIterator getSensorBackwardIterator(final String aSensor, final long aStart, final long aEnd, final String fragment, MongoPersistence aPersistence)
 	{
 		return new ICollectionIterator()
 		{
@@ -135,7 +135,7 @@ public class MongoCollectionIterator
 				{
 					if (mState==State.INIT)
 					{
-						DBCollection col=MongoUtils.getCollectionForSensor(aSensor);
+						DBCollection col=aPersistence.getCollectionForSensor(aSensor);
 						BasicDBObject startO=new BasicDBObject("t", new BasicDBObject("$gte",aStart));
 						BasicDBObject endO=new BasicDBObject("t", new BasicDBObject("$lt",aEnd));
 						BasicDBList listO=new BasicDBList();
@@ -163,7 +163,7 @@ public class MongoCollectionIterator
 					
 					if (mState==State.PRE)
 					{
-						DBCollection col=MongoUtils.getCollectionForSensor(aSensor);
+						DBCollection col=aPersistence.getCollectionForSensor(aSensor);
 						BasicDBObject startI=new BasicDBObject("t", new BasicDBObject("$lt",aStart));
 						DBCursor cursor = col.find(startI).sort(new BasicDBObject("t",-1)).limit(1);
 						if (cursor.hasNext())
@@ -201,7 +201,7 @@ public class MongoCollectionIterator
 		};
 	}
 	
-	public static ICollectionIterator getErrorForwardIterator(final String aSensor, final long aStart, final long aEnd)
+	public static ICollectionIterator getErrorForwardIterator(final String aSensor, final long aStart, final long aEnd, MongoPersistence aPersistence)
 	{
 		return new ICollectionIterator()
 		{
@@ -223,7 +223,7 @@ public class MongoCollectionIterator
 				{
 					if (mState==State.INIT)
 					{
-						DBCollection col=MongoUtils.getCollection(ERROR_COLLECTION);
+						DBCollection col=aPersistence.getCollection(ERROR_COLLECTION);
 						
 						BasicDBList inO=new BasicDBList();
 						inO.add(aSensor);
@@ -250,7 +250,7 @@ public class MongoCollectionIterator
 					else if (mState==State.PRE)
 					{	
 											
-						DBCollection col=MongoUtils.getCollection(ERROR_COLLECTION);
+						DBCollection col=aPersistence.getCollection(ERROR_COLLECTION);
 						BasicDBList inO=new BasicDBList();
 						inO.add(aSensor);
 						BasicDBObject idEqualsO=new BasicDBObject("i", new BasicDBObject("$in",inO));
@@ -304,7 +304,7 @@ public class MongoCollectionIterator
 		};
 	}
 
-	public static ICollectionIterator getErrorBackwardIterator(final String aSensor, final long aStart, final long aEnd) throws NKFException
+	public static ICollectionIterator getErrorBackwardIterator(final String aSensor, final long aStart, final long aEnd, MongoPersistence aPersistence) throws NKFException
 	{
 		throw new NKFException("Not Implemented");
 		//return null;

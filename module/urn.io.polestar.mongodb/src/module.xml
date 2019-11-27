@@ -26,9 +26,32 @@
 	</meta>
 	<system>
 		<dynamic/>
-		
+		<classloader>
+			<exports>
+				<match>io\.polestar\.persistence\.mongo\..*</match>
+			</exports>
+		</classloader>
 	</system>
-	<rootspace name="Polestar / MongoDB ">
-		
+	<rootspace name="Polestar / MongoDB Persistence">
+		<literal type="xml" uri="res:/etc/PolestarPersistence.xml">
+			<config>active:mongoDBPersistence</config>
+		</literal>
+		<accessor>
+			<grammar>active:mongoDBPersistence</grammar>
+			<class>io.polestar.persistence.mongo.MongoPersistenceFactory</class>
+		</accessor>
+		<!-- import to get classloaded from polestar for persistence interface -->
+		<import>
+			<private/>
+			<uri>urn:io:polestar:data</uri>
+		</import>
+		<import>
+			<private/>
+			<uri>urn:org:netkernel:mod:hds</uri>
+		</import>
+		<import>
+			<private/>
+			<uri>urn:org:netkernel:json:core</uri>
+		</import>
 	</rootspace>
 </module>

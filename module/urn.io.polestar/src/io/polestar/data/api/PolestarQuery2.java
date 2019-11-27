@@ -1,9 +1,7 @@
 package io.polestar.data.api;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.netkernel.layer0.nkf.INKFLocale;
 import org.netkernel.layer0.nkf.INKFRequest;
@@ -13,19 +11,13 @@ import org.netkernel.mod.hds.HDSFactory;
 import org.netkernel.mod.hds.IHDSDocument;
 import org.netkernel.mod.hds.IHDSMutator;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-
-import io.polestar.api.IPolestarContext;
 import io.polestar.api.IPolestarMatcher;
 import io.polestar.api.IPolestarQuery;
 import io.polestar.api.IPolestarQueryResultSet;
 import io.polestar.api.QueryType;
 import io.polestar.data.api.QueryIteratorController.IQueryIteratorController;
-import io.polestar.data.db.MongoUtils;
+import io.polestar.data.db.IPolestarPersistence;
+import io.polestar.data.db.PersistenceFactory;
 import io.polestar.data.util.MonitorUtils;
 
 public class PolestarQuery2 implements IPolestarQuery
@@ -216,159 +208,6 @@ public class PolestarQuery2 implements IPolestarQuery
 		return m;
 	}
 	
-	private Object executeHistoricalQuery(IHDSDocument aQuery) throws NKFException
-	{	INKFRequest req=mContext.createRequest("active:polestarHistoricalQuery");
-		req.addArgumentByValue("operator",aQuery);
-		req.setRepresentationClass(IHDSDocument.class);
-		IHDSDocument rep=(IHDSDocument)mContext.issueRequest(req);
-		
-		if (mPeriod>0)
-		{	return rep.getReader().getValues("/rows/row/sensor1");
-		}
-		else
-		{	return rep.getReader().getFirstValue("/rows/row[1]/sensor1");
-		}
-	}
-	
-	/*
-	private Object getSensorValue(DBObject aCapture)
-	{	Object v=aCapture.get("v");
-		if (v instanceof Map && mFragment!=null)
-		{	v=((Map)v).get(mFragment);			
-		}
-		return v;
-	}
-	
-	private void iterateForward(IQueryIteratorController aController) throws NKFException
-	{
-		try
-		{
-			DBCollection col=MongoUtils.getCollectionForSensor(mSensor);
-			
-			//initialise with value directly before start
-			BasicDBObject startI=new BasicDBObject("t", new BasicDBObject("$lt",mStart));
-			DBCursor cursorP = col.find(startI).sort(new BasicDBObject("t",-1)).limit(1);
-			
-			Object lastValue=null;
-			long lastTime=mStart;
-			if (cursorP.hasNext())
-			{	DBObject previous=cursorP.next();
-				lastValue=previous.get("v");
-			}
-			
-			boolean continueIterating=true;
-			BasicDBObject startO=new BasicDBObject("t", new BasicDBObject("$gte",mStart));
-			BasicDBObject endO=new BasicDBObject("t", new BasicDBObject("$lt",mEnd));
-			BasicDBList listO=new BasicDBList();
-			listO.add(startO);
-			listO.add(endO);
-			BasicDBObject queryO=new BasicDBObject("$and", listO);
-			DBCursor cursor = col.find(queryO);
-			
-			DBObject capture=null;
-			int index=0;
-			do
-			{	if (cursor.hasNext())
-				{	capture=cursor.next();
-				}
-				else
-				{	break;
-				}
-				long time=(Long)capture.get("t");
-				Object value=capture.get("v");
-				continueIterating=aController.accept(lastValue, lastTime, time-lastTime, index);
-				index++;
-				lastTime=time;
-				lastValue=value;
-			} while (continueIterating);
-			
-			if (continueIterating)
-			{
-				aController.accept(lastValue, lastTime, mEnd-lastTime, index);
-			}
-	
-		} catch (Exception e)
-		{	throw new NKFException("Unhandled Exception", null, e);
-		}
-	}
-	
-	private IPolestarQueryResultSet iterateForwardRS(IQueryIteratorController aController) throws NKFException
-	{
-		try
-		{
-			DBCollection col=MongoUtils.getCollectionForSensor(mSensor);
-			
-			//initialise with value directly before start
-			BasicDBObject startI=new BasicDBObject("t", new BasicDBObject("$lt",mStart));
-			DBCursor cursorP = col.find(startI).sort(new BasicDBObject("t",-1)).limit(1);
-			
-			Object lastValue=null;
-			long lastTime=mStart;
-			if (cursorP.hasNext())
-			{	DBObject previous=cursorP.next();
-				lastValue=getSensorValue(previous);
-			}
-			
-			BasicDBObject startO=new BasicDBObject("t", new BasicDBObject("$gte",mStart));
-			BasicDBObject endO=new BasicDBObject("t", new BasicDBObject("$lt",mEnd));
-			BasicDBList listO=new BasicDBList();
-			listO.add(startO);
-			listO.add(endO);
-			BasicDBObject queryO=new BasicDBObject("$and", listO);
-			DBCursor cursor = col.find(queryO);
-			int index=0;
-			boolean continueIterating=true;
-			DBObject capture=null;
-			
-			List<Long> times=new ArrayList<Long>();
-			List<Object> values=new ArrayList<Object>();
-			
-			for (long t=mStart; t<mEnd; t+=mPeriod)
-			{	long sampleEndTime=t+mPeriod;
-				do
-				{	
-					if (capture==null)
-					{	if (cursor.hasNext())
-						{	capture=cursor.next();
-						}
-						else
-						{	break;
-						}
-					}
-					long time=(Long)capture.get("t");
-
-					if (time<sampleEndTime)
-					{
-						if (continueIterating)
-						{	Object value=getSensorValue(capture);
-							continueIterating=aController.accept(lastValue, lastTime, time-lastTime, index);
-							index++;
-							lastTime=time;
-							lastValue=value;
-						}
-						capture=null;
-					}
-					else
-					{	break; //move into next sample
-					}
-				} while(true);
-				
-				if (sampleEndTime>=mEnd && continueIterating)
-				{	continueIterating=aController.accept(lastValue, lastTime, mEnd-lastTime, index);
-				}
-				
-				values.add(aController.getResult());
-				times.add(t);
-				
-			}
-			return new PolestarQueryResultSet(times,values);
-
-		} catch (Exception e)
-		{	throw new NKFException("Unhandled Exception", null, e);
-		}
-	}
-	*/
-	
 	private static IPolestarQueryResultSet iterateForward(ICollectionIterator aIterator, IQueryIteratorController aController, long aStart, long aEnd, long aPeriod) throws NKFException
 	{	Object lastValue=null;
 		long lastTime=aStart;
@@ -516,11 +355,16 @@ public class PolestarQuery2 implements IPolestarQuery
 			return mIterator;
 		}
 		else
-		{	if (mFragment!=null && mFragment.equals(ERROR_FRAGMENT))
-			{	return MongoCollectionIterator.getErrorForwardIterator(mSensor, aStart, aEnd);
-			}
-			else
-			{	return MongoCollectionIterator.getSensorForwardIterator(mSensor, aStart, aEnd, mFragment);
+		{	try
+			{	IPolestarPersistence p=PersistenceFactory.getPersistence(mContext);
+				if (mFragment!=null && mFragment.equals(ERROR_FRAGMENT))
+				{	return p.getErrorForwardIterator(mSensor, aStart, aEnd, mContext);
+				}
+				else
+				{	return p.getSensorForwardIterator(mSensor, aStart, aEnd, mFragment, mContext);
+				}
+			} catch (NKFException e)
+			{	throw new RuntimeException(e);
 			}
 		}
 	}
@@ -532,11 +376,16 @@ public class PolestarQuery2 implements IPolestarQuery
 			return mIterator;
 		}
 		else
-		{	if (mFragment!=null && mFragment.equals(ERROR_FRAGMENT))
-			{	return MongoCollectionIterator.getErrorBackwardIterator(mSensor, aStart, aEnd);
-			}
-			else
-			{	return MongoCollectionIterator.getSensorBackwardIterator(mSensor, aStart, aEnd, mFragment);	
+		{	try
+			{	IPolestarPersistence p=PersistenceFactory.getPersistence(mContext);
+				if (mFragment!=null && mFragment.equals(ERROR_FRAGMENT))
+				{	return p.getErrorBackwardIterator(mSensor, aStart, aEnd, mContext);
+				}
+				else
+				{	return p.getSensorBackwardIterator(mSensor, aStart, aEnd, mFragment, mContext);
+				}
+			} catch (NKFException e)
+			{	throw new RuntimeException(e);
 			}
 		}
 	}

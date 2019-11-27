@@ -16,20 +16,18 @@ package io.polestar.data.scripts;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.netkernel.layer0.nkf.*;
-import org.netkernel.mod.hds.HDSFactory;
+import org.netkernel.layer0.nkf.INKFLocale;
+import org.netkernel.layer0.nkf.INKFRequest;
+import org.netkernel.layer0.nkf.INKFRequestContext;
+import org.netkernel.layer0.nkf.INKFRequestReadOnly;
+import org.netkernel.layer0.nkf.INKFResponseReadOnly;
+import org.netkernel.layer0.nkf.NKFException;
 import org.netkernel.mod.hds.IHDSDocument;
-import org.netkernel.mod.hds.IHDSMutator;
 import org.netkernel.mod.hds.IHDSReader;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 import org.netkernel.request.IRequestScopeLevel;
 
 import io.polestar.data.util.MonitorUtils;
-
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
 
 public class ExecuteScriptAccessor extends StandardAccessorImpl
 {

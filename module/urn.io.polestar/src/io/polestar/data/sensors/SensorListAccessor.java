@@ -14,16 +14,16 @@
 */
 package io.polestar.data.sensors;
 
-import java.io.ByteArrayOutputStream;
-import java.text.DateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bson.BSONObject;
-import org.netkernel.layer0.nkf.*;
-import org.netkernel.layer0.representation.ByteArrayRepresentation;
-import org.netkernel.layer0.representation.IBinaryStreamRepresentation;
-import org.netkernel.layer0.representation.IReadableBinaryStreamRepresentation;
+import org.netkernel.layer0.nkf.INKFLocale;
+import org.netkernel.layer0.nkf.INKFRequestContext;
+import org.netkernel.layer0.nkf.INKFResponse;
+import org.netkernel.layer0.nkf.NKFException;
 import org.netkernel.layer0.urii.ParsedIdentifierImpl;
 import org.netkernel.layer0.util.GoldenThreadExpiryFunction;
 import org.netkernel.mod.hds.HDSFactory;
@@ -37,16 +37,8 @@ import io.polestar.api.IPolestarContext;
 import io.polestar.api.IPolestarQuery;
 import io.polestar.api.QueryType;
 import io.polestar.data.api.PolestarContext;
-import io.polestar.data.db.MongoUtils;
+import io.polestar.data.db.PersistenceFactory;
 import io.polestar.data.util.MonitorUtils;
-
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.CommandResult;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.WriteResult;
 
 public class SensorListAccessor extends StandardAccessorImpl
 {
@@ -69,61 +61,19 @@ public class SensorListAccessor extends StandardAccessorImpl
 	{	
 		MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO,"## Polestar Started ##");
 	
-		BasicDBObject query = new BasicDBObject("id",0);
-		DBCollection col=MongoUtils.getCollection("sensorState");
-		DBCursor cursor = col.find(query);
-		try
-		{	if(cursor.hasNext())
-			{	DBObject dbo=cursor.next();	
-				byte[] hds=(byte[])dbo.get("hds");
-				IHDSDocument state=aContext.transrept(new ByteArrayRepresentation(hds), IHDSDocument.class);
-				for (IHDSReader sensor : state.getReader().getNodes("/sensors/sensor"))
-				{	String id=(String)sensor.getFirstValue("id");
-					try
-					{	SensorState ss=new SensorState(sensor);
-						mSensorStates.put(id, ss);
-					} catch (Exception e) {
-						aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
-					}
+		IHDSDocument sensorState=PersistenceFactory.getPersistence(aContext).getCurrentSensorState(aContext);
+		if (sensorState!=null)
+		{
+			for (IHDSReader sensor : sensorState.getReader().getNodes("/sensors/sensor"))
+			{	String id=(String)sensor.getFirstValue("id");
+				try
+				{	SensorState ss=new SensorState(sensor);
+					mSensorStates.put(id, ss);
+				} catch (Exception e) {
+					aContext.logRaw(INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
 				}
 			}
-		} finally
-		{	cursor.close();
 		}
-	
-		//index all sensors
-		Set<String> collections=MongoUtils.getDB().getCollectionNames();
-		for (String collection : collections)
-		{	try
-			{	if (collection.startsWith("sensor:"))
-				{	col=MongoUtils.getCollection(collection);
-					List<DBObject> indexes=col.getIndexInfo();
-					if (indexes.size()<2)
-					{
-						MonitorUtils.log(aContext,null,INKFLocale.LEVEL_INFO,"Creating time index for "+collection);
-						col.createIndex(new BasicDBObject("t", 1));
-					}
-				}
-			}
-			catch (Exception e)
-			{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
-			}
-		}
-		
-		//index errors
-		try
-		{	col=MongoUtils.getCollection("errors");
-			List<DBObject> indexes=col.getIndexInfo();
-			//System.out.println(indexes.size()+" indices on errors");
-			if (indexes.size()<2)
-			{	col.createIndex(new BasicDBObject("t", 1));
-				col.createIndex(new BasicDBObject("i", 1));
-			}
-		}
-		catch (Exception e)
-		{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, Utils.throwableToString(e));
-		}
-		
 		
 		//run startup scripts
 		MonitorUtils.executeTriggeredScripts(Collections.singleton("startup"), true, aContext);
@@ -139,19 +89,8 @@ public class SensorListAccessor extends StandardAccessorImpl
 	}
 	
 	private void saveSensorState(INKFRequestContext aContext) throws Exception
-	{
-		//save current sensor state
-		IHDSDocument state=getState(aContext);
-		IBinaryStreamRepresentation bs=aContext.transrept(state, IBinaryStreamRepresentation.class);
-		ByteArrayOutputStream baos=new ByteArrayOutputStream(4096);
-		bs.write(baos);
-		baos.flush();
-		DBCollection col=MongoUtils.getCollection("sensorState");
-		BasicDBObject o=new BasicDBObject("hds",baos.toByteArray());
-		o.append("id", 0);
-		BasicDBObject set = new BasicDBObject("$set",o);
-		BasicDBObject query = new BasicDBObject("id",0);
-		WriteResult wr=col.update(query, set, true, false);
+	{	IHDSDocument state=getState(aContext);
+		PersistenceFactory.getPersistence(aContext).setCurrentSensorState(state, aContext);
 	}
 
 	public void onSource(INKFRequestContext aContext) throws Exception
@@ -214,71 +153,16 @@ public class SensorListAccessor extends StandardAccessorImpl
 	}
 	
 	public void onSensorInfoDelete(INKFRequestContext aContext) throws Exception
-	{
-		String toDelete=aContext.source("arg:state",String.class);
-		//System.out.println("toDelete "+toDelete);
-		DBCollection col=MongoUtils.getCollectionForSensor(toDelete);
-		col.remove(new BasicDBObject());
+	{	String toDelete=aContext.source("arg:state",String.class);
+		PersistenceFactory.getPersistence(aContext).deleteSensor(toDelete, aContext);
 	}
 	
 	public void onSensorInfo(INKFRequestContext aContext) throws Exception
 	{
-		IHDSMutator m=HDSFactory.newDocument();
-		m.pushNode("sensors");
-		Set<String> collections=MongoUtils.getDB().getCollectionNames();
-		for (String collection : collections)
-		{
-			DBCollection col=MongoUtils.getCollection(collection);
-			
-			if (collection.startsWith("sensor:"))
-			{	
-				CommandResult cr=col.getStats();
-				Long count=cr.getLong("count");
-				Long size=cr.getLong("size");
-
-				long first=-1;
-				long last=-1;
-				DBCursor cursor;
-				
-				try
-				{
-					cursor = col.find().sort(new BasicDBObject("t",1)).limit(1);
-					if (cursor.hasNext())
-					{	DBObject entry=cursor.next();
-						first=(Long)entry.get("t");
-					}
-					cursor = col.find().sort(new BasicDBObject("t",-1)).limit(1);
-					if (cursor.hasNext())
-					{	DBObject entry=cursor.next();
-						last=(Long)entry.get("t");
-					}
-				}
-				catch (Exception e)
-				{
-				}
-					
-				String id=collection.substring(7);
-				
-				DateFormat df=DateFormat.getDateInstance(DateFormat.SHORT);
-				String firstString=first>0?df.format(new Date(first)):"none";
-				String lastString=last>0?df.format(new Date(last)):"none";
-				long avgSize=count>0?size/count:0L;
-				m.pushNode("sensor")
-				.addNode("id",id)
-				.addNode("count", count)
-				.addNode("size", size)
-				.addNode("avgSize", avgSize)
-				.addNode("first", firstString)
-				.addNode("last", lastString)
-				.addNode("firstraw", first)
-				.addNode("lastraw", last)
-				.popNode();
-
-				//System.out.println(collection+" "+count+" "+size+" "+size/count);
-			}
-		}
-		m.declareKey("byId", "/sensors/sensor", "id");
-		INKFResponse resp=aContext.createResponseFrom(m.toDocument(false));
+		IHDSDocument sensorInfo=PersistenceFactory.getPersistence(aContext).getSensorInfo(aContext);
+		IHDSReader r=sensorInfo.getReader();
+		r.declareKey("byId", "/sensors/sensor", "id");
+		INKFResponse resp=aContext.createResponseFrom(r.toDocument());
 		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 	}
 	
@@ -384,12 +268,6 @@ public class SensorListAccessor extends StandardAccessorImpl
 					if (lastModified!=null && lastModified>0)
 					{
 						Object value=pctx.createQuery(id, QueryType.LAST_VALUE).setStart(0).execute();
-						if (value!=null && value instanceof DBObject)
-						{	
-							//System.out.println(id+" "+value.getClass());
-							DBObject dbo=(DBObject)value;
-							value=dbo.toMap();
-						}
 						
 						IHDSMutator m=HDSFactory.newDocument();
 						m.addNode("value",value);
@@ -434,9 +312,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 	
 	public void onUpdate(IHDSReader aState,INKFRequestContext aContext) throws Exception
 	{
-		boolean result=false;
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
-		//IHDSReader currentState=aContext.source("active:polestarSensorState",IHDSDocument.class).getReader();
 		long now=System.currentTimeMillis();
 		
 		for (IHDSReader sensorStateNode : aState.getNodes("/sensors/sensor"))
@@ -465,29 +341,6 @@ public class SensorListAccessor extends StandardAccessorImpl
 				ss.setValue(newValue, updateTime, sensorDef,aContext);
 			}
 			
-			//if (updateWindow!=null)
-			//{	System.out.println("here"+(ss.getLastModified()==updateTime));	
-			//}
-
-			
-			
-			DBCollection col=MongoUtils.getCollectionForSensor(sensorId);
-			if (updateWindow!=null)
-			{
-				Long existingTime=findExistingSensorValueAtTime(updateTime,updateWindow,col);
-				//System.out.println("setting "+sensorId+" to "+newValue+" at "+new Date(updateTime).toString()+" existing="+existingTime);
-				if (existingTime==null)
-				{	storeSensorState(sensorId,newValue,updateTime,col,aContext);
-				}
-				else
-				{	replaceSensorState(sensorId,newValue,existingTime,col,aContext);
-					result=true;
-				}
-			}
-			else
-			{	storeSensorState(sensorId,newValue,updateTime,col,aContext);
-			}
-				
 			if (ss.getLastModified()==updateTime)
 			{	mChanges.put(sensorId, sensorId);
 			}
@@ -496,106 +349,35 @@ public class SensorListAccessor extends StandardAccessorImpl
 			{	mChanges.put(SENSOR_ERROR, SENSOR_ERROR);
 				recordError(sensorId,updateTime,aContext);
 			}
+
+			PersistenceFactory.getPersistence(aContext).setSensorValue(sensorId,newValue,updateTime,updateWindow,aContext);
+			
 		}
-		aContext.createResponseFrom(result).setExpiry(INKFResponse.EXPIRY_ALWAYS);
 		
 	}
 	
 	private void recordError(String aSensorId, long aNow, INKFRequestContext aContext)
-	{	try
-		{	BasicDBObject sensor=new BasicDBObject();
-			sensor.append("t", aNow);
-			sensor.append("i", aSensorId);
-			SensorState ss=mSensorStates.get(aSensorId);
-			String error=ss.getError();
-			int level;
-			if (error==null || error.length()==0)
-			{	level=0;
-				error=null;
-			}
-			else
-			{	level=3;
-			}
-			sensor.append("l", level);
-			sensor.append("m", error);
-			DBCollection col=MongoUtils.getCollection("errors");
-			WriteResult wr=col.insert(sensor);
+	{	
+		SensorState ss=mSensorStates.get(aSensorId);
+		String error=ss.getError();
+		int level;
+		if (error==null || error.length()==0)
+		{	level=0;
+			error=null;
+		}
+		else
+		{	level=3;
+		}
+		try
+		{	PersistenceFactory.getPersistence(aContext).setSensorError(aSensorId,error,level,aNow,aContext);
 		}
 		catch (Exception e)
-		{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_SEVERE, Utils.throwableToString(e));
+		{	try
+			{	MonitorUtils.log(aContext,null,INKFLocale.LEVEL_SEVERE, Utils.throwableToString(e));
+			}
+			catch (Exception e2) {;}
 		}
 	}
-
-	
-	
-	public static void storeSensorState(String aId, Object aValue, long aNow, DBCollection aCol, INKFRequestContext aContext) throws Exception
-	{
-		if (aValue!=null)
-		{	Class c=aValue.getClass();
-			if (c==String.class||c==Boolean.class||c==Integer.class||c==Long.class||c==Float.class||c==Double.class||Map.class.isAssignableFrom(c))
-			{	
-				BasicDBObject sensor=new BasicDBObject();
-				sensor.append("t", aNow);
-				sensor.append("v", aValue);
-				//DBCollection col=MongoUtils.getCollectionForSensor(aId);
-				WriteResult wr=aCol.insert(sensor);
-			}
-			else
-			{	String msg=String.format("Unsupported datatype for %s of %s",aId,c.getName());
-				MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, msg);
-			}
-		}
-	}
-	
-	public static void replaceSensorState(String aId, Object aValue, long aTime, DBCollection aCol, INKFRequestContext aContext) throws Exception
-	{
-		if (aValue!=null)
-		{	Class c=aValue.getClass();
-			if (c==String.class||c==Boolean.class||c==Integer.class||c==Long.class||c==Float.class||c==Double.class||Map.class.isAssignableFrom(c))
-			{	
-				BasicDBObject sensor=new BasicDBObject();
-				sensor.append("t", aTime);
-				sensor.append("v", aValue);
-				
-				//$eq doesn't work on earlier versions
-				//BasicDBObject query=new BasicDBObject("t", new BasicDBObject("$eq",aTime));
-				
-				BasicDBList inO=new BasicDBList();
-				inO.add(aTime);
-				BasicDBObject query=new BasicDBObject("t", new BasicDBObject("$in",inO));
-				
-				//DBCollection col=MongoUtils.getCollectionForSensor(aId);
-				WriteResult wr=aCol.update(query, sensor);
-			}
-			else
-			{	String msg=String.format("Unsupported datatype for %s of %s",aId,c.getName());
-				MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, msg);
-			}
-		}
-	}
-	
-	public static Long findExistingSensorValueAtTime(Long aTime, Long aWindow, DBCollection aCol) throws Exception
-	{
-		long start=aTime-aWindow;
-		long end=aTime+aWindow;
-		BasicDBObject startO=new BasicDBObject("t", new BasicDBObject("$gte",start));
-		BasicDBObject endO=new BasicDBObject("t", new BasicDBObject("$lt",end));
-		BasicDBList listO=new BasicDBList();
-		listO.add(startO);
-		listO.add(endO);
-		BasicDBObject queryO=new BasicDBObject("$and", listO);
-		DBCursor cursor = aCol.find(queryO);
-		Long existingTime=null;
-		if (cursor.hasNext())
-		{	DBObject capture=cursor.next();
-			if (cursor.hasNext())
-			{	throw new NKFException("Multiple sensor values within window");
-			}
-			existingTime=(Long)capture.get("t");		
-		}	
-		return existingTime;
-	}
-	
 	
 	void updateSensorState(String aId, Object aValue, long aNow, String aException, INKFRequestContext aContext)
 	{

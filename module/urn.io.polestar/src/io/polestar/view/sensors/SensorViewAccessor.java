@@ -14,9 +14,12 @@
 */
 package io.polestar.view.sensors;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IllegalFormatConversionException;
@@ -368,7 +371,8 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		long xAxisTicks=10;
 		int offset=0;
 		String endSnap=null;
-		Long endTime=null;
+		Long endTime=System.currentTimeMillis();
+		String title=null;
 		
 		if (!aTicker)
 		{
@@ -409,7 +413,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 					xAxisTicks=10;
 					timeFormat="d MMM";
 					endSnap="day";
-					endTime=-DAY;
+					//endTime=-DAY;
 				}
 				if (periodString.equals("year"))
 				{	period=31104000000L;
@@ -417,13 +421,37 @@ public class SensorViewAccessor extends StandardAccessorImpl
 					xAxisTicks=12;
 					timeFormat="d MMM";
 					endSnap="day";
-					endTime=-DAY;
+					//endTime=-DAY;
 				}
 	
 			} catch (Exception e)
 			{;}
 			
 			height=aError?(width/16):(width/4);
+			
+			if ("day".equals(endSnap))
+			{
+				Calendar cal = Calendar.getInstance();
+				cal.set(Calendar.HOUR_OF_DAY, 0); // ! clear would not reset the hour of day !
+				cal.clear(Calendar.MINUTE);
+				cal.clear(Calendar.SECOND);
+				cal.clear(Calendar.MILLISECOND);
+				endTime=cal.getTimeInMillis()+1000L*60*60*24;
+			}
+			else
+			{	endTime=System.currentTimeMillis();
+			}
+			endTime+=period*offset;
+			
+			if (!aError)
+			{
+				DateFormat df=DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+				String endTimeS=df.format(new Date(endTime));
+				String startTimeS=df.format(new Date(endTime-period));
+				title="from "+startTimeS+" to "+endTimeS;
+			}
+			
+			
 		}
 		else
 		{
@@ -461,6 +489,9 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		.addNode("timeFormat", timeFormat)
 		.addNode("width", Integer.toString(width))
 		.addNode("height", Integer.toString(height));
+		if (title!=null)
+		{	m.addNode("title", title);
+		}
 		if (aTicker)
 		{	m.addNode("xAxisTicks","none");
 		}
@@ -473,7 +504,7 @@ public class SensorViewAccessor extends StandardAccessorImpl
 		}
 		
 		if (endSnap!=null) m.addNode("endSnap", endSnap);
-		if (endTime!=null) m.addNode("endTime", Long.toString(endTime));
+		//if (endTime!=null) m.addNode("endTime", Long.toString(endTime));
 		if (aError)
 		{	m.addNode("yAxisTicks", "1");
 		}

@@ -113,6 +113,7 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		copyThrough(aOp,m,"height","240");
 		copyThrough(aOp,m,"legend","false");
 		copyThrough(aOp,m,"title",null);
+		copyThrough(aOp,m,"subTitle",null);
 		copyThrough(aOp,m,"excludeJS",null);
 		copyThrough(aOp,m,"yAxisTop",Double.toString(max));
 		copyThrough(aOp,m,"yAxisBottom",Double.toString(min));

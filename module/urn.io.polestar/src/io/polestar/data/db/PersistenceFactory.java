@@ -17,18 +17,7 @@ import org.netkernel.util.Utils;
 
 public class PersistenceFactory extends StandardAccessorImpl
 {
-	private static IPolestarPersistence sPersistence;
-	/*
-	static
-	{
-		try
-		{	sPersistence=NullPersistence.getInstance();
-		}
-		catch (Exception e)
-		{ ; }
-	}
-	*/
-		
+	private static IPolestarPersistence sPersistence;	
 	
 	public static IPolestarPersistence getPersistence(INKFRequestContext aContext) throws NKFException
 	{	

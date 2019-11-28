@@ -63,6 +63,6 @@ public class ScriptExecutionDataAccessor extends StandardAccessorImpl
 		{	error=aContext.source("arg:error",String.class);
 		}
 		long now=System.currentTimeMillis();
-		PersistenceFactory.getPersistence(aContext).updateScriptStats(id,isEdit,error,now);
+		PersistenceFactory.getPersistence(aContext).updateScriptStats(id,isEdit,error,now,aContext);
 	}
 }

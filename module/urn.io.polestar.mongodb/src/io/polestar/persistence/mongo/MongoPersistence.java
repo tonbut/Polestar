@@ -46,7 +46,6 @@ import com.mongodb.util.JSON;
 
 import io.polestar.data.api.ICollectionIterator;
 import io.polestar.data.db.IPolestarPersistence;
-import io.polestar.data.db.MongoUtils;
 import io.polestar.data.util.MonitorUtils;
 
 public class MongoPersistence implements IPolestarPersistence
@@ -637,7 +636,7 @@ public class MongoPersistence implements IPolestarPersistence
 	}
 	
 	@Override
-	public void updateScriptStats(long aScriptId, boolean aIsEdit, String aError, long aTime) throws NKFException
+	public void updateScriptStats(long aScriptId, boolean aIsEdit, String aError, long aTime, INKFRequestContext aContext) throws NKFException
 	{
 		try
 		{	

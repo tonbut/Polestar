@@ -1,0 +1,36 @@
+//Apply plugins
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+//Include common properties
+//NOTE: Use relative path instead of $rootDir so that CI/CD pipeline gradle build files can also find the common.properties.gradle file
+apply from: "../../gradle/common/common.properties.gradle"
+
+apply from: '../../gradle/common/common-nk-build.gradle'
+
+// Apply Kotlin
+// Note: if you don't want Kotlin in every module, then comment out the following 'apply from', and uncomment the equivalent
+// in the module's build.gradle.
+//apply from: '../../gradle/common/common-kotlin-build.gradle'
+
+//Group to publish Maven artifacts/modules
+project.group = MODULEMAVENGROUP
+
+//For Publishing - note target is a relative URI to the local maven-module-dev repo mirror
+uploadArchives { repositories { mavenDeployer { repository(url: UPLOADMAVENTARGET) } } }
+
+//Define source set so that the IDE tools automatically set up src/ path
+sourceSets {
+    main {
+        java {
+            srcDir 'src/'
+        }
+    }
+}
+
+// Pin target JVM to Java 1.8
+sourceCompatibility = 1.8
+targetCompatibility = 1.8

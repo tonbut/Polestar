@@ -1,0 +1,43 @@
+apply plugin: 'kotlin'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$versions.kotlin"
+    }
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+
+    maven {
+        url "http://maven.netkernel.org/netkernel-maven"
+    }
+}
+
+dependencies {
+    compileOnly group: 'urn.org.netkernel', name: 'lang.kotlin', version: "$versions.langKotlin"
+
+    // explicitly add kotlin-stdlib to as a dependency so that IntelliJ thinks that Kotlin is configured. Added as an
+    // implementation dependency so as to not interfere with compilation/built module.
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$versions.kotlin"
+}
+
+sourceSets["main"].kotlin.srcDirs("src")
+sourceSets["main"].java.exclude("**/*.kts")
+sourceSets["main"].kotlin.exclude("**/*.kts")
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}

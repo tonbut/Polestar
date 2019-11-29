@@ -1,0 +1,11 @@
+//Dynamic properties need to be poked into ext
+//See http://stackoverflow.com/questions/37101589/how-to-read-a-properties-files-and-use-the-values-in-project-gradle-script
+ext {
+
+    MODULEMAVENGROUP = 'org.netkernel'
+    // NB: In order to override the default maven target repo, provide the below system property at runtime.
+    // Example: ./gradlew uploadArchives -Dupload.maven.target=gs://maven-test-dito/releases
+    UPLOADMAVENTARGET = System.getProperty('upload.maven.target', 'file:/tmp/m2/')
+
+    apply from: '../../gradle/common/common.properties-versions.gradle'
+}

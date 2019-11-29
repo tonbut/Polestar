@@ -1,0 +1,7 @@
+//PJR Note - replace / with : so that gradle eclipse doesn't get confused by paths
+//See https://discuss.gradle.org/t/import-multi-project-into-eclipse-fails/18303/2
+
+include (
+  ':module:urn.io.polestar',
+  ':module:urn.io.polestar.mongodb'
+)

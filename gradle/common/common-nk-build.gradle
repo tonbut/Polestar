@@ -1,0 +1,24 @@
+apply plugin: 'netkernel'
+
+netkernel {
+    //Add the Maven Central repository for compile time dependency resolution
+    useMavenCentral()
+
+    //Add the NetKernel maven repository for compile time dependency resolution of core NetKernel libraries
+    useMavenNK()
+
+    //Add the core NetKernel libraries as compile time dependencies
+    useStandardCompileDependencies()
+
+    //Specify NetKernel instance for module deployment and management tasks etc
+    instances {
+        NK {
+                edition = "EE"
+                location = nklocation // Local property from ~/.gradle/gradle.properties
+        }
+    }
+}
+
+dependencies {
+    // put any global dependencies here
+}

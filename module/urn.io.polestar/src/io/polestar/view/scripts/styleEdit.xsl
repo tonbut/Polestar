@@ -17,6 +17,7 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:output method="xml"/>
     <xsl:param name="sensors"/>
+    <xsl:param name="languages"/>
 
     <xsl:template match="/*">
     	<div id="fill" class="container top" style="height: 100%">
@@ -164,8 +165,23 @@
 								<xsl:if test="public='public'"><xsl:attribute name="selected"/></xsl:if>
 								public</option>
 						</select>
-						
+
 					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-1 control-label" for="language">Language</label>
+					<div class="col-sm-5">
+						<select name="language" class="form-control">
+							<xsl:variable name="sel" select="language"/>
+							<xsl:for-each select="$languages/languages/language">
+								<option value="{endpoint}">
+									<xsl:if test="$sel=endpoint"><xsl:attribute name="selected"/></xsl:if>
+									<xsl:value-of select="name"/>
+								</option>
+							</xsl:for-each>
+						</select>
+					</div>
+
 				</div>
 				<div class="form-group">
 					<div id="editor" >

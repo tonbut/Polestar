@@ -32,11 +32,11 @@ import io.polestar.data.util.MonitorUtils;
 public class ScriptDataAccessor extends StandardAccessorImpl
 {
 	private final static String SCRIPT_HEAD="context = io.polestar.data.api.PolestarContext.createContext(context,\"%s\");\n";
-	
+
 	public ScriptDataAccessor()
 	{	declareThreadSafe();
 	}
-	
+
 	public void onSource(INKFRequestContext aContext) throws Exception
 	{
 		String idString=aContext.getThisRequest().getArgumentValue("id");
@@ -45,7 +45,7 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 		if (aContext.getThisRequest().argumentExists("fragment"))
 		{	fragment=aContext.getThisRequest().getArgumentValue("fragment");
 		}
-		
+
 		IHDSDocument script=PersistenceFactory.getPersistence(aContext).getScript(id, aContext);
 		if (fragment==null)
 		{
@@ -57,7 +57,7 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 			Object rep=null;
 			IHDSReader r=script.getReader();
 			if (fragment.equals("script"))
-			{	
+			{
 				String code=(String)r.getFirstValue("/script/script");
 				String name=(String)r.getFirstValue("/script/name");
 				code=String.format(SCRIPT_HEAD,name)+code;
@@ -65,9 +65,24 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 				MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id);
 			}
 			else if (fragment.equals("state"))
-			{	
+			{
 				rep=r.getFirstValue("/script/state");
 				MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id+":state");
+			}
+			else if (fragment.equals("name"))
+			{
+				rep=r.getFirstValue("/script/name");
+				MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id);
+			}
+			else if (fragment.equals("language"))
+			{
+				rep=r.getFirstValueOrNull("/script/language");
+				if (rep == null || rep.equals(""))
+				{
+					// default for backwards compatibility
+					rep = "polestar:script:groovy";
+				}
+				MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id);
 			}
 			INKFResponse resp=aContext.createResponseFrom(rep);
 		}
@@ -81,7 +96,7 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 		if (aContext.getThisRequest().argumentExists("fragment"))
 		{	fragment=aContext.getThisRequest().getArgumentValue("fragment");
 		}
-		
+
 		IHDSDocument saveState;
 		if (fragment==null)
 		{	saveState=aContext.sourcePrimary(IHDSDocument.class);
@@ -99,7 +114,7 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 			}
 		}
 		PersistenceFactory.getPersistence(aContext).setScript(id, saveState, aContext);
-		
+
 		boolean cutList=false;
 		boolean cutState=false;
 		for (IHDSReader childNode : saveState.getReader().getNodes("/script/*"))
@@ -112,7 +127,7 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 			{	cutState=true;
 			}
 		}
-		
+
 		MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id);
 		if (cutList) MonitorUtils.cutGoldenThread(aContext, ListScriptsAccessor.GT_SCRIPT_LIST);
 		if (cutState) MonitorUtils.cutGoldenThread(aContext, "gt:script:"+id+":state");
@@ -145,11 +160,11 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 			id=r.nextLong();
 			idString=MonitorUtils.hexString(id);
 		}
-		
+
 		IPolestarPersistence persistence=PersistenceFactory.getPersistence(aContext);
-		
+
 		int size=((Number)persistence.getScriptList(aContext).getReader().getFirstValue("count(/scripts/script)")).intValue();
-		
+
 		IHDSMutator m=HDSFactory.newDocument();
 		m.pushNode("script")
 			.addNode("name", "Script "+idString)
@@ -159,10 +174,11 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 			.addNode("script", "")
 			.addNode("state", "<state/>")
 			.addNode("public", "private")
+			.addNode("language", "polestar:script:groovy")
 			.addNode("order", size);
-		
+
 		persistence.addScript(m.toDocument(false),aContext);
-		
+
 		aContext.createResponseFrom("res:/md/script/"+idString);
 		MonitorUtils.cutGoldenThread(aContext, ListScriptsAccessor.GT_SCRIPT_LIST);
 	}

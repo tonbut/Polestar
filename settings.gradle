@@ -3,5 +3,8 @@
 
 include (
   ':module:urn.io.polestar',
-  ':module:urn.io.polestar.mongodb'
+  ':module:urn.io.polestar.mongodb',
+  ':module:urn.io.polestar.scripts.groovy'
+// Kotlin module currently commented out due to Maven/build issues
+//  ':module:urn.io.polestar.scripts.kotlin'
 )

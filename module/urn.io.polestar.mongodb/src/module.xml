@@ -16,7 +16,7 @@
 <module version="2.0">
 	<meta>
 		<identity>
-			<uri>urn:io:polestar:gitlab</uri>
+			<uri>urn:io:polestar:mongodb</uri>
 			<version>0.1.0</version>
 		</identity>
 		<info>

@@ -523,7 +523,6 @@ public class ScriptAccessor extends StandardAccessorImpl
 			m.addNode("name",params.getFirstValue("name"));
 			m.addNode("triggers",params.getFirstValue("triggers"));
 			m.addNode("period",params.getFirstValue("period"));
-			m.addNode("target",params.getFirstValue("target"));
 			m.addNode("keywords",params.getFirstValue("keywords"));
 			m.addNode("script",params.getFirstValue("script"));
 			m.addNode("language",params.getFirstValue("language"));

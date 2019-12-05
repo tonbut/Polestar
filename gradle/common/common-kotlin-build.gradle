@@ -21,10 +21,6 @@ repositories {
 
 dependencies {
     compileOnly group: 'urn.org.netkernel', name: 'lang.kotlin', version: "$versions.langKotlin"
-
-    // explicitly add kotlin-stdlib to as a dependency so that IntelliJ thinks that Kotlin is configured. Added as an
-    // implementation dependency so as to not interfere with compilation/built module.
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$versions.kotlin"
 }
 
 sourceSets["main"].kotlin.srcDirs("src")

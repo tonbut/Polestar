@@ -443,6 +443,7 @@ public class MongoPersistence implements IPolestarPersistence
 					m.addNode("period",(String)dbo.get("period"));
 					m.addNode("target",(String)dbo.get("target"));
 					m.addNode("keywords",(String)dbo.get("keywords"));
+					m.addNode("language",(String)dbo.get("language"));
 					m.addNode("public",dbo.get("public"));
 					m.popNode();
 					return m.toDocument(false);
@@ -493,6 +494,11 @@ public class MongoPersistence implements IPolestarPersistence
 			Object keywords=primary.getFirstValueOrNull("keywords");	
 			if (keywords!=null)
 			{	update.append("keywords", keywords);
+				needsUpdate=true;
+			}
+			Object language=primary.getFirstValueOrNull("language");
+			if (language!=null)
+			{	update.append("language", language);
 				needsUpdate=true;
 			}
 			Object isPublic=primary.getFirstValueOrNull("public");	

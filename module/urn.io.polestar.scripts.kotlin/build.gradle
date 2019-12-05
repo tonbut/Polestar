@@ -1,0 +1,15 @@
+//Use common build configuration for modules
+apply from: '../../gradle/common/common-module-build.gradle'
+
+// Uncomment if not using Kotlin globally
+apply from: '../../gradle/common/common-kotlin-build.gradle'
+
+// CC Note: Would be nice to be able to put this in 'common-nk-build.gradle', but doing so doesn't appear to work.
+buildscript {
+    apply from: '../../gradle/common/common-nk-boilerplate.gradle', to: buildscript
+}
+
+//Additional Compile Dependencies
+dependencies {
+    compile group:'urn.org.netkernel', name: 'mod.hds', version: '[0.5.0,)'
+}

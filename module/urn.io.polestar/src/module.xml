@@ -28,9 +28,10 @@
 		<dynamic/>
 		<classloader>
 			<exports>
-				<match>io.polestar.api.*</match>
-				<match>io.polestar.data.api.*</match>
-				<match>io.polestar.data.db.*</match>
+				<match>io\.polestar\.api\.*</match>
+				<match>io\.polestar\.data\.api.*</match>
+				<match>io\.polestar\.data\.scripts.*</match>
+				<match>io\.polestar\.data\.db.*</match>
 			</exports>
 		</classloader>
 	</system>
@@ -58,19 +59,19 @@
 						</import>
 						<import>
 							<uri>urn:org:netkernel:ext:layer1</uri>
-						</import>						
+						</import>
 						<import>
 							<uri>urn:org:netkernel:mod:hds</uri>
-						</import>						
+						</import>
 						<import>
 							<uri>urn:org:netkernel:xml:core</uri>
-						</import>						
+						</import>
 						<import>
 							<uri>urn:org:netkernel:lang:groovy</uri>
-						</import>		
+						</import>
 						<import>
 							<uri>urn:org:netkernel:mod:wfw</uri>
-						</import>				
+						</import>
 					</space>
 				</mapper>
 				<import>
@@ -86,9 +87,9 @@
 					<private/>
 				</import>
 				<import>
-		            <uri>urn:org:netkernel:mod:security</uri>
-		            <private/>
-		        </import>					
+					<uri>urn:org:netkernel:mod:security</uri>
+					<private/>
+				</import>
 			</space>
 		</branch-merge>
 		<import>
@@ -101,7 +102,7 @@
 	</rootspace>
 
 	<rootspace name="Polestar / Data " uri="urn:io:polestar:data" public="true">
-	
+
 		<!-- script stuff -->
 		<endpoint>
 			<id>polestar:data:scriptData</id>
@@ -123,35 +124,35 @@
 			</grammar>
 			<class>io.polestar.data.scripts.ExecuteScriptAccessor</class>
 		</endpoint>
-        <endpoint>
-            <id>polestar:data:scriptExecuteActive</id>
-            <grammar><active>
-                <identifier>active:polestarExecuteScript</identifier>
-                <argument min="0" name="script"/>
-                <argument min="0" name="name"/>
-                <varargs/>
-            </active></grammar>
-            <class>io.polestar.data.scripts.ExecuteScriptAccessor</class>
-        </endpoint>
-        
-        <endpoint>
-            <id>polestar:data:listScripts</id>
-            <grammar>
-                <active>
-                    <identifier>active:polestarListScripts</identifier>
-                </active>
-            </grammar>
-            <class>io.polestar.data.scripts.ListScriptsAccessor</class>
-        </endpoint>
-        
-        <endpoint>
+		<endpoint>
+			<id>polestar:data:scriptExecuteActive</id>
+			<grammar><active>
+				<identifier>active:polestarExecuteScript</identifier>
+				<argument min="0" name="script"/>
+				<argument min="0" name="name"/>
+				<varargs/>
+			</active></grammar>
+			<class>io.polestar.data.scripts.ExecuteScriptAccessor</class>
+		</endpoint>
+
+		<endpoint>
+			<id>polestar:data:listScripts</id>
+			<grammar>
+				<active>
+					<identifier>active:polestarListScripts</identifier>
+				</active>
+			</grammar>
+			<class>io.polestar.data.scripts.ListScriptsAccessor</class>
+		</endpoint>
+
+		<endpoint>
 			<id>polestar:data:pollingState</id>
 			<grammar><active>
 				<identifier>active:polestarPollingState</identifier>
 			</active></grammar>
 			<class>io.polestar.data.poll.PollingStateAccessor</class>
 		</endpoint>
-		
+
 		<endpoint>
 			<id>polestar:data:scriptExecutionState</id>
 			<grammar><active>
@@ -164,7 +165,7 @@
 			</active></grammar>
 			<class>io.polestar.data.scripts.ScriptExecutionDataAccessor</class>
 		</endpoint>
-		
+
 		<!-- sensor stuff -->
 		<endpoint>
 			<id>polestar:data:sensor</id>
@@ -183,29 +184,29 @@
 			</active></grammar>
 			<class>io.polestar.data.sensors.SensorListAccessor</class>
 		</endpoint>
-		
+
 		<endpoint>
 			<id>polestar:data:error</id>
 			<grammar><active>
 				<identifier>active:polestarSensorErrorInfo</identifier>
-				<!--<identifier>active:polestarSensorErrorList</identifier>-->
-				<argument name="id"/> <!--  min="0" -->
+				<identifier>active:polestarSensorErrorList</identifier>
+				<argument name="id" min="0"/>
 				<argument name="duration"/>
 			</active></grammar>
 			<class>io.polestar.data.sensors.SensorErrorAccessor</class>
 		</endpoint>
-        
-        <endpoint>
-            <id>polestar:data:scriptTriggers</id>
-            <grammar>
-                <active>
-                    <identifier>active:polestarScriptTriggers</identifier>
-                </active>
-            </grammar>
-            <class>io.polestar.data.scripts.ScriptTriggersAccessor</class>
-        </endpoint>
-        
-        <endpoint>
+
+		<endpoint>
+			<id>polestar:data:scriptTriggers</id>
+			<grammar>
+				<active>
+					<identifier>active:polestarScriptTriggers</identifier>
+				</active>
+			</grammar>
+			<class>io.polestar.data.scripts.ScriptTriggersAccessor</class>
+		</endpoint>
+
+		<endpoint>
 			<id>polestar:data:sensor:backup</id>
 			<grammar><active>
 				<identifier>active:polestarSensorBackupInfo</identifier>
@@ -217,36 +218,33 @@
 				<argument name="operator" min="0"/>
 			</active></grammar>
 			<class>io.polestar.data.sensors.SensorBackupAccessor</class>
-		</endpoint>	
-        
-        <!-- authentication stuff -->
-        <endpoint>
-            <id>polestar:data:authenticationData</id>
-            <grammar>res:/md/authentication
-            </grammar>
-            <class>io.polestar.data.login.AuthenticationDataAccessor</class>
-        </endpoint>
-        
-        <!-- log stuff -->
-        <endpoint>
+		</endpoint>
+
+		<!-- authentication stuff -->
+		<endpoint>
+			<id>polestar:data:authenticationData</id>
+			<grammar>res:/md/authentication
+			</grammar>
+			<class>io.polestar.data.login.AuthenticationDataAccessor</class>
+		</endpoint>
+
+		<!-- log stuff -->
+		<endpoint>
 			<id>polestar:data:logCleanup</id>
-            <grammar><active>
-            		<identifier>active:polestarLogCleanup</identifier>
-            	</active></grammar>
-            <class>io.polestar.data.log.LogCleanupAccessor</class>
-        </endpoint>
-        <endpoint>
+			<grammar><active>
+				<identifier>active:polestarLogCleanup</identifier>
+			</active></grammar>
+			<class>io.polestar.data.log.LogCleanupAccessor</class>
+		</endpoint>
+		<endpoint>
 			<id>polestar:data:logQuery</id>
-            <grammar><active>
-            		<identifier>active:polestarLogQuery</identifier>
-            		<argument name="operator" min="0"/>
-            	</active></grammar>
-            <class>io.polestar.data.log.LogQueryAccessor</class>
-        </endpoint>
-        
-       
-        
-        
+			<grammar><active>
+				<identifier>active:polestarLogQuery</identifier>
+				<argument name="operator" min="0"/>
+			</active></grammar>
+			<class>io.polestar.data.log.LogQueryAccessor</class>
+		</endpoint>
+
 		<mapper>
 			<config>res:/io/polestar/data/config/Mappings.xml</config>
 			<space>
@@ -256,39 +254,39 @@
 				</fileset>
 			</space>
 		</mapper>
-		
+
 		<endpoint>
 			<private/>
 			<class>io.polestar.data.db.PersistenceFactory</class>
 		</endpoint>
-		
+
 		<import>
 			<uri>urn:org:netkernel:ext:layer1</uri>
-		</import>						
+		</import>
 		<import>
 			<uri>urn:org:netkernel:mod:hds</uri>
-		</import>						
+		</import>
 		<import>
 			<uri>urn:org:netkernel:lang:groovy</uri>
-		</import>						
+		</import>
 		<import>
 			<uri>urn:org:netkernel:client:http</uri>
-		</import>		
-        <import>
-            <uri>urn:org:netkernel:mod:security</uri>
-        </import>
-        <import>
-            <uri>urn:org:netkernel:email:core</uri>
-        </import>
-        <import>
+		</import>
+		<import>
+			<uri>urn:org:netkernel:mod:security</uri>
+		</import>
+		<import>
+			<uri>urn:org:netkernel:email:core</uri>
+		</import>
+		<import>
 			<uri>urn:org:netkernel:web:core</uri>
 		</import>
 		<import>
 			<uri>urn:org:netkernel:xml:core</uri>
-		</import>		
+		</import>
 		<import>
 			<uri>urn:org:netkernel:json:core</uri>
-		</import>		
+		</import>
 
 		<endpoint>
 			<prototype>SimpleImportDiscovery</prototype>
@@ -298,9 +296,18 @@
 		<endpoint>
 			<prototype>DynamicImport</prototype>
 			<config>active:SimpleImportDiscovery</config>
-		</endpoint>							
+		</endpoint>
+
+		<accessor>
+			<grammar>
+				<active>
+					<identifier>active:polestarAvailableLanguages</identifier>
+				</active>
+			</grammar>
+			<class>io.polestar.data.scriptRuntime.RuntimeLookupAccessor</class>
+		</accessor>
 	</rootspace>
-	
+
 	<rootspace name="Polestar / Cron">
 		<fileset>
 			<regex>res:/etc/system/CronConfig.xml</regex>
@@ -319,7 +326,7 @@
 			<private/>
 		</import>
 	</rootspace>
-		
+
 	<rootspace name="Polestar / Grafana " uri="urn:io:polestar:grafana" public="false" private-filter="false">
 		<endpoint>
 			<id>polestar:grafana:jsonendpoint</id>

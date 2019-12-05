@@ -526,6 +526,7 @@ public class ScriptAccessor extends StandardAccessorImpl
 			m.addNode("target",params.getFirstValue("target"));
 			m.addNode("keywords",params.getFirstValue("keywords"));
 			m.addNode("script",params.getFirstValue("script"));
+			m.addNode("language",params.getFirstValue("language"));
 			m.addNode("public",params.getFirstValue("public"));
 			aContext.sink("res:/md/script/"+aId, m.toDocument(false));
 			updateScriptExecutionData(aId,aContext);
@@ -554,7 +555,8 @@ public class ScriptAccessor extends StandardAccessorImpl
 		req.addArgument("operator", "res:/io/polestar/view/scripts/styleEdit.xsl");
 		req.addArgument("operand", "res:/md/script/"+aId);
 		req.addArgument("sensors","active:polestarSensorConfig");
-		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);		
+		req.addArgument("languages","active:polestarAvailableLanguages");
+		INKFResponseReadOnly subresp = aContext.issueRequestForResponse(req);
 		INKFResponse resp=aContext.createResponseFrom(subresp);
 		resp.setHeader(TemplateWrapper.HEADER_WRAP, true);
 	

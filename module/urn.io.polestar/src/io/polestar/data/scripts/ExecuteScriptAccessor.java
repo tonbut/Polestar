@@ -16,18 +16,20 @@ package io.polestar.data.scripts;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.netkernel.layer0.nkf.INKFLocale;
-import org.netkernel.layer0.nkf.INKFRequest;
-import org.netkernel.layer0.nkf.INKFRequestContext;
-import org.netkernel.layer0.nkf.INKFRequestReadOnly;
-import org.netkernel.layer0.nkf.INKFResponseReadOnly;
-import org.netkernel.layer0.nkf.NKFException;
-import org.netkernel.mod.hds.IHDSDocument;
-import org.netkernel.mod.hds.IHDSReader;
+import org.netkernel.layer0.meta.IEndpointMeta;
+import org.netkernel.layer0.nkf.*;
+import org.netkernel.layer0.urii.SimpleIdentifierImpl;
+import org.netkernel.mod.hds.*;
 import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 import org.netkernel.request.IRequestScopeLevel;
 
 import io.polestar.data.util.MonitorUtils;
+
+import org.netkernel.urii.IIdentifier;
+import org.netkernel.urii.IMetaRepresentation;
+import org.netkernel.urii.ISpace;
+import org.netkernel.urii.IVersion;
+import org.netkernel.urii.impl.Version;
 
 public class ExecuteScriptAccessor extends StandardAccessorImpl
 {
@@ -51,12 +53,7 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 		ScriptStateBuffer ssb=new ScriptStateBuffer(originalScope);
 		ssb.onCommissionSpace(aContext.getKernelContext().getKernel());
 		aContext.getKernelContext().injectDurableRequestScope(ssb);
-		
-		//inject groovy space into scope to stop resolving out to data space to find groovy and hence stopping
-		//script state buffer being first in line to capture state sink requests
-		INKFRequest groovyRequest=aContext.createRequest("active:groovy+operator@dummy");
-		aContext.getKernelContext().rescope(groovyRequest);
-		
+
 		String resolvedId=aContext.getThisRequest().getResolvedElementId();
 		if (resolvedId.equals("polestar:data:scriptExecute"))
 		{	onSourceData(aContext);
@@ -83,30 +80,8 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 		else
 		{	id=thisReq.getArgumentValue("script");
 		}
-		try
-		{	INKFRequest req=aContext.createRequest("active:groovy");
-			req.addArgument("operator", "res:/md/script/"+id+"#script");
-			req.addArgument("state","res:/md/script/"+id+"#state");
-			for (int i=0; i<thisReq.getArgumentCount(); i++)
-			{	String n=thisReq.getArgumentName(i);
-				if (!(n.equals("scheme") || n.equals("activeType") || n.equals("script")))
-				{	req.addArgument(n, thisReq.getArgumentValue(i));
-				}
-				//System.out.println(argName);
-			}
-			INKFResponseReadOnly resp=aContext.issueRequestForResponse(req);
-			aContext.createResponseFrom(resp);	
-			updateScriptExecutionData(id,null,aContext);
-		}
-		catch (NKFException e)
-		{	//System.out.println(e);
-			IHDSReader scriptData=aContext.source("res:/md/script/"+id,IHDSDocument.class).getReader();
-			String scriptName=(String)scriptData.getFirstValue("/script/name");
-			MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, "Script "+scriptName+" Failed: "+e.getDeepestId()+" "+e.getDeepestMessage());
-			updateScriptExecutionData(id,e,aContext);
-			throw e;
-			
-		}
+
+		doExecuteScript(aContext, id);
 	}
 
 	public void onSourceData(INKFRequestContext aContext) throws Exception
@@ -121,11 +96,34 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 			id=(String)aContext.issueRequest(req);
 		}
 		else throw new NKFException("Malformed execute request");
-		
+
+		doExecuteScript(aContext, id);
+	}
+
+	private void doExecuteScript(INKFRequestContext aContext, String id) throws Exception {
+		String language = aContext.source("res:/md/script/"+id+"#language", String.class);
+
+		IHDSDocument availableLanguages = aContext.source("active:polestarAvailableLanguages", IHDSDocument.class);
+		IHDSReader languageNode = availableLanguages.getReader().getFirstNode("//language[endpoint='" + language + "']");
+
+		IIdentifier spaceId = new SimpleIdentifierImpl((String) languageNode.getFirstValue("id"));
+		IVersion spaceVersion = new Version((String) languageNode.getFirstValue("version"));
+		ISpace space = aContext.getKernelContext().getKernel().getSpace(spaceId, spaceVersion, spaceVersion);
+
 		try
-		{	INKFRequest req=aContext.createRequest("active:groovy");
+		{
+			INKFRequest metaReq=aContext.createRequest(language);
+			metaReq.injectRequestScope(space);
+			metaReq.setVerb(INKFRequestReadOnly.VERB_META);
+			metaReq.setRepresentationClass(IMetaRepresentation.class);
+			IEndpointMeta meta=(IEndpointMeta)aContext.issueRequest(metaReq);
+
+			INKFRequest req = aContext.getKernelContext().createRequestToEndpoint(meta);
+			req.injectRequestScope(space);
 			req.addArgument("operator", "res:/md/script/"+id+"#script");
-			req.addArgument("state","res:/md/script/"+id+"#state");
+			req.addArgument("name", "res:/md/script/"+id+"#name");
+			req.addArgument("state", "res:/md/script/"+id+"#state");
+
 			INKFResponseReadOnly resp=aContext.issueRequestForResponse(req);
 			aContext.createResponseFrom(resp);
 			updateScriptExecutionData(id,null,aContext);
@@ -137,10 +135,10 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 			MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, "Script "+scriptName+" Failed: "+e.getDeepestId()+" "+e.getDeepestMessage());
 			updateScriptExecutionData(id,e,aContext);
 			throw e;
-			
+
 		}
-	}	
-	
+	}
+
 	private void updateScriptExecutionData(String aId, NKFException aError, INKFRequestContext aContext) throws Exception
 	{	
 		INKFRequest req=aContext.createRequest("active:polestarScriptExecutionUpdate");

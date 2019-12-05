@@ -31,7 +31,7 @@
 				function resize()
 				{	var height=$("#fill").height();
   					//console.log(height);
-  					height=height-310;
+  					height=height-350;
   					if (height&lt;400) height=400;
   					$('#editor').css('height',height);
 				}
@@ -123,6 +123,7 @@
 								7 days</option>	
 						</select>
 					</div>
+					<!--
 					<label class="col-sm-1 control-label" for="target">Target</label>
 					<div class="col-sm-5">
 						<select name="target" class="form-control">
@@ -140,6 +141,7 @@
 						</select>
 						
 					</div>
+					-->
 				</div>
 				
 				<div class="form-group">

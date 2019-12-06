@@ -44,6 +44,7 @@
 					<argument name="operator"/>
 					<argument name="name"/>
 					<argument name="state"/>
+					<varargs/>
 				</active>
 			</grammar>
 			<class>io.polestar.scripts.groovy.ScriptRunnerAccessor</class>

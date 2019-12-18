@@ -31,8 +31,6 @@ import io.polestar.data.util.MonitorUtils;
 
 public class ScriptDataAccessor extends StandardAccessorImpl
 {
-	private final static String SCRIPT_HEAD="context = io.polestar.data.api.PolestarContext.createContext(context,\"%s\");\n";
-
 	public ScriptDataAccessor()
 	{	declareThreadSafe();
 	}
@@ -60,7 +58,6 @@ public class ScriptDataAccessor extends StandardAccessorImpl
 			{
 				String code=(String)r.getFirstValue("/script/script");
 				String name=(String)r.getFirstValue("/script/name");
-				code=String.format(SCRIPT_HEAD,name)+code;
 				rep=code;
 				MonitorUtils.attachGoldenThread(aContext, "gt:script:"+id);
 			}

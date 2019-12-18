@@ -123,6 +123,13 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 			req.addArgument("operator", "res:/md/script/"+id+"#script");
 			req.addArgument("name", "res:/md/script/"+id+"#name");
 			req.addArgument("state", "res:/md/script/"+id+"#state");
+			INKFRequestReadOnly thisReq=aContext.getThisRequest();
+			for (int i=0; i<thisReq.getArgumentCount(); i++)
+			{	String n=thisReq.getArgumentName(i);
+				if (!(n.equals("scheme") || n.equals("activeType") || n.equals("script") || n.equals("id") || n.equals("name")))
+				{	req.addArgument(n, thisReq.getArgumentValue(i));
+				}
+			}
 
 			INKFResponseReadOnly resp=aContext.issueRequestForResponse(req);
 			aContext.createResponseFrom(resp);

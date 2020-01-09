@@ -40,6 +40,8 @@ public class MongoCollectionIterator
 			public void reset()
 			{
 				mState=State.INIT;
+				if (mCursor!=null) mCursor.close();
+				mCursor=null;
 			}
 			
 			@Override
@@ -63,6 +65,7 @@ public class MongoCollectionIterator
 						}
 						mState=State.PRE;
 						result=true;
+						cursor.close();
 					}
 					else if (mState==State.PRE)
 					{	DBCollection col=aPersistence.getCollectionForSensor(aSensor);
@@ -126,6 +129,8 @@ public class MongoCollectionIterator
 			@Override
 			public void reset()
 			{	mState=State.INIT;
+				if (mCursor!=null) mCursor.close();
+				mCursor=null;
 			}
 			
 			@Override
@@ -176,6 +181,7 @@ public class MongoCollectionIterator
 							mValue=null;
 						}
 						mState=State.END;
+						cursor.close();
 					}
 					
 					if (mState==State.END)
@@ -214,6 +220,8 @@ public class MongoCollectionIterator
 			public void reset()
 			{
 				mState=State.INIT;
+				if (mCursor!=null) mCursor.close();
+				mCursor=null;
 			}
 			
 			@Override
@@ -246,6 +254,7 @@ public class MongoCollectionIterator
 						}
 						mState=State.PRE;
 						result=true;
+						cursor.close();
 					}
 					else if (mState==State.PRE)
 					{	

@@ -314,6 +314,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 	{
 		IHDSReader config=aContext.source("active:polestarSensorConfig",IHDSDocument.class).getReader();
 		long now=System.currentTimeMillis();
+		boolean wasReplaced=false;
 		
 		for (IHDSReader sensorStateNode : aState.getNodes("/sensors/sensor"))
 		{	String sensorId=(String)sensorStateNode.getFirstValue("id");
@@ -350,10 +351,11 @@ public class SensorListAccessor extends StandardAccessorImpl
 				recordError(sensorId,updateTime,aContext);
 			}
 
-			PersistenceFactory.getPersistence(aContext).setSensorValue(sensorId,newValue,updateTime,updateWindow,aContext);
+			wasReplaced = PersistenceFactory.getPersistence(aContext).setSensorValue(sensorId,newValue,updateTime,updateWindow,aContext);
 			
 		}
-		
+		INKFResponse resp=aContext.createResponseFrom(wasReplaced);
+		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
 	}
 	
 	private void recordError(String aSensorId, long aNow, INKFRequestContext aContext)

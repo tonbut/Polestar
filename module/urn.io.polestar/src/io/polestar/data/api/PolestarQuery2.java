@@ -414,6 +414,7 @@ public class PolestarQuery2 implements IPolestarQuery
 				}
 				mergePeriodResults.add(rs);
 				aController.reset();
+				it.reset();
 			}
 			IPolestarQueryResultSet merged=mergePeriods(mergePeriodResults);
 			if (mPeriod>0)
@@ -431,9 +432,11 @@ public class PolestarQuery2 implements IPolestarQuery
 			
 			ICollectionIterator it=aForward?getForwardIterator(start,end):getBackwardIterator(start,end);
 			IPolestarQueryResultSet rs=aForward?iterateForward(it,aController,start,end,mPeriod):iterateBackward(it,aController,start,end,mPeriod);
+			it.reset();
 			if (aRelativeTime)
 			{	rs=createRelativeRS(rs);
 			}
+			
 			if (mPeriod>0)
 			{	return rs;
 			}
@@ -660,7 +663,9 @@ public class PolestarQuery2 implements IPolestarQuery
 			//get median duration (i.e. sample rate)
 			IQueryIteratorController qic1=QueryIteratorController.getMedianDurationInstance();
 			//iterateForward(qic1);
-			IPolestarQueryResultSet rs=iterateForward(getForwardIterator(mStart,mEnd), qic1,mStart,mEnd,mPeriod);
+			ICollectionIterator it=getForwardIterator(mStart,mEnd);
+			IPolestarQueryResultSet rs=iterateForward(it, qic1,mStart,mEnd,mPeriod);
+			it.reset();
 			//System.out.println("rs="+rs);
 			//long medianDuration=(Long)qic1.getResult();
 			//System.out.println("median duration="+medianDuration);

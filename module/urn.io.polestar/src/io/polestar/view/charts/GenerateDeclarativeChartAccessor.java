@@ -95,12 +95,15 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		//String yAxisTicks=(String)aOp.getFirstValueOrNull("yAxisTicks");
 		//String xAxisTicks=(String)aOp.getFirstValueOrNull("xAxisTicks");
 		
-		String stackElements="";
+		//String stackElements="";
 		
 		ChartSensorData csd=new ChartSensorData(aContext, aOp, endTime, period, samplesPeriod, timeFormat);
 		IHDSDocument data=csd.getData();
-		double min=csd.getMin();
-		double max=csd.getMax();
+		String min=csd.getMin();
+		String max=csd.getMax();
+		System.out.println("min="+min+" max="+max);
+		System.out.println("data="+data);
+		
 		
 		IHDSMutator m=HDSFactory.newDocument();
 		m.pushNode("chart")
@@ -115,8 +118,8 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		copyThrough(aOp,m,"title",null);
 		copyThrough(aOp,m,"subTitle",null);
 		copyThrough(aOp,m,"excludeJS",null);
-		copyThrough(aOp,m,"yAxisTop",Double.toString(max));
-		copyThrough(aOp,m,"yAxisBottom",Double.toString(min));
+		copyThrough(aOp,m,"yAxisTop",max);
+		copyThrough(aOp,m,"yAxisBottom",min);
 		copyThrough(aOp,m,"yAxisTicks",null);
 		copyThrough(aOp,m,"xAxisTicks",null);
 		

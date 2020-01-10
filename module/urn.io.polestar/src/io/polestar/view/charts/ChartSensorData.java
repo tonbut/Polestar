@@ -32,8 +32,8 @@ import io.polestar.view.sensors.SensorViewAccessor;
 public class ChartSensorData
 {
 	private IHDSDocument mData;
-	private double mMax;
-	private double mMin;
+	private String mMax;
+	private String mMin;
 	
 	private static class SensorConfig
 	{
@@ -281,9 +281,29 @@ public class ChartSensorData
 			max+=0.5f;
 		}
 		
-		//System.out.println(min+" "+max);
-		mMax=max;
-		mMin=min;
+		if (aConfigs.size()==1)
+		{
+			SensorConfig config=aConfigs.get(0);
+			String format=config.format;
+			if (format==null || !format.contains("%")) format="%.3f";
+			mMax=String.format(format, max);
+			mMin=String.format(format, min);
+			
+			//special case where not enough resolution to separate
+			if (mMax.equals(mMin))
+			{
+				min-=0.5;
+				max+=0.5f;
+				mMax=String.format(format, max);
+				mMin=String.format(format, min);
+			}
+			
+		}
+		else
+		{
+			mMax=Double.toString(max);
+			mMin=Double.toString(min);
+		}
 		
 	}
 	
@@ -314,11 +334,11 @@ public class ChartSensorData
 	}
 	
 	
-	public double getMin()
+	public String getMin()
 	{	return mMin;
 	}
 	
-	public double getMax()
+	public String getMax()
 	{	return mMax;
 	}
 	

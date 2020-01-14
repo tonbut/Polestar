@@ -10,6 +10,11 @@ import org.netkernel.module.standard.endpoint.StandardAccessorImpl;
 
 public class RuntimeLookupAccessor extends StandardAccessorImpl {
 
+	public RuntimeLookupAccessor()
+	{	this.declareThreadSafe();
+	}
+	
+	
 	@Override
 	public void onSource(INKFRequestContext aContext) throws Exception {
 		INKFRequest req = aContext.createRequest("active:spaceAggregateHDS");

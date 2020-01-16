@@ -67,9 +67,6 @@
 		<p><b>Everything in Polestar is driven by scripts.</b></p>
 		<p>We hope to have a set of standard scripts initialised when Polestar is installed. At the moment
 		you can manually create scripts from the information in this guide.</p>
-		<p>Alternatively there are set of
-		scripts to download and install from the <a href="https://github.com/tonbut/polestar/tree/master/scripts/example">
-		Github repository</a>.</p>
 		<p>We hope to have a set of standard scripts either installed by default or available in the repo. At the
 		moment you must manually create them to seed Polestar.</p>
 		<p>All the scripts are coded using the <a href="http://groovy.codehaus.org/">Groovy</a> programming language.</p>
@@ -230,7 +227,7 @@ context.createResponseFrom(m.toDocument(false));</code></pre>
 	
 	<h3>Script context</h3>
 	<p>Every script gets passed a variable called context. The context gives access to all the polestar and NetKernel functionality
-	for more details of the API see the <a href="https://rawgit.com/tonbut/polestar/master/javadoc/index.html">Javadoc</a>.
+	for more details of the API see the <a href="https://polestar.io/javadoc/index.html">Javadoc</a>.
 	</p>
 	
 	

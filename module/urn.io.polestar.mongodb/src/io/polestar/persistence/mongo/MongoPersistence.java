@@ -109,9 +109,10 @@ public class MongoPersistence implements IPolestarPersistence
 			/* prime authentication defaults */
 			col=getCollection(AUTH_COLLECTION);
 			DBCursor cursor = col.find();
-			if (!cursor.hasNext())
-			{	cursor.close();
-				aContext.logRaw(INKFLocale.LEVEL_INFO,"Initialising authentication to defaults");
+			boolean hasNext=cursor.hasNext();
+			cursor.close();
+			if (!hasNext)
+			{	aContext.logRaw(INKFLocale.LEVEL_INFO,"Initialising authentication to defaults");
 				initialiseAuthentication(aContext);
 			}
 			
@@ -235,20 +236,13 @@ public class MongoPersistence implements IPolestarPersistence
 		
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
 	@Override
 	public IHDSDocument getAuthentication(INKFRequestContext aContext) throws NKFException
 	{	try
 		{	DBCollection col=getCollection(AUTH_COLLECTION);
 			DBCursor cursor = col.find();
 			DBObject o=cursor.next();
+			cursor.close();
 			IHDSMutator m=HDSFactory.newDocument();
 			m.pushNode("authentication");
 			for (String k : o.keySet())
@@ -312,11 +306,6 @@ public class MongoPersistence implements IPolestarPersistence
 		
 		setAuthentication(m.toDocument(false),aContext);
 	}
-	
-	
-	
-	
-	
 	
 	@Override
 	public IHDSDocument getScriptList(INKFRequestContext aContext) throws NKFException
@@ -571,11 +560,15 @@ public class MongoPersistence implements IPolestarPersistence
 		{	DBCollection col=getCollection(SCRIPT_COLLECTION);
 			BasicDBObject query = new BasicDBObject("name", new BasicDBObject("$regex",".*"+aName+".*"));
 			DBCursor cursor = col.find(query).limit(1);
-			if (cursor.hasNext())
-			{	DBObject dbo=cursor.next();
-				return (Long)dbo.get("id");
+			try 
+			{	if (cursor.hasNext())
+				{	DBObject dbo=cursor.next();
+					return (Long)dbo.get("id");
+				}
+				return null;
+			} finally
+			{	cursor.close();
 			}
-			return null;
 		}
 		catch (UnknownHostException uhe)
 		{	throw new NKFException(ERROR_ID_MONGO_PERSISTENCE,null,uhe);
@@ -634,6 +627,7 @@ public class MongoPersistence implements IPolestarPersistence
 				.addNode("lastEdited", lastEdited)
 				.popNode();
 			}
+			cursor.close();
 			return m.toDocument(false);
 		}
 		catch (UnknownHostException uhe)
@@ -774,11 +768,13 @@ public class MongoPersistence implements IPolestarPersistence
 						{	DBObject entry=cursor.next();
 							first=(Long)entry.get("t");
 						}
+						cursor.close();
 						cursor = col.find().sort(new BasicDBObject("t",-1)).limit(1);
 						if (cursor.hasNext())
 						{	DBObject entry=cursor.next();
 							last=(Long)entry.get("t");
 						}
+						cursor.close();
 					}
 					catch (Exception e)
 					{
@@ -850,15 +846,21 @@ public class MongoPersistence implements IPolestarPersistence
 		listO.add(endO);
 		BasicDBObject queryO=new BasicDBObject("$and", listO);
 		DBCursor cursor = aCol.find(queryO);
-		Long existingTime=null;
-		if (cursor.hasNext())
-		{	DBObject capture=cursor.next();
+		try
+		{	Long existingTime=null;
 			if (cursor.hasNext())
-			{	throw new NKFException("Multiple sensor values within window");
-			}
-			existingTime=(Long)capture.get("t");		
-		}	
-		return existingTime;
+			{	DBObject capture=cursor.next();
+				if (cursor.hasNext())
+				{	throw new NKFException("Multiple sensor values within window");
+				}
+				existingTime=(Long)capture.get("t");		
+			}	
+			return existingTime;
+		}
+		finally
+		{
+			cursor.close();
+		}
 	}
 	
 	
@@ -976,6 +978,7 @@ public class MongoPersistence implements IPolestarPersistence
 				lastTime=t;
 				lastTimeD=t;
 			}
+			cursor.close();
 			
 			long d=now-lastTime;
 			if (lastLevel>0)
@@ -1100,6 +1103,7 @@ public class MongoPersistence implements IPolestarPersistence
 				DBObject query=MDBUtils.getQuery(aStart,aEnd);
 				DBCursor cursor=getCollectionForSensor(sensorId).find(query);
 				long count=cursor.count();
+				cursor.close();
 				IHDSReader r=info.getFirstNode("key('byId','"+sensorId+"')");
 				long avgSize=(Long)r.getFirstValue("avgSize");
 				long size=avgSize*count;
@@ -1116,6 +1120,7 @@ public class MongoPersistence implements IPolestarPersistence
 			DBObject errorQuery=MDBUtils.getQuery(aSensorIds, aStart, aEnd);
 			DBCursor cursor=getCollection(SENSOR_ERRORS_COLLECTION).find(errorQuery);
 			long errorCount=cursor.count();
+			cursor.close();
 			totalCount+=errorCount;
 			long size=errorCount*256; //guess
 			totalSize+=size;
@@ -1174,6 +1179,7 @@ public class MongoPersistence implements IPolestarPersistence
 					w.write("\n");	
 					mProgressNow++;
 				}
+				cursor.close();
 			}
 			
 			//backup errors
@@ -1190,6 +1196,7 @@ public class MongoPersistence implements IPolestarPersistence
 				w.write("\n");
 				mProgressNow++;
 			}
+			cursor.close();
 	
 			w.flush();
 			zos.finish();
@@ -1286,6 +1293,7 @@ public class MongoPersistence implements IPolestarPersistence
 		DBObject query=MDBUtils.getQuery(aStart,aEnd);
 		DBCursor cursor=getCollectionForSensor(aSensorId).find(query);
 		int count=cursor.count();
+		cursor.close();
 		return count>0;
 	}
 	

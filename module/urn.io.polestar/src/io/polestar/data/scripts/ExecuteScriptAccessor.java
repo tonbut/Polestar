@@ -48,11 +48,7 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 			java.beans.Introspector.flushCaches();
 		}
 		
-		//inject script state buffer into scope to capture state sink requests
-		IRequestScopeLevel originalScope=aContext.getKernelContext().getRequestScope();
-		ScriptStateBuffer ssb=new ScriptStateBuffer(originalScope);
-		ssb.onCommissionSpace(aContext.getKernelContext().getKernel());
-		aContext.getKernelContext().injectDurableRequestScope(ssb);
+		
 
 		String resolvedId=aContext.getThisRequest().getResolvedElementId();
 		if (resolvedId.equals("polestar:data:scriptExecute"))
@@ -62,9 +58,7 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 		{	onSourceActive(aContext);
 		}
 		
-		//now really sink state if necessary
-		aContext.getKernelContext().setRequestScope(originalScope);
-		ssb.sinkIfModified(aContext);
+		
 	}
 	
 	public void onSourceActive(INKFRequestContext aContext) throws Exception
@@ -105,6 +99,12 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 
 		IHDSDocument availableLanguages = aContext.source("active:polestarAvailableLanguages", IHDSDocument.class);
 		IHDSReader languageNode = availableLanguages.getReader().getFirstNode("//language[endpoint='" + language + "']");
+		
+		//inject script state buffer into scope to capture state sink requests
+		IRequestScopeLevel originalScope=aContext.getKernelContext().getRequestScope();
+		ScriptStateBuffer ssb=new ScriptStateBuffer(originalScope);
+		ssb.onCommissionSpace(aContext.getKernelContext().getKernel());
+		aContext.getKernelContext().injectDurableRequestScope(ssb);
 
 		IIdentifier spaceId = new SimpleIdentifierImpl((String) languageNode.getFirstValue("id"));
 		IVersion spaceVersion = new Version((String) languageNode.getFirstValue("version"));
@@ -142,7 +142,12 @@ public class ExecuteScriptAccessor extends StandardAccessorImpl
 			MonitorUtils.log(aContext,null,INKFLocale.LEVEL_WARNING, "Script "+scriptName+" Failed: "+e.getDeepestId()+" "+e.getDeepestMessage());
 			updateScriptExecutionData(id,e,aContext);
 			throw e;
-
+		}
+		finally
+		{
+			//now really sink state if necessary
+			aContext.getKernelContext().setRequestScope(originalScope);
+			ssb.sinkIfModified(aContext);
 		}
 	}
 

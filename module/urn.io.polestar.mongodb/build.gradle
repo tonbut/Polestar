@@ -11,11 +11,11 @@ buildscript {
 
 //Additional Compile Dependencies
 dependencies {
-    compileOnly project(':module:urn.io.polestar')
+    provided project(':module:urn.io.polestar')
 
-    compile group:'urn.org.netkernel', name: 'mod.hds', version: '[0.5.0,)'
-    compile group:'urn.org.netkernel', name: 'tpt.http', version: '[2.31.1,)'
-    compile group:'urn.org.netkernel', name: 'client.http', version: '[3.3.1,)'
+    provided group:'urn.org.netkernel', name: 'mod.hds', version: '[0.5.0,)'
+    provided group:'urn.org.netkernel', name: 'tpt.http', version: '[2.31.1,)'
+    provided group:'urn.org.netkernel', name: 'client.http', version: '[3.3.1,)'
 
     compile group:'org.mongodb', name: 'bson', version: '3.11.1'
     compile group:'org.mongodb', name: 'mongodb-driver', version: '3.11.1'

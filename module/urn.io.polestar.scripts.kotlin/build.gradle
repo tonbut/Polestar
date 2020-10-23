@@ -11,5 +11,5 @@ buildscript {
 
 //Additional Compile Dependencies
 dependencies {
-    compile group:'urn.org.netkernel', name: 'mod.hds', version: '[0.5.0,)'
+    provided group:'urn.org.netkernel', name: 'mod.hds', version: '[0.5.0,)'
 }

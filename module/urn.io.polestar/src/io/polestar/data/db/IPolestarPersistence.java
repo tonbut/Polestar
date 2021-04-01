@@ -314,5 +314,13 @@ public interface IPolestarPersistence
 	 */
 	void sensorRestore(File aRestoreFile, String aMode, long aStart, long aEnd, List<String> aSensors, INKFRequestContext aContext) throws NKFException;
 	
+	/** Bulk delete sensor data for given sensors in time-range
+	 * @param aStart the start time in milliseconds from datum
+	 * @param aEnd the end time in milliseconds from datum
+	 * @param aSensorIds a list of sensor ids
+	 * @param aContext NetKernel context
+	 * @throws NKFException thrown if anything goes wrong
+	 */
+	void sensorBulkDelete(long aStart, long aEnd, List<String> aSensorIds, INKFRequestContext aContext) throws NKFException;
 }
 	

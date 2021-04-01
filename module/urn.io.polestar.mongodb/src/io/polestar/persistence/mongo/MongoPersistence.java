@@ -1397,5 +1397,24 @@ public class MongoPersistence implements IPolestarPersistence
 		WriteResult result=getCollection("errors").remove(query);
 	}
 	
+	@Override
+	public void sensorBulkDelete(long aStart, long aEnd, List<String> aSensorIds, INKFRequestContext aContext) throws NKFException
+	{
+		try
+		{
+			for (String sensorId : aSensorIds)
+			{
+				DBObject query=MDBUtils.getQuery(aStart,aEnd);
+				DBCollection collection=getCollectionForSensor(sensorId);
+				WriteResult wr=collection.remove(query);
+			}
+		}
+		catch (Throwable e)
+		{	mStatusMessage=e.getClass().getName()+": "+e.getMessage();
+			mProgressNow=mProgressTotal;
+			throw new NKFException(ERROR_ID_MONGO_PERSISTENCE,null,e);
+		}
+	}
+	
 
 }

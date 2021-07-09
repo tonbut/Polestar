@@ -287,6 +287,12 @@
 		<import>
 			<uri>urn:org:netkernel:json:core</uri>
 		</import>
+		
+		<!-- hack for tony to get Selenium to work -->
+		
+		<import>
+			<uri>urn:org:netkernel:selenium:test</uri>
+		</import>
 
 		<endpoint>
 			<prototype>SimpleImportDiscovery</prototype>

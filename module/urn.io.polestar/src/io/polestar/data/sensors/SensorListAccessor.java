@@ -163,7 +163,7 @@ public class SensorListAccessor extends StandardAccessorImpl
 		IHDSReader r=sensorInfo.getReader();
 		r.declareKey("byId", "/sensors/sensor", "id");
 		INKFResponse resp=aContext.createResponseFrom(r.toDocument());
-		resp.setExpiry(INKFResponse.EXPIRY_ALWAYS);
+		resp.setExpiry(INKFResponse.EXPIRY_CONSTANT,System.currentTimeMillis()+60000L);
 	}
 	
 	//check to see if any sensors are not updating

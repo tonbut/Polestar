@@ -44,6 +44,7 @@
 	 			<div class="col-sm-12">
 	 				<div class="btn-group" role="group" id="periods">
 						<button id="hour" type="button" class="btn btn-default">hour</button>
+						<button id="6hour" type="button" class="btn btn-default">6 hour</button>
 						<button id="day" type="button" class="btn btn-default">day</button>
 						<button id="week" type="button" class="btn btn-default">week</button>
 						<button id="month" type="button" class="btn btn-default">month</button>

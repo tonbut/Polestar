@@ -101,8 +101,8 @@ public class GenerateDeclarativeChartAccessor extends StandardAccessorImpl
 		IHDSDocument data=csd.getData();
 		String min=csd.getMin();
 		String max=csd.getMax();
-		System.out.println("min="+min+" max="+max);
-		System.out.println("data="+data);
+		//System.out.println("min="+min+" max="+max);
+		//System.out.println("data="+data);
 		
 		
 		IHDSMutator m=HDSFactory.newDocument();

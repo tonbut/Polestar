@@ -395,22 +395,27 @@ public class SensorViewAccessor extends StandardAccessorImpl
 					samplePeriod=period/60;
 					xAxisTicks=12;
 				}
+				if (periodString.equals("6hour"))
+				{	period=21600000L;
+					samplePeriod=period/(6*12);
+					xAxisTicks=6;
+				}
 				if (periodString.equals("day"))
 				{	period=86400000L;
-					samplePeriod=period/48;
+					samplePeriod=period/96;
 					xAxisTicks=12;
 				}
 				if (periodString.equals("week"))
 				{	period=604800000L;
-					samplePeriod=period/(12*7);
+					samplePeriod=period/(24*7);
 					xAxisTicks=7;
 					timeFormat="E";
 					endSnap="day";
 				}
 				if (periodString.equals("month"))
-				{	period=2592000000L;
-					samplePeriod=period/30;
-					xAxisTicks=10;
+				{	period=2419200000L;
+					samplePeriod=period/28;
+					xAxisTicks=4;
 					timeFormat="d MMM";
 					endSnap="day";
 					//endTime=-DAY;

@@ -103,7 +103,7 @@ public class ChartSensorData
 				{
 					Integer periodCount=Integer.parseInt((String)sensorNode.getFirstValue("periodCount"));
 					String mergeOpString=(String)sensorNode.getFirstValue("mergeOp");
-					System.out.println(sensorId+" "+periodMerge+" "+periodCount+" "+mergeOpString);
+					//System.out.println(sensorId+" "+periodMerge+" "+periodCount+" "+mergeOpString);
 					QueryType mergeOp=QueryType.valueOf(mergeOpString.toUpperCase());
 					q.setTimeMerge(periodCount);
 					q.setTimeMergeOp(mergeOp);
